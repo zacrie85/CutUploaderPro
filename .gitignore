@@ -1,0 +1,14 @@
+# Data lokal pengguna (jangan ikut ke repo)
+cutuploader_settings.json
+cutuploader_riwayat.json
+
+# Python
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+
+# Sistem
+.DS_Store
+Thumbs.db

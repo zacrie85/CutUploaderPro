@@ -1,0 +1,153 @@
+============================================================
+  CUTUPLOADER PRO v1.0 - PANDUAN LENGKAP
+  Uploader Video Batch Otomatis untuk CutMotions (Kwai)
+============================================================
+
+APA INI?
+--------
+CutUploader Pro adalah aplikasi desktop Windows yang meng-upload
+video dari folder kamu ke situs CutMotions secara OTOMATIS,
+satu per satu, lengkap dengan caption otomatis.
+
+Contoh:
+  Caption dasar : #dangdut
+  Nama file     : melati.mp4
+  Caption jadi  : #dangdut - melati   (otomatis!)
+
+Kamu tinggal tentukan:
+  - Berapa video yang mau diupload sekaligus (5 / 10 / 20, bebas)
+  - Folder video untuk setiap browser (bisa banyak browser)
+  - 3 titik klik di situs (sekali ambil saja, tersimpan)
+
+CARA PAKAI PERTAMA KALI
+-----------------------
+1. Pastikan Python sudah terinstall di PC kamu.
+   Belum ada? Download di https://www.python.org/downloads/
+   Saat install, CENTANG "Add Python to PATH"!
+
+2. Klik dua kali file: JALANKAN.bat
+   File ini otomatis memasang library pynput (sekali saja)
+   lalu langsung membuka aplikasi.
+
+ALUR KERJA APLIKASI (per 1 video)
+---------------------------------
+  1) Klik tombol PILIH VIDEO di situs CutMotions
+  2) Jendela pilih file Windows terbuka -> aplikasi mengetik
+     lokasi file videonya -> otomatis ENTER
+  3) Klik kolom CAPTION di situs -> tulis caption gabungan
+     (contoh: #dangdut - melati)
+  4) Klik tombol KIRIM di situs
+  5) Tunggu sesuai "TUNGGU SETELAH KIRIM" -> lanjut video berikutnya
+
+LANGKAH SETUP (LAKUKAN SEKALI SAJA)
+-----------------------------------
+A. SIAPKAN FOLDER VIDEO
+   - Buat folder untuk setiap browser/akun, contoh:
+       D:\video\akun1   -> untuk browser Chrome akun 1
+       D:\video\akun2   -> untuk browser Edge akun 2
+   - Isi dengan file video (.mp4 .mov .avi .mkv .webm dll)
+   - Nama file jangan pakai tanda kutip " atau karakter aneh.
+     Nama file inilah yang jadi judul videomu (tanpa .mp4).
+
+B. DAFTARKAN BROWSER DI APLIKASI (bagian 1)
+   - Klik "+ TAMBAH BROWSER" -> beri nama, mis. "Chrome Akun 1"
+   - Klik "PILIH FOLDER" -> pilih folder videonya
+   - Ulangi untuk browser/akun lainnya.
+   - Browser yang aktif = yang tersorot hijau di daftar.
+
+C. ATUR 3 POSISI KLIK (bagian 3) - PALING PENTING!
+   1. Buka browser kamu, login ke cutmotions.com,
+      masuk sampai ke HALAMAN UPLOAD video.
+   2. Atur ukuran/posisi jendela browser. JANGAN DIGESER LAGI
+      setelah posisi diambil!
+   3. Klik "AMBIL POSISI" baris A, lalu dalam 5 detik arahkan
+      mouse ke TOMBOL PILIH VIDEO di situs, diamkan.
+   4. Klik "AMBIL POSISI" baris B, arahkan ke KOLOM CAPTION.
+   5. Klik "AMBIL POSISI" baris C, arahkan ke TOMBOL KIRIM.
+   6. Gunakan tombol "LIHAT" untuk mengecek: mouse akan melompat
+      ke posisi yang tersimpan (tanpa klik).
+   Posisi tersimpan OTOMATIS per browser. Ganti browser di daftar,
+   ambil posisi yang sesuai untuk browser itu.
+
+D. ISI JUMLAH & CAPTION (bagian 2)
+   - JUMLAH VIDEO SEKALI JALAN: tulis angkanya, mis. 5 / 10 / 20
+   - CAPTION DASAR: mis. #dangdut
+   - Pratinjau hijau menunjukkan caption final yang akan ditulis.
+
+E. PENGATURAN WAKTU (bagian 4)
+   - MUNDUR SEBELUM MULAI (default 5 dtk):
+     waktu buat kamu pindah ke jendela browser.
+   - JEDA BUKA DIALOG (default 2 dtk):
+     waktu tunggu sampai jendela pilih file Windows terbuka.
+     Kalau di PC kamu lambat, naikkan jadi 3-4.
+   - JEDA ANTAR LANGKAH (default 1 dtk):
+     jeda antar klik/ketik di dalam situs.
+   - TUNGGU SETELAH KIRIM (default 60 dtk):
+     menunggu proses upload video selesai sebelum lanjut.
+     Video besar / internet lambat -> naikkan (mis. 180).
+
+MULAI UPLOAD
+------------
+1. Pilih browser di daftar (yang mau dipakai sekarang).
+2. Buka browser itu di halaman upload CutMotions.
+3. Klik MULAI UPLOAD (atau tekan F6) di aplikasi.
+4. Selama hitungan mundur, klik/buka jendela browser.
+5. JANGAN SENTUH MOUSE & KEYBOARD sampai selesai!
+   - Tekan F7 atau ESC kapan saja untuk BERHENTI.
+6. Selesai -> status hijau "Selesai! X video berhasil diupload".
+
+RIWAYAT ANTI-UPLOAD-DOUBLE
+--------------------------
+- Setiap video yang terkirim dicatat otomatis (riwayat per browser).
+- Centang "Lewati video yang sudah pernah terupload" supaya
+  besok-besoknya aplikasi lanjut ke video berikutnya, bukan
+  mengulang dari awal.
+- Mau upload ulang semua dari awal? Klik
+  "Bersihkan riwayat browser ini".
+
+TIPS PENTING
+------------
+- Jangan pindahkan/resize jendela browser setelah posisi diambil.
+- Jangan mengecilkan browser ke belakang (minimize).
+- Kalau situs di-update tampilannya, tinggal ambil ulang posisi.
+- Coba dulu dengan JUMLAH = 1 untuk memastikan semua posisi pas,
+  baru naik ke 5 / 10 / 20.
+- ESC juga berfungsi berhenti, jadi hati-hati menekan ESC
+  sambil dialog file terbuka.
+
+MENJADI FILE .EXE (OPSIONAL)
+----------------------------
+1. Klik dua kali: build_exe.bat
+2. Tunggu selesai -> muncul folder "dist" berisi
+   CutUploaderPro.exe (satu file, bisa dipindah bebas).
+3. Simpan CutUploaderPro.exe di folder mana pun,
+   settings & riwayat tersimpan di sebelah file exe itu.
+
+HOTKEY
+------
+  F6          : Mulai upload
+  F7 / ESC    : Berhenti
+
+FILE PENDUKUNG YANG OTOMATIS DIBUAT
+-----------------------------------
+  cutuploader_settings.json  -> semua pengaturan & posisi klik
+  cutuploader_riwayat.json   -> daftar video yang sudah terupload
+  Kedua file aman dihapus bila mau mulai benar-benar dari nol.
+
+MASALAH UMUM
+------------
+- "Library pynput belum terpasang"
+  -> Buka CMD, jalankan: pip install pynput
+
+- Aplikasi mengetik tapi tidak masuk ke kolom situs
+  -> Posisi kolom caption mungkin bergeser. Ambil ulang posisi B.
+  -> Pastikan jendela browser tidak dipindah setelah ambil posisi.
+
+- Jendela pilih file terbuka tapi path tidak terketik
+  -> Naikkan JEDA BUKA DIALOG jadi 3-4 detik.
+
+- Upload gagal di tengah jalan
+  -> Tetap aman: video yang sudah terkirim sudah tercatat.
+     Jalankan lagi, aplikasi lanjut dari video berikutnya.
+
+Selamat mengupload kawan! - CutUploader Pro v1.0
