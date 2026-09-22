@@ -1,153 +1,190 @@
-============================================================
-  CUTUPLOADER PRO v1.0 - PANDUAN LENGKAP
-  Uploader Video Batch Otomatis untuk CutMotions (Kwai)
-============================================================
+================================================================
+  CUTUPLOADER PRO v2.0 — PANDUAN LENGKAP
+  Uploader video batch otomatis untuk situs CutMotions (Kwai)
+================================================================
 
-APA INI?
---------
-CutUploader Pro adalah aplikasi desktop Windows yang meng-upload
-video dari folder kamu ke situs CutMotions secara OTOMATIS,
-satu per satu, lengkap dengan caption otomatis.
+ALUR SITUS YANG DIKOTAK-KATIK OTOMATIS
+--------------------------------------
+Aplikasi ini mengikuti alur asli halaman CutMotions:
 
-Contoh:
-  Caption dasar : #dangdut
-  Nama file     : melati.mp4
-  Caption jadi  : #dangdut - melati   (otomatis!)
+  [Manual sekali di awal]
+  1. Login (email + kata sandi)
+  2. Pilih "Versi lama" di bagian atas
+  3. Klik "Rilis karya" di menu kiri
+     -> masuk ke halaman "Video Bublikasikan"
 
-Kamu tinggal tentukan:
-  - Berapa video yang mau diupload sekaligus (5 / 10 / 20, bebas)
-  - Folder video untuk setiap browser (bisa banyak browser)
-  - 3 titik klik di situs (sekali ambil saja, tersimpan)
+  [Otomatis oleh aplikasi, tekan F6]
+  FASE 1  UPLOAD  : klik "+ Tambah video" -> ketik path file
+                    video di dialog Windows -> Enter -> tunggu
+                    upload selesai -> ulangi untuk video
+                    berikutnya (urut nama A-Z)
+  FASE 2  JADWAL  : (opsional) klik radio "Jadwalkan rilis" +
+                    Negara Indonesia; Zona waktu & Waktu rilis
+                    diatur saat JEDA F8
+  FASE 3  CAPTION : per video -> klik tombol "Edit" -> klik
+                    kotak "Judul video" -> Ctrl+A -> ketik
+                    caption gabungan -> klik "Konfirmasi"
+  FASE 4  KIRIM   : scroll ke bawah -> klik "Kirim"
 
-CARA PAKAI PERTAMA KALI
------------------------
-1. Pastikan Python sudah terinstall di PC kamu.
-   Belum ada? Download di https://www.python.org/downloads/
-   Saat install, CENTANG "Add Python to PATH"!
+Batas situs: maksimal 20 video sekali jalan.
+Batas judul video: 250 karakter.
+Caption otomatis:  CAPTION DASAR - NAMA FILE  (contoh:
+"#dangdut - melati", tanpa .mp4)
 
-2. Klik dua kali file: JALANKAN.bat
-   File ini otomatis memasang library pynput (sekali saja)
-   lalu langsung membuka aplikasi.
 
-ALUR KERJA APLIKASI (per 1 video)
----------------------------------
-  1) Klik tombol PILIH VIDEO di situs CutMotions
-  2) Jendela pilih file Windows terbuka -> aplikasi mengetik
-     lokasi file videonya -> otomatis ENTER
-  3) Klik kolom CAPTION di situs -> tulis caption gabungan
-     (contoh: #dangdut - melati)
-  4) Klik tombol KIRIM di situs
-  5) Tunggu sesuai "TUNGGU SETELAH KIRIM" -> lanjut video berikutnya
+CARA PASANG (WINDOWS)
+---------------------
+Cara paling gampang:
+  1. Ekstrak semua file ke satu folder, mis. D:\CutUploaderPro
+  2. Klik dua kali  JALANKAN.bat
+     (kalau Python/pynput belum ada, akan dicoba pasang otomatis)
 
-LANGKAH SETUP (LAKUKAN SEKALI SAJA)
------------------------------------
-A. SIAPKAN FOLDER VIDEO
-   - Buat folder untuk setiap browser/akun, contoh:
-       D:\video\akun1   -> untuk browser Chrome akun 1
-       D:\video\akun2   -> untuk browser Edge akun 2
-   - Isi dengan file video (.mp4 .mov .avi .mkv .webm dll)
-   - Nama file jangan pakai tanda kutip " atau karakter aneh.
-     Nama file inilah yang jadi judul videomu (tanpa .mp4).
+Cara manual:
+  1. Install Python 3.8+ dari python.org (centang "Add to PATH")
+  2. Buka CMD di folder ini, jalankan:
+       pip install pynput
+       python cut_uploader.py
 
-B. DAFTARKAN BROWSER DI APLIKASI (bagian 1)
-   - Klik "+ TAMBAH BROWSER" -> beri nama, mis. "Chrome Akun 1"
-   - Klik "PILIH FOLDER" -> pilih folder videonya
-   - Ulangi untuk browser/akun lainnya.
-   - Browser yang aktif = yang tersorot hijau di daftar.
+Jadi file .exe (opsional):
+  - Klik dua kali  build_exe.bat  (butuh internet untuk PyInstaller)
+  - Hasil: dist\cut_uploader.exe
 
-C. ATUR 3 POSISI KLIK (bagian 3) - PALING PENTING!
-   1. Buka browser kamu, login ke cutmotions.com,
-      masuk sampai ke HALAMAN UPLOAD video.
-   2. Atur ukuran/posisi jendela browser. JANGAN DIGESER LAGI
-      setelah posisi diambil!
-   3. Klik "AMBIL POSISI" baris A, lalu dalam 5 detik arahkan
-      mouse ke TOMBOL PILIH VIDEO di situs, diamkan.
-   4. Klik "AMBIL POSISI" baris B, arahkan ke KOLOM CAPTION.
-   5. Klik "AMBIL POSISI" baris C, arahkan ke TOMBOL KIRIM.
-   6. Gunakan tombol "LIHAT" untuk mengecek: mouse akan melompat
-      ke posisi yang tersimpan (tanpa klik).
-   Posisi tersimpan OTOMATIS per browser. Ganti browser di daftar,
-   ambil posisi yang sesuai untuk browser itu.
 
-D. ISI JUMLAH & CAPTION (bagian 2)
-   - JUMLAH VIDEO SEKALI JALAN: tulis angkanya, mis. 5 / 10 / 20
-   - CAPTION DASAR: mis. #dangdut
-   - Pratinjau hijau menunjukkan caption final yang akan ditulis.
+LANGKAH PERTAMA KALI (SEKALI SAJA)
+----------------------------------
+1. Buka aplikasi -> bagian 1 -> "+ TAMBAH BROWSER"
+   (mis. "Chrome Akun 1"), lalu pilih FOLDER VIDEO-nya.
+2. Buka browser -> login CutMotions -> Versi lama -> Rilis karya.
+   Pastikan jendela browser TIDAK dipindah/resize lagi setelah ini.
+3. Ambil 9 posisi klik di bagian 3. Klik AMBIL, lalu dalam 5 detik
+   arahkan mouse ke target dan diamkan:
 
-E. PENGATURAN WAKTU (bagian 4)
-   - MUNDUR SEBELUM MULAI (default 5 dtk):
-     waktu buat kamu pindah ke jendela browser.
-   - JEDA BUKA DIALOG (default 2 dtk):
-     waktu tunggu sampai jendela pilih file Windows terbuka.
-     Kalau di PC kamu lambat, naikkan jadi 3-4.
-   - JEDA ANTAR LANGKAH (default 1 dtk):
-     jeda antar klik/ketik di dalam situs.
-   - TUNGGU SETELAH KIRIM (default 60 dtk):
-     menunggu proses upload video selesai sebelum lanjut.
-     Video besar / internet lambat -> naikkan (mis. 180).
+   Slot  Diarahkan ke                              Kondisi halaman
+   ----  ----------------------------------------  -------------------------------
+   A     Tombol "+ Tambah video"                   halaman Rilis karya biasa
+   B     Tombol "Edit" baris video TERATAS         baris teratas TERTUTUP
+                                                   (tulisan Edit terlihat)
+   C     Kotak "Judul video"                       baris teratas TERBUKA
+                                                   (klik dulu Edit-nya manual)
+   D     Tombol "Konfirmasi"                       masih dalam keadaan terbuka
+   E     Tombol "Kirim"                            scroll halaman sampai BAWAH
+   F     Radio "Jadwalkan rilis"                   (opsional, jadwal otomatis)
+   G     Dropdown "Negara"                         (opsional, jadwal otomatis)
+   H     Item "Indonesia" di dropdown              (opsional; ambil saat
+                                                   dropdown terbuka)
+   I     Tombol "Batal"                            (opsional; isi HANYA kalau
+                                                   setelah tambah video
+                                                   editor-nya terbuka sendiri)
 
-MULAI UPLOAD
-------------
-1. Pilih browser di daftar (yang mau dipakai sekarang).
-2. Buka browser itu di halaman upload CutMotions.
-3. Klik MULAI UPLOAD (atau tekan F6) di aplikasi.
-4. Selama hitungan mundur, klik/buka jendela browser.
-5. JANGAN SENTUH MOUSE & KEYBOARD sampai selesai!
-   - Tekan F7 atau ESC kapan saja untuk BERHENTI.
-6. Selesai -> status hijau "Selesai! X video berhasil diupload".
+   WAJIB: A, B, C, D, E.  F/G/H hanya kalau pakai mode jadwal
+   OTOMATIS.  I boleh dikosongkan.
 
-RIWAYAT ANTI-UPLOAD-DOUBLE
---------------------------
-- Setiap video yang terkirim dicatat otomatis (riwayat per browser).
-- Centang "Lewati video yang sudah pernah terupload" supaya
-  besok-besoknya aplikasi lanjut ke video berikutnya, bukan
-  mengulang dari awal.
-- Mau upload ulang semua dari awal? Klik
-  "Bersihkan riwayat browser ini".
+RAHASIA TRIK POSISI B/C/D:
+   Setelah satu video di-Konfirmasi, baris video berikutnya NAIK
+   ke posisi yang sama. Jadi cukup SATU set posisi B/C/D untuk
+   semua video (1, 5, 10, sampai 20 video pun tetap pas),
+   selama tinggi tiap baris video sama dan halaman terlihat dari
+   baris teratas. Kalau videonya banyak, kecilkan zoom browser
+   (Ctrl + tanda minus) supaya semua baris muat tanpa scroll.
+
+
+MODE JADWAL RILIS (BAGIAN 5)
+----------------------------
+Isi halaman "Bublikasikan aturan": pilih "Jadwalkan rilis",
+Negara = Indonesia, Zona waktu, dan Waktu rilis (tanggal-jam).
+
+Mode 1 — MANUAL (paling aman, default):
+  - Centang "Jeda F8". Aplikasi akan:
+    upload semua video -> BERHENTI SEBENTAR -> kamu atur sendiri
+    jadwalnya di browser -> tekan F8 -> caption dijalankan ->
+    Kirim.
+  - Atau atur jadwalnya SEBELUM menekan F6 lalu matikan jeda F8.
+
+Mode 2 — OTOMATIS (butuh posisi F, G, H):
+  - Aplikasi klik radio "Jadwalkan rilis" + dropdown Negara +
+    item Indonesia secara otomatis.
+  - Zona waktu & tanggal tetap disarankan diisi saat jeda F8
+    (kalendernya sulit diklik otomatis).
+
+
+CARA PAKAI SETIAP HARI
+----------------------
+1. Buka aplikasi, pilih browser + folder video, isi JUMLAH
+   (maks 20) dan CAPTION DASAR.
+2. Buka browser: pastikan sudah login, Versi lama, halaman
+   "Rilis karya" (Video Bublikasikan), dan posisi jendela browser
+   SAMA seperti saat ambil posisi.
+3. Klik MULAI (atau F6). Aplikasi bekerja 4 fase di atas.
+   Jangan sentuh mouse/keyboard sampai selesai.
+4. Hotkey: F6 = mulai | F7 / ESC = berhenti | F8 = lanjut dari
+   jeda jadwal.
+
+Tombol "Kirim" otomatis: kalau dicentang, aplikasi langsung
+mengklik Kirim setelah semua caption selesai. Matikan centangnya
+kalau mau mengecek dulu secara manual.
+
+
+RIWAYAT & ANTI-DOBEL UPLOAD
+---------------------------
+- Setiap video yang selesai diupload dicatat otomatis di
+  cutuploader_riwayat.json (per browser + folder).
+- Kalau ada video yang sudah pernah terupload, video itu
+  DILEWATI pada eksekusi berikutnya (centang "Lewati video yang
+  sudah pernah terupload").
+- Mau upload ulang video yang sama? Klik "Bersihkan riwayat
+  browser ini" dulu.
+- Dihentikan di tengah jalan (F7)? Jalankan F6 lagi — upload
+  bersambung dari video yang belum terupload, dan caption
+  diulang dari baris teratas (caption yang sudah jadi otomatis
+  ditimpa dengan isian yang sama, jadi aman).
+- Catatan: kalau berhenti SAAT FASE UPLOAD, urutan caption pada
+  eksekusi lanjutan bisa tidak pas dengan urutan baris. Paling
+  aman: hapus video yang sudah masuk daftar di situs + bersihkan
+  riwayat, lalu ulangi dari awal. Atau lanjutkan saja dan koreksi
+  judul yang meleset lewat tombol Edit secara manual.
+
+
+PENGATURAN WAKTU (BAGIAN 4)
+---------------------------
+- MUNDUR SEBELUM MULAI      : persiapan pindah ke jendela browser
+                              (default 5 detik)
+- JEDA BUKA DIALOG/EDITOR   : tunggu dialog pilih file Windows /
+                              editor video terbuka (default 2)
+- JEDA ANTAR LANGKAH        : jeda klik-ketik di situs (default 1)
+- TUNGGU UPLOAD PER VIDEO   : menunggu 1 video selesai terupload
+                              sebelum menambah video berikutnya
+                              (default 60 detik; naikkan kalau
+                              video besar / internet lambat)
+
+Semua pengaturan tersimpan otomatis di cutuploader_settings.json.
+
 
 TIPS PENTING
 ------------
-- Jangan pindahkan/resize jendela browser setelah posisi diambil.
-- Jangan mengecilkan browser ke belakang (minimize).
-- Kalau situs di-update tampilannya, tinggal ambil ulang posisi.
-- Coba dulu dengan JUMLAH = 1 untuk memastikan semua posisi pas,
-  baru naik ke 5 / 10 / 20.
-- ESC juga berfungsi berhenti, jadi hati-hati menekan ESC
-  sambil dialog file terbuka.
+- UJI DULU DENGAN JUMLAH = 1 sampai lancar, baru naik ke 5/10/20.
+- Jangan pindahkan/resize jendela browser setelah ambil posisi.
+- Jangan gunakan mouse/keyboard saat aplikasi berjalan.
+- Zoom out browser (Ctrl + minus) bila videonya banyak supaya
+  baris teratas tetap terlihat.
+- "Menyisipkan link pendek" tidak diisi otomatis (kosong).
+- Judul di batas 250 karakter: pratinjau akan berwarna MERAH bila
+  melebihi; aplikasi juga memperingatkan saat MULAI.
 
-MENJADI FILE .EXE (OPSIONAL)
-----------------------------
-1. Klik dua kali: build_exe.bat
-2. Tunggu selesai -> muncul folder "dist" berisi
-   CutUploaderPro.exe (satu file, bisa dipindah bebas).
-3. Simpan CutUploaderPro.exe di folder mana pun,
-   settings & riwayat tersimpan di sebelah file exe itu.
 
-HOTKEY
-------
-  F6          : Mulai upload
-  F7 / ESC    : Berhenti
+TROUBLESHOOTING
+---------------
+- "pynput belum terpasang"  -> pip install pynput
+- Klik meleset              -> ambil ulang posisi; pastikan jendela
+                              browser & zoom tidak berubah; layar
+                              tidak boleh ganti resolusi.
+- Upload berulang terus     -> riwayat tidak sinkron; bersihkan
+                              riwayat, hapus daftar video di situs,
+                              ulangi.
+- Dialog file tidak terbuka -> naikkan JEDA BUKA DIALOG/EDITOR.
+- Video gagal masuk semua   -> naikkan TUNGGU UPLOAD PER VIDEO.
+- Antivirus curiga pada exe -> ini normal untuk hasil PyInstaller;
+                              tambahkan pengecualian / jalankan versi
+                              Python saja.
 
-FILE PENDUKUNG YANG OTOMATIS DIBUAT
------------------------------------
-  cutuploader_settings.json  -> semua pengaturan & posisi klik
-  cutuploader_riwayat.json   -> daftar video yang sudah terupload
-  Kedua file aman dihapus bila mau mulai benar-benar dari nol.
-
-MASALAH UMUM
-------------
-- "Library pynput belum terpasang"
-  -> Buka CMD, jalankan: pip install pynput
-
-- Aplikasi mengetik tapi tidak masuk ke kolom situs
-  -> Posisi kolom caption mungkin bergeser. Ambil ulang posisi B.
-  -> Pastikan jendela browser tidak dipindah setelah ambil posisi.
-
-- Jendela pilih file terbuka tapi path tidak terketik
-  -> Naikkan JEDA BUKA DIALOG jadi 3-4 detik.
-
-- Upload gagal di tengah jalan
-  -> Tetap aman: video yang sudah terkirim sudah tercatat.
-     Jalankan lagi, aplikasi lanjut dari video berikutnya.
-
-Selamat mengupload kawan! - CutUploader Pro v1.0
+SELAMAT MENCOBA! 🎬
+================================================================
