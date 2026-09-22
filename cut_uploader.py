@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v4.1  -  MACRO EDITION
+  CUTUPLOADER PRO  v4.2  -  MACRO EDITION
   Aplikasi desktop uploader video batch otomatis
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -11,6 +11,12 @@
       Properti Langkah di bawahnya)
     - JEDA bisa diatur per langkah (jeda sebelum langkah)
       dan jeda antar klik di dalam satu langkah
+    - BARU v4.2: CARI GAMBAR bisa diaktifkan pada SEMUA langkah
+      (bukan hanya C) - hasil pencarian bisa DIKLIK langsung
+      atau hanya DIPINDAH tanpa klik
+    - BARU v4.2: SALIN / TEMPEL / HAPUS langkah - langkah A-J
+      bisa digandakan jadi titik klik tambahan yang diatur
+      sendiri (posisi, jeda, jumlah klik, cari gambar)
     - Tema Windows klasik yang ringan dan familiar
 
   Alur situs yang diikuti aplikasi ini (urutan posisi A-J):
@@ -107,7 +113,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "4.1"
+APP_VERSION = "4.2"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -241,6 +247,31 @@ SLOT_KODE = {
     "pos_edit": "I1", "pos_judul": "I2", "pos_konfirmasi": "I3",
     "pos_submit": "J",
 }
+
+# ---- v4.2: pencarian gambar opsional pada SEMUA langkah ----
+GAMBAR_AKSI_OPSI = ("Klik di gambar", "Pindah saja")
+GAMBAR_GAGAL_OPSI = ("Klik titik X,Y", "Lewati langkah", "Stop alur")
+
+
+def gambar_langkah_default():
+    """Config pencarian gambar untuk SATU langkah (bawaan/salinan)."""
+    return {"aktif": False, "path": "", "aksi": "Klik di gambar",
+            "gagal": "Klik titik X,Y", "radius": "", "mirip": ""}
+
+
+# Parameter tambahan yang dimiliki SALINAN tiap jenis langkah
+# (nama, label tampilan, lebar entry)
+PARAM_DEF = {
+    "pos_jadwal": [], "pos_negara": [], "pos_pilih_neg": [],
+    "pos_oke": [], "pos_tambah": [], "pos_video": [],
+    "pos_edit": [], "pos_judul": [], "pos_konfirmasi": [],
+    "pos_tanggal": [("teks", "TANGGAL & JAM RILIS", 22)],
+    "pos_bebas1": [("klik", "JUMLAH KLIK (0-500)", 6),
+                   ("scroll", "JUMLAH SCROLL (0-50)", 6)],
+    "pos_bebas2": [("klik", "JUMLAH KLIK (0-20)", 6)],
+    "pos_submit": [("klik", "JUMLAH KLIK (1-10)", 6)],
+}
+PARAM_BAWAAN = {"teks": "", "klik": "1", "scroll": "0"}
 
 
 def jeda_default_per():
@@ -400,6 +431,14 @@ class CutUploaderApp:
         self.posisi = {k: None for k in POS_KUNCI}
         self.jeda_per = jeda_default_per()        # jeda sebelum langkah
         self.jeda_klik_per = jeda_klik_default_per()  # jeda antar klik
+        # v4.2: config pencarian gambar opsional per langkah bawaan
+        self.gambar_langkah = {k: gambar_langkah_default()
+                               for k in POS_KUNCI}
+        # v4.2: salinan langkah (hasil SALIN/TEMPEL)
+        self.langkah_extra = []       # list of dict (lihat _tempel_langkah)
+        self.papan_klip = None        # langkah yang sedang disalin
+        self._extra_counter = 0
+        self._potong_target = None    # tujuan POTONG GAMBAR aktif
         self.sel = "pos_jadwal"                   # slot terpilih di tabel
         self._loading = True                      # penjaga trace variabel
         self._loading_prop = False
@@ -562,6 +601,10 @@ class CutUploaderApp:
         self._tb_btn(tb, "TES CARI GAMBAR", self._tes_cari)
         self._tb_btn(tb, "POTONG GAMBAR REFERENSI", self._potong_gambar)
         self._tb_pemisah(tb)
+        self._tb_btn(tb, "SALIN LANGKAH", self._salin_langkah)
+        self._tb_btn(tb, "TEMPEL LANGKAH", self._tempel_langkah)
+        self._tb_btn(tb, "HAPUS SALINAN", self._hapus_langkah)
+        self._tb_pemisah(tb)
         self._tb_btn(tb, "SIMPAN PROFIL", self._simpan_profil)
         self._tb_btn(tb, "BUKA PROFIL", self._buka_profil)
 
@@ -649,7 +692,12 @@ class CutUploaderApp:
         vsb.pack(side="left", fill="y", pady=(2, 6), padx=(0, 6))
         self.tree.tag_configure("genap", background=C_STRIPE)
         self.tree.tag_configure("ganjil", background=C_PANEL)
+        self.tree.tag_configure("salinan", foreground=C_BLUE)
         self.tree.bind("<<TreeviewSelect>>", self._on_pilih_baris)
+        self.tree.bind("<Control-c>", lambda _e: self._salin_langkah())
+        self.tree.bind("<Control-v>", lambda _e: self._tempel_langkah())
+        self.tree.bind("<Delete>", lambda _e: self._hapus_langkah())
+        self.tree.bind("<Button-3>", self._menu_klik_kanan)
 
         # ---- panel properti ----
         self.f_prop = tk.LabelFrame(paned, text=" PROPERTI LANGKAH ",
@@ -706,11 +754,17 @@ class CutUploaderApp:
         pos_t = "({},{})".format(pos[0], pos[1]) if pos else "belum diatur"
         V = self.vars
         if kunci == "pos_pilih_neg":
-            if V["pakai_gambar"].get():
-                g = os.path.basename(V["gambar_ref"].get()) \
-                    if V["gambar_ref"].get() else "(gambar belum dipilih)"
-                return "{} | gambar: {} | radius {} px | mirip {}".format(
-                    pos_t, g, V["radius"].get(), V["kemiripan"].get())
+            cfg = self.gambar_langkah.get(kunci) or {}
+            if cfg.get("aktif"):
+                g = os.path.basename(cfg.get("path")) \
+                    if cfg.get("path") else "(gambar belum dipilih)"
+                aksi_t = ("pindah saja"
+                          if cfg.get("aksi") == "Pindah saja"
+                          else "klik gambar")
+                return "{} | gambar: {} | {} | radius {} px | mirip {}".format(
+                    pos_t, g, aksi_t,
+                    cfg.get("radius") or V["radius"].get(),
+                    cfg.get("mirip") or V["kemiripan"].get())
             return pos_t + " | klik biasa"
         if kunci == "pos_tanggal":
             return "{} | ketik: {}".format(pos_t, V["tanggal"].get())
@@ -732,7 +786,8 @@ class CutUploaderApp:
     def _ulang_slot(self, kunci):
         V = self.vars
         if kunci == "pos_pilih_neg":
-            return "cari gambar" if V["pakai_gambar"].get() else "1 klik"
+            cfg = self.gambar_langkah.get(kunci) or {}
+            return "cari gambar" if cfg.get("aktif") else "1 klik"
         if kunci == "pos_tanggal":
             return "klik + ketik"
         if kunci == "pos_bebas1":
@@ -748,20 +803,121 @@ class CutUploaderApp:
             return "{} klik".format(V["klik_submit"].get())
         return "1 klik"
 
+    # ---------- v4.2: salinan langkah (copy-paste) ----------
+    def _iid_ekstra(self, uid):
+        """Ambil dict salinan berdasar uid (atau None)."""
+        if not uid:
+            return None
+        for e in self.langkah_extra:
+            if e.get("uid") == uid:
+                return e
+        return None
+
+    def _params_dari_global(self, sumber):
+        """Nilai awal parameter salinan diambil dari setelan global."""
+        V = self.vars
+        if sumber == "pos_tanggal":
+            return {"teks": V["tanggal"].get()}
+        if sumber == "pos_bebas1":
+            return {"klik": V["klik_bebas1"].get(),
+                    "scroll": V["scroll_bebas1"].get()}
+        if sumber == "pos_bebas2":
+            return {"klik": V["klik_bebas2"].get()}
+        if sumber == "pos_submit":
+            return {"klik": V["klik_submit"].get()}
+        return {}
+
+    def _urutan_lengkap(self):
+        """Semua iid baris tabel (bawaan A-J + salinan) urut tampil."""
+        anak = {}
+        for e in self.langkah_extra:
+            anak.setdefault(e.get("setelah"), []).append(e["uid"])
+        hasil = []
+
+        def emit(anchor):
+            for uid in anak.get(anchor, ()):  # kedalaman dulu
+                if uid not in hasil:        # anti siklus
+                    hasil.append(uid)
+                    emit(uid)
+
+        for k in POS_KUNCI:
+            hasil.append(k)
+            emit(k)
+        # salinan yang tak tersambung ke urutan (file profil rusak)
+        # tetap ditampilkan supaya tidak hilang
+        for e in self.langkah_extra:
+            if e["uid"] not in hasil:
+                hasil.append(e["uid"])
+        return hasil
+
+    def _detail_ekstra(self, e):
+        pos = e.get("posisi")
+        pos_t = "({},{})".format(pos[0], pos[1]) if pos else "belum diatur"
+        teks = "SALINAN | " + pos_t
+        g = e.get("gambar") or {}
+        if g.get("aktif"):
+            teks += " | gambar: {}".format(
+                os.path.basename(g.get("path") or "(kosong)"))
+            if g.get("aksi") == "Pindah saja":
+                teks += " (pindah saja)"
+        p = e.get("params") or {}
+        sumber = e.get("sumber")
+        if sumber == "pos_tanggal":
+            teks += " | ketik: {}".format(p.get("teks")
+                                          or self.vars["tanggal"].get())
+        elif sumber == "pos_bebas1":
+            teks += " | {} klik + {} scroll {}".format(
+                p.get("klik", "1"), p.get("scroll", "0"),
+                self.vars["arah_scroll"].get())
+        elif sumber in ("pos_bebas2", "pos_submit"):
+            teks += " | {} klik".format(p.get("klik", "1"))
+        elif sumber == "pos_video":
+            teks += " | Shift+turun otomatis"
+        return teks
+
+    def _ulang_ekstra(self, e):
+        g = e.get("gambar") or {}
+        sumber = e.get("sumber")
+        if sumber == "pos_tanggal":
+            return "klik + ketik"
+        if sumber == "pos_bebas1":
+            p = e.get("params") or {}
+            return "{} klik + {}x scroll".format(p.get("klik", "1"),
+                                                 p.get("scroll", "0"))
+        if sumber == "pos_video":
+            return "Shift+turun (batch)"
+        if sumber in ("pos_bebas2", "pos_submit"):
+            return "{} klik".format((e.get("params") or {}).get("klik",
+                                                                 "1"))
+        return "cari gambar" if g.get("aktif") else "1 klik"
+
     def _refresh_tabel(self):
         if not hasattr(self, "tree"):
             return
         anak = self.tree.get_children()
         if anak:
             self.tree.delete(*anak)
-        for i, (kunci, label, _w, _ket) in enumerate(POSISI_DEF):
-            self.tree.insert("", "end", iid=kunci, tags=(
-                "genap" if i % 2 == 0 else "ganjil",), values=(
-                SLOT_KODE.get(kunci, kunci),
-                label, self._detail_slot(kunci),
-                "{:.1f}s".format(self.jeda_per.get(kunci, 1.0)),
-                self._ulang_slot(kunci)))
-        if self.sel in POS_KUNCI:
+        for i, iid in enumerate(self._urutan_lengkap()):
+            if iid in POS_KUNCI:
+                kode = SLOT_KODE.get(iid, iid)
+                label = LABEL_POSISI[iid]
+                detail = self._detail_slot(iid)
+                ulang = self._ulang_slot(iid)
+                jeda_t = "{:.1f}s".format(self.jeda_per.get(iid, 1.0))
+                tag = "genap" if i % 2 == 0 else "ganjil"
+            else:
+                e = self._iid_ekstra(iid)
+                if not e:
+                    continue
+                kode = "+"
+                label = e.get("label") or iid
+                detail = self._detail_ekstra(e)
+                ulang = self._ulang_ekstra(e)
+                jeda_t = "{:.1f}s".format(float(e.get("jeda", 1.0)))
+                tag = "salinan"
+            self.tree.insert("", "end", iid=iid, tags=(tag,), values=(
+                kode, label, detail, jeda_t, ulang))
+        if self.sel and self.tree.exists(self.sel):
             try:
                 self.tree.selection_set(self.sel)
                 self.tree.see(self.sel)
@@ -779,12 +935,31 @@ class CutUploaderApp:
         self._loading_prop = True
         for wdg in self.prop_body.winfo_children():
             wdg.destroy()
-        kunci = self.sel
-        if kunci not in POS_KUNCI:
-            self._loading_prop = False
-            return
-        label = LABEL_POSISI[kunci]
-        ket = JUDUL_POSISI[kunci]
+        iid = self.sel
+        ek = None
+        if iid not in POS_KUNCI:
+            ek = self._iid_ekstra(iid) if iid else None
+            if not ek:
+                self._loading_prop = False
+                return
+        V = self.vars
+        if ek:
+            kunci = ek.get("sumber")
+            label = ek.get("label") or iid
+            ket = ("SALINAN LANGKAH (titik klik tambahan) - "
+                   + JUDUL_POSISI.get(kunci, kunci))
+            pos = ek.get("posisi")
+            jeda_v = float(ek.get("jeda", 1.0))
+            jk_v = float(ek.get("jeda_klik", 0.3))
+            cfg_g = ek.get("gambar") or gambar_langkah_default()
+        else:
+            kunci = iid
+            label = LABEL_POSISI[kunci]
+            ket = JUDUL_POSISI[kunci]
+            pos = self.posisi.get(kunci)
+            jeda_v = self.jeda_per.get(kunci, 1.0)
+            jk_v = self.jeda_klik_per.get(kunci, 0.3)
+            cfg_g = self.gambar_langkah.get(kunci) or gambar_langkah_default()
 
         kepala = tk.Frame(self.prop_body, bg=C_BG)
         kepala.pack(fill="x", pady=(0, 4))
@@ -793,14 +968,11 @@ class CutUploaderApp:
                  wraplength=860, justify="left").pack(fill="x")
 
         # ---- posisi X / Y + AMBIL + LIHAT ----
-        pos = self.posisi.get(kunci)
         self.pv = {
             "x": tk.StringVar(value=str(pos[0]) if pos else ""),
             "y": tk.StringVar(value=str(pos[1]) if pos else ""),
-            "jeda": tk.StringVar(value="{:.1f}".format(
-                self.jeda_per.get(kunci, 1.0))),
-            "jeda_klik": tk.StringVar(value="{:.2f}".format(
-                self.jeda_klik_per.get(kunci, 0.3))),
+            "jeda": tk.StringVar(value="{:.1f}".format(jeda_v)),
+            "jeda_klik": tk.StringVar(value="{:.2f}".format(jk_v)),
         }
         r = self._baris_prop("POSISI X , Y")
         self._ent_prop(r, self.pv["x"], 6)
@@ -808,9 +980,9 @@ class CutUploaderApp:
                  font=F_N).pack(side="left", padx=2)
         self._ent_prop(r, self.pv["y"], 6)
         self._btn_prop(r, "AMBIL (5 dtk)",
-                       lambda k=kunci: self._ambil_posisi(k))
+                       lambda k=iid: self._ambil_posisi(k))
         self._btn_prop(r, "LIHAT",
-                       lambda k=kunci: self._lihat_posisi(k), bg=C_BG)
+                       lambda k=iid: self._lihat_posisi(k), bg=C_BG)
         tk.Label(r, text="bisa juga diketik manual", bg=C_BG, fg=C_MUTED,
                  font=F_XS).pack(side="left", padx=6)
 
@@ -824,30 +996,40 @@ class CutUploaderApp:
                          "di langkah ini", bg=C_BG, fg=C_MUTED,
                  font=F_XS).pack(side="left", padx=6)
 
-        # ---- kontrol khusus per slot ----
-        V = self.vars
-        if kunci == "pos_pilih_neg":
-            tk.Checkbutton(self.prop_body,
-                           text="Pilih negara pakai PENCARIAN GAMBAR - "
-                                "cari potongan layar (mis. tulisan "
-                                "'Indonesia') dalam radius, lalu diklik",
-                           variable=V["pakai_gambar"], bg=C_BG, fg=C_TEXT,
-                           font=F_XS, anchor="w").pack(fill="x", pady=(4, 0))
-            r = self._baris_prop("GAMBAR REFERENSI")
-            self._ent_prop(r, V["gambar_ref"], 42, tengah=False)
-            self._btn_prop(r, "PILIH GAMBAR...", self._pilih_gambar_ref)
-            self._btn_prop(r, "POTONG GAMBAR...", self._potong_gambar)
-            r = self._baris_prop("RADIUS (px) | KEMIRIPAN:")
-            self._ent_prop(r, V["radius"], 6)
-            self._ent_prop(r, V["kemiripan"], 6)
-            self._btn_prop(r, "TES CARI SEKARANG", self._tes_cari)
-            tk.Label(self.prop_body,
-                     text="Tips: pakai POTONG GAMBAR supaya ukuran gambar "
-                          "PERSIS seperti tampilan layar. Zoom browser "
-                          "jangan diubah setelah gambar dipotong.",
-                     bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
-                     wraplength=860, justify="left").pack(
-                         fill="x", pady=(4, 0))
+        # ---- kontrol khusus ----
+        if ek:
+            # salinan: parameter milik sendiri (bukan variabel global)
+            for nama_p, label_p, lebar in PARAM_DEF.get(kunci, []):
+                r = self._baris_prop(label_p)
+                var_p = tk.StringVar(value=str(
+                    (ek.get("params") or {}).get(nama_p, "")))
+                self.pv["p_" + nama_p] = var_p
+                self._ent_prop(r, var_p, lebar)
+                if kunci == "pos_tanggal" and nama_p == "teks":
+                    tk.Label(r, text="format: 2026-09-10 02:05:01 "
+                                     "(detik boleh dilewat)",
+                             bg=C_BG, fg=C_MUTED,
+                             font=F_XS).pack(side="left", padx=6)
+                if kunci == "pos_bebas1" and nama_p == "scroll":
+                    tk.Label(r, text="arah scroll mengikuti setelan "
+                                     "langkah G",
+                             bg=C_BG, fg=C_MUTED,
+                             font=F_XS).pack(side="left", padx=6)
+            if kunci in ("pos_edit", "pos_judul", "pos_konfirmasi"):
+                tk.Label(self.prop_body,
+                         text="Salinan langkah caption mengikuti baris "
+                              "video: gesernya otomatis pakai JARAK ANTAR "
+                              "BARIS milik langkah I3.",
+                         bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                         wraplength=860, justify="left").pack(
+                             fill="x", pady=(4, 0))
+            if kunci == "pos_submit":
+                tk.Label(self.prop_body,
+                         text="Salinan SUBMIT dijalankan setelah klik "
+                              "SUBMIT utama (J).",
+                         bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                         wraplength=860, justify="left").pack(
+                             fill="x", pady=(4, 0))
         elif kunci == "pos_tanggal":
             r = self._baris_prop("TANGGAL & JAM RILIS")
             self._ent_prop(r, V["tanggal"], 22)
@@ -897,6 +1079,63 @@ class CutUploaderApp:
                            variable=V["auto_kirim"], bg=C_BG, fg=C_TEXT,
                            font=F_XS, anchor="w").pack(fill="x", pady=(4, 0))
 
+        # ---- v4.2: PENCARIAN GAMBAR untuk SEMUA langkah ----
+        pemisah = tk.Frame(self.prop_body, bg=C_LINE, height=1)
+        pemisah.pack(fill="x", pady=(6, 2))
+        tk.Label(self.prop_body,
+                 text="PENCARIAN GAMBAR (opsional) - gambar ketemu bisa "
+                      "DIKLIK langsung, atau mouse hanya DIPINDAH ke sana",
+                 bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                 wraplength=860, justify="left").pack(fill="x")
+        self.pv["g_aktif"] = tk.BooleanVar(value=bool(cfg_g.get("aktif")))
+        self.pv["g_path"] = tk.StringVar(value=str(cfg_g.get("path") or ""))
+        self.pv["g_aksi"] = tk.StringVar(value=cfg_g.get("aksi")
+                                         if cfg_g.get("aksi")
+                                         in GAMBAR_AKSI_OPSI
+                                         else "Klik di gambar")
+        self.pv["g_gagal"] = tk.StringVar(value=cfg_g.get("gagal")
+                                          if cfg_g.get("gagal")
+                                          in GAMBAR_GAGAL_OPSI
+                                          else "Klik titik X,Y")
+        self.pv["g_radius"] = tk.StringVar(
+            value=str(cfg_g.get("radius") or ""))
+        self.pv["g_mirip"] = tk.StringVar(
+            value=str(cfg_g.get("mirip") or ""))
+        tk.Checkbutton(self.prop_body,
+                       text="Aktifkan CARI GAMBAR pada langkah ini "
+                            "(cari potongan layar dalam radius titik "
+                            "X,Y di atas)",
+                       variable=self.pv["g_aktif"], bg=C_BG, fg=C_TEXT,
+                       font=F_XS, anchor="w").pack(fill="x", pady=(2, 0))
+        r = self._baris_prop("GAMBAR REFERENSI")
+        self._ent_prop(r, self.pv["g_path"], 42, tengah=False)
+        self._btn_prop(r, "PILIH GAMBAR...",
+                       lambda k=iid: self._pilih_gambar_ref(k))
+        self._btn_prop(r, "POTONG GAMBAR...",
+                       lambda k=iid: self._potong_gambar(("langkah", k)))
+        r = self._baris_prop("SAAT KETEMU:")
+        tk.OptionMenu(r, self.pv["g_aksi"],
+                      *GAMBAR_AKSI_OPSI).pack(side="left")
+        tk.Label(r, text="SAAT TIDAK KETEMU:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left", padx=(12, 4))
+        tk.OptionMenu(r, self.pv["g_gagal"],
+                      *GAMBAR_GAGAL_OPSI).pack(side="left")
+        r = self._baris_prop("RADIUS (px) | KEMIRIPAN:")
+        self._ent_prop(r, self.pv["g_radius"], 6)
+        self._ent_prop(r, self.pv["g_mirip"], 6)
+        tk.Label(r, text="kosongkan = pakai nilai global", bg=C_BG,
+                 fg=C_MUTED, font=F_XS).pack(side="left", padx=6)
+        self._btn_prop(r, "TES CARI LANGKAH INI", self._tes_cari)
+        tk.Label(self.prop_body,
+                 text="Tips: pakai POTONG GAMBAR supaya ukuran gambar "
+                      "PERSIS seperti tampilan layar. Zoom browser "
+                      "jangan diubah setelah gambar dipotong. Mode "
+                      "'Pindah saja' tidak mengklik - cocok untuk "
+                      "hover atau hanya kalibrasi posisi.",
+                 bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
+                 wraplength=860, justify="left").pack(
+                     fill="x", pady=(4, 0))
+
         self.lbl_ambil = tk.Label(self.prop_body, text="", bg=C_BG,
                                   fg=C_ORANGE, font=F_XS, anchor="w",
                                   wraplength=860, justify="left")
@@ -908,33 +1147,68 @@ class CutUploaderApp:
         self._loading_prop = False
 
     def _terapkan_prop(self, *_):
-        if self._loading_prop or self.sel not in POS_KUNCI:
+        if self._loading_prop:
             return
-        kunci = self.sel
+        iid = self.sel
+        ek = None
+        if iid not in POS_KUNCI:
+            ek = self._iid_ekstra(iid) if iid else None
+            if not ek:
+                return
         try:
             x = int(float(str(self.pv["x"].get()).strip() or "nan"))
             y = int(float(str(self.pv["y"].get()).strip() or "nan"))
-            self.posisi[kunci] = [x, y]
+            pos_baru = [x, y]
         except (ValueError, TypeError):
-            self.posisi[kunci] = None
+            pos_baru = None
         try:
-            self.jeda_per[kunci] = max(0.0, float(
+            jeda_baru = max(0.0, float(
                 str(self.pv["jeda"].get()).replace(",", ".")))
         except ValueError:
-            pass
+            jeda_baru = None
         try:
-            self.jeda_klik_per[kunci] = max(0.05, float(
+            jk_baru = max(0.05, float(
                 str(self.pv["jeda_klik"].get()).replace(",", ".")))
         except ValueError:
-            pass
+            jk_baru = None
+        if ek:
+            ek["posisi"] = pos_baru
+            if jeda_baru is not None:
+                ek["jeda"] = jeda_baru
+            if jk_baru is not None:
+                ek["jeda_klik"] = jk_baru
+            params = ek.setdefault("params", {})
+            for nama_p, _l, _w in PARAM_DEF.get(ek.get("sumber"), []):
+                if "p_" + nama_p in self.pv:
+                    params[nama_p] = self.pv["p_" + nama_p].get()
+        else:
+            kunci = iid
+            self.posisi[kunci] = pos_baru
+            if jeda_baru is not None:
+                self.jeda_per[kunci] = jeda_baru
+            if jk_baru is not None:
+                self.jeda_klik_per[kunci] = jk_baru
+        if "g_aktif" in self.pv:
+            cfg = (ek.get("gambar") if ek else
+                   self.gambar_langkah.setdefault(
+                       iid, gambar_langkah_default()))
+            cfg["aktif"] = bool(self.pv["g_aktif"].get())
+            cfg["path"] = self.pv["g_path"].get().strip()
+            aksi_g = self.pv["g_aksi"].get()
+            cfg["aksi"] = aksi_g if aksi_g in GAMBAR_AKSI_OPSI \
+                else "Klik di gambar"
+            gagal_g = self.pv["g_gagal"].get()
+            cfg["gagal"] = gagal_g if gagal_g in GAMBAR_GAGAL_OPSI \
+                else "Klik titik X,Y"
+            cfg["radius"] = self.pv["g_radius"].get().strip()
+            cfg["mirip"] = self.pv["g_mirip"].get().strip()
         self._refresh_tabel()
 
     def _terapkan_opts(self, *_):
         """Variabel isian berubah -> segarkan tabel/pratinjau."""
         if self._loading:
             return
-        if self.sel in POS_KUNCI:
-            self._refresh_tabel()
+        self._refresh_tabel()
         if hasattr(self, "lbl_count"):
             self._update_count()
             self._update_preview()
@@ -943,6 +1217,8 @@ class CutUploaderApp:
         v = _angka(self.vars["jeda_langkah"].get(), 1.0, 0.0, 3600)
         for k in POS_KUNCI:
             self.jeda_per[k] = v
+        for ek in self.langkah_extra:
+            ek["jeda"] = v
         self._refresh_tabel()
         self._render_properti()
         self._set_status("Jeda {:.1f} detik diterapkan ke semua langkah "
@@ -953,13 +1229,17 @@ class CutUploaderApp:
         if hasattr(self, "lbl_ambil") and self.lbl_ambil.winfo_exists():
             self.lbl_ambil.config(text=teks, fg=warna)
 
-    def _ambil_posisi(self, kunci):
+    def _ambil_posisi(self, iid):
         if not PYNPUT_OK:
             messagebox.showerror(
                 APP_NAME, "Library pynput belum terpasang.\n\n"
                           "Buka CMD lalu jalankan:\n  pip install pynput")
             return
-        judul = LABEL_POSISI[kunci]
+        ek = self._iid_ekstra(iid) if iid not in POS_KUNCI else None
+        if ek:
+            judul = ek.get("label") or iid
+        else:
+            judul = LABEL_POSISI.get(iid, iid)
 
         def kerja():
             try:
@@ -973,9 +1253,12 @@ class CutUploaderApp:
                 px, py = self.mouse.position
 
                 def isi():
-                    self.posisi[kunci] = [int(px), int(py)]
+                    if ek:
+                        ek["posisi"] = [int(px), int(py)]
+                    else:
+                        self.posisi[iid] = [int(px), int(py)]
                     self._refresh_tabel()
-                    if self.sel == kunci:
+                    if self.sel == iid:
                         self._render_properti()
                     self._tampilkan_info(
                         "{} tersimpan: X={}, Y={}".format(judul, int(px),
@@ -992,10 +1275,14 @@ class CutUploaderApp:
 
         threading.Thread(target=kerja, daemon=True).start()
 
-    def _lihat_posisi(self, kunci):
+    def _lihat_posisi(self, iid):
         if not PYNPUT_OK:
             return
-        pos = self.posisi.get(kunci)
+        if iid in POS_KUNCI:
+            pos = self.posisi.get(iid)
+        else:
+            ek = self._iid_ekstra(iid)
+            pos = ek.get("posisi") if ek else None
         if not pos:
             messagebox.showinfo(APP_NAME,
                                 "Posisi ini belum diatur. Klik dulu AMBIL "
@@ -1006,25 +1293,53 @@ class CutUploaderApp:
         except Exception:
             pass
 
-    # ================== GAMBAR REFERENSI (LANGKAH C) ==================
-    def _pilih_gambar_ref(self):
+    # ================== GAMBAR REFERENSI (SEMUA LANGKAH) ==================
+    def _pasang_gambar_langkah(self, iid, path):
+        """Pasang file gambar pada satu langkah (bawaan/salinan)."""
+        self.vars["gambar_ref"].set(path)   # ingat gambar terakhir
+        nama = iid
+        if iid and iid not in POS_KUNCI:
+            ek = self._iid_ekstra(iid)
+            if ek:
+                cfg = ek.setdefault("gambar", gambar_langkah_default())
+                cfg["aktif"] = True
+                cfg["path"] = path
+                nama = ek.get("label") or iid
+        elif iid in POS_KUNCI:
+            cfg = self.gambar_langkah.setdefault(
+                iid, gambar_langkah_default())
+            cfg["aktif"] = True
+            cfg["path"] = path
+            nama = LABEL_POSISI.get(iid, iid)
+        else:
+            return
+        self._save_settings()
+        self._refresh_tabel()
+        if self.sel == iid:
+            self._render_properti()
+        self._set_status("Gambar referensi terpasang pada {}: {}".format(
+            nama, path), C_GREEN)
+        self._tampilkan_info("Gambar dipasang pada {}: {}".format(
+            nama, os.path.basename(path)), C_GREEN)
+
+    def _pilih_gambar_ref(self, iid=None):
+        iid = iid or self.sel
         f = filedialog.askopenfilename(
-            title="Pilih gambar referensi (potongan layar tulisan "
-                  "'Indonesia')",
+            title="Pilih gambar referensi (potongan layar)",
             filetypes=[("Gambar", "*.png *.jpg *.jpeg *.bmp"),
                        ("Semua file", "*.*")])
         if f:
-            self.vars["gambar_ref"].set(f)
-            self._save_settings()
-            self._tampilkan_info("Gambar referensi: "
-                                 + os.path.basename(f), C_GREEN)
+            self._pasang_gambar_langkah(iid, f)
 
-    def _potong_gambar(self):
+    def _potong_gambar(self, target=None):
         """Screenshot layar -> user seret kotak -> simpan PNG referensi.
 
         Ini kunci perbaikan 'cari gambar error': gambar referensi
         dipotong PERSIS dari tampilan layar yang hidup, ukurannya
         cocok 1:1 dengan hasil pencarian.
+
+        v4.2: target menentukan langkah yang dipasangi gambar -
+        bila dikosongkan, gambar dipasang pada langkah terpilih.
         """
         if not PIL_OK or not CV_OK:
             messagebox.showwarning(
@@ -1033,13 +1348,16 @@ class CutUploaderApp:
                 "Buka CMD lalu jalankan:\n"
                 "  pip install pillow opencv-python")
             return
+        self._potong_target = target if target is not None else (
+            ("langkah", self.sel) if self.sel else None)
 
         def kerja():
             try:
                 for s in range(3, 0, -1):
                     self.root.after(0, lambda s=s: self._set_status(
-                        "Screenshot layar dalam {} detik - pastikan daftar "
-                        "negara terbuka & terlihat...".format(s), C_ORANGE))
+                        "Screenshot layar dalam {} detik - pastikan area "
+                        "yang mau dipotong terlihat...".format(s),
+                        C_ORANGE))
                     time.sleep(1)
                 img = ImageGrab.grab()
                 self.root.after(0, lambda: JendelaPotong(
@@ -1051,16 +1369,15 @@ class CutUploaderApp:
         threading.Thread(target=kerja, daemon=True).start()
 
     def _gambar_terpotong(self, path):
-        self.vars["gambar_ref"].set(path)
-        self.vars["pakai_gambar"].set(True)
-        self._save_settings()
+        target = getattr(self, "_potong_target", None)
+        iid = target[1] if (target and target[0] == "langkah" and
+                            len(target) > 1) else self.sel
+        self._pasang_gambar_langkah(iid, path)
         self._set_status("Gambar referensi tersimpan: {}".format(path),
                          C_GREEN)
-        self._tampilkan_info("Gambar referensi baru: "
-                             + os.path.basename(path), C_GREEN)
 
     def _tes_cari(self):
-        """Tes pencarian gambar tanpa menjalankan seluruh alur."""
+        """Tes pencarian gambar pada LANGKAH TERPILIH di tabel."""
         if not PYNPUT_OK:
             messagebox.showerror(APP_NAME, "Library pynput belum terpasang.")
             return
@@ -1072,22 +1389,50 @@ class CutUploaderApp:
                 "  pip install opencv-python\n\n"
                 "Atau pakai CutUploaderPro.exe (OpenCV sudah menyatu).")
             return
-        gambar = self.vars["gambar_ref"].get().strip()
+        iid = self.sel
+        if iid in POS_KUNCI:
+            cfg = self.gambar_langkah.get(iid) or {}
+            pos = self.posisi.get(iid)
+            nama = LABEL_POSISI.get(iid, iid)
+        else:
+            ek = self._iid_ekstra(iid) if iid else None
+            if not ek:
+                messagebox.showinfo(
+                    APP_NAME,
+                    "Klik dulu satu baris langkah di tabel yang mau "
+                    "dites cari gambarnya.")
+                return
+            cfg = ek.get("gambar") or {}
+            pos = ek.get("posisi")
+            nama = ek.get("label") or iid
+        gambar = str(cfg.get("path") or "").strip()
+        if not cfg.get("aktif"):
+            messagebox.showinfo(
+                APP_NAME,
+                "Cari gambar belum DIAKTIFKAN pada langkah {}.\n\n"
+                "Centang 'Aktifkan CARI GAMBAR pada langkah ini' di panel "
+                "properti.".format(nama))
+            return
         if not gambar or not os.path.isfile(gambar):
             messagebox.showinfo(
                 APP_NAME,
-                "Pilih dulu gambar referensinya.\n\nCara termudah: buka "
-                "langkah C di tabel, klik 'POTONG GAMBAR...', lalu seret "
-                "kotak di atas tulisan negaranya.")
+                "Pilih dulu gambar referensi langkah {}.\n\nCara termudah: "
+                "klik 'POTONG GAMBAR...' pada langkah itu, lalu seret "
+                "kotak di atas tulisan/gambarnya.".format(nama))
             return
-        pos = self.posisi.get("pos_pilih_neg")
         if not pos:
-            messagebox.showinfo(APP_NAME,
-                                "Atur dulu posisi C sebagai titik acuan "
-                                "pencarian (AMBIL pada langkah C).")
+            messagebox.showinfo(
+                APP_NAME,
+                "Atur dulu posisi langkah {} sebagai titik acuan "
+                "pencarian (tombol AMBIL).".format(nama))
             return
-        radius = int(_angka(self.vars["radius"].get(), 300, 50, 2000))
-        mirip = _angka(self.vars["kemiripan"].get(), 0.8, 0.5, 0.99)
+        V = self.vars
+        radius = int(_angka(cfg.get("radius"),
+                            _angka(V["radius"].get(), 300, 50, 2000),
+                            50, 2000))
+        mirip = _angka(cfg.get("mirip"),
+                       _angka(V["kemiripan"].get(), 0.8, 0.5, 0.99),
+                       0.5, 0.99)
 
         def kerja():
             self.root.after(0, lambda: self._set_status(
@@ -1103,10 +1448,14 @@ class CutUploaderApp:
                         self.mouse.position = (x, y)
                     except Exception:
                         pass
+                    mode_t = ("pindah saja"
+                              if cfg.get("aksi") == "Pindah saja"
+                              else "akan diklik")
                     self._set_status(
                         "TES OK: gambar KETEMU di ({}, {}) - kemiripan "
-                        "{:.0%}. Mouse dipindah ke sana (tidak diklik)."
-                        .format(x, y, skor), C_GREEN)
+                        "{:.0%}. Mouse dipindah ke sana (tidak diklik; "
+                        "mode langkah ini: {})."
+                        .format(x, y, skor, mode_t), C_GREEN)
                     self._tampilkan_info(
                         "TES OK: ketemu di ({}, {}), kemiripan {:.0%}."
                         .format(x, y, skor), C_GREEN)
@@ -1120,6 +1469,123 @@ class CutUploaderApp:
             self.root.after(0, lapor)
 
         threading.Thread(target=kerja, daemon=True).start()
+
+    # ================== v4.2: SALIN / TEMPEL / HAPUS LANGKAH ==========
+    def _menu_klik_kanan(self, ev):
+        iid = self.tree.identify_row(ev.y)
+        if iid:
+            self.tree.selection_set(iid)
+        m = tk.Menu(self.root, tearoff=0)
+        m.add_command(label="Salin langkah ini  (Ctrl+C)",
+                      command=self._salin_langkah)
+        m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
+                      command=self._tempel_langkah)
+        m.add_command(label="Hapus salinan ini  (Del)",
+                      command=self._hapus_langkah)
+        try:
+            m.tk_popup(ev.x_root, ev.y_root)
+        finally:
+            m.grab_release()
+
+    def _salin_langkah(self):
+        """Simpan salinan langkah terpilih ke papan klip internal."""
+        iid = self.sel
+        if iid in POS_KUNCI:
+            sumber = iid
+            params = self._params_dari_global(iid)
+            posisi = (list(self.posisi.get(iid))
+                      if self.posisi.get(iid) else None)
+            cfg_g = dict(self.gambar_langkah.get(iid)
+                         or gambar_langkah_default())
+            jeda = self.jeda_per.get(iid, 1.0)
+            jk = self.jeda_klik_per.get(iid, 0.3)
+        else:
+            ek = self._iid_ekstra(iid) if iid else None
+            if not ek:
+                messagebox.showinfo(
+                    APP_NAME,
+                    "Klik dulu satu baris langkah di tabel yang mau "
+                    "disalin.")
+                return
+            sumber = ek.get("sumber")
+            params = dict(ek.get("params") or {})
+            posisi = (list(ek["posisi"]) if ek.get("posisi") else None)
+            cfg_g = dict(ek.get("gambar") or gambar_langkah_default())
+            jeda = float(ek.get("jeda", 1.0))
+            jk = float(ek.get("jeda_klik", 0.3))
+        self.papan_klip = {"sumber": sumber, "params": params,
+                           "posisi": posisi, "gambar": cfg_g,
+                           "jeda": jeda, "jeda_klik": jk}
+        self._set_status(
+            "Langkah {} disalin. Klik baris acuan lalu TEMPEL LANGKAH "
+            "(Ctrl+V).".format(SLOT_KODE.get(sumber, sumber)), C_GREEN)
+
+    def _tempel_langkah(self):
+        """Tambahkan salinan langkah sebagai titik klik tambahan."""
+        if not self.papan_klip:
+            messagebox.showinfo(
+                APP_NAME,
+                "Belum ada langkah yang disalin.\n\nKlik satu baris di "
+                "tabel, lalu klik SALIN LANGKAH dulu.")
+            return
+        anchor = self.sel if (
+            self.sel and (self.sel in POS_KUNCI
+                          or self._iid_ekstra(self.sel))) else POS_KUNCI[-1]
+        self._extra_counter += 1
+        uid = "x{}".format(self._extra_counter)
+        kode = SLOT_KODE.get(self.papan_klip["sumber"], "?")
+        nama_acuan = (LABEL_POSISI.get(anchor, anchor)
+                      if anchor in POS_KUNCI
+                      else ((self._iid_ekstra(anchor) or {}).get("label")
+                            or "langkah terpilih"))
+        ek = {"uid": uid, "sumber": self.papan_klip["sumber"],
+              "setelah": anchor,
+              "label": "{} - salinan {}".format(kode, self._extra_counter),
+              "posisi": (list(self.papan_klip["posisi"])
+                         if self.papan_klip["posisi"] else None),
+              "jeda": float(self.papan_klip["jeda"]),
+              "jeda_klik": float(self.papan_klip["jeda_klik"]),
+              "params": dict(self.papan_klip["params"]),
+              "gambar": dict(self.papan_klip["gambar"])}
+        self.langkah_extra.append(ek)
+        self._refresh_tabel()
+        self.sel = uid
+        try:
+            self.tree.selection_set(uid)
+            self.tree.see(uid)
+        except Exception:
+            pass
+        self._render_properti()
+        self._save_settings()
+        self._set_status(
+            "Salinan {} ditambahkan setelah {}. Atur posisinya (AMBIL), "
+            "lalu jalankan F6.".format(kode, nama_acuan), C_GREEN)
+
+    def _hapus_langkah(self):
+        """Hapus salinan langkah terpilih (langkah bawaan A-J tetap)."""
+        iid = self.sel
+        ek = self._iid_ekstra(iid) if iid else None
+        if not ek:
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu baris SALINAN yang mau dihapus.\n\nLangkah "
+                "bawaan A-J tidak bisa dihapus - matikan centangnya "
+                "dengan mengatur posisi/jeda saja.")
+            return
+        if not messagebox.askyesno(
+                APP_NAME, "Hapus salinan '{}'?".format(
+                    ek.get("label") or iid)):
+            return
+        for lain in self.langkah_extra:
+            if lain.get("setelah") == iid:
+                lain["setelah"] = ek.get("setelah") or "pos_jadwal"
+        self.langkah_extra.remove(ek)
+        self.sel = ek.get("setelah") if ek.get("setelah") in POS_KUNCI \
+            else "pos_jadwal"
+        self._refresh_tabel()
+        self._render_properti()
+        self._save_settings()
+        self._set_status("Salinan dihapus.", C_ORANGE)
 
     # ================== FOLDER, JUMLAH, CAPTION ==================
     def _pilih_folder(self):
@@ -1238,7 +1704,8 @@ class CutUploaderApp:
             "pynput        : {}\n"
             "Pillow (PIL)  : {}\n"
             "opencv-python: {}\n\n"
-            "Pencarian gambar (langkah C) butuh opencv-python + Pillow.\n"
+            "Pencarian gambar (bisa diaktifkan pada langkah mana pun) "
+            "butuh opencv-python + Pillow.\n"
             "Catatan: versi EXE/Setup sudah menyatukan semuanya, jadi "
             "tidak perlu install apa pun.".format(
                 cek("pynput"), cek("PIL"), cek("cv2")))
@@ -1265,6 +1732,9 @@ class CutUploaderApp:
             "Tampilan editor makro ala Jitbit Macro Recorder.\n\n"
             "Alur: Jadwal (A-E) > Tambah video + Shift+turun (F-H2) >\n"
             "Caption per baris (I) > Submit (J).\n\n"
+            "v4.2: CARI GAMBAR bisa diaktifkan di semua langkah\n"
+            "(klik di gambar ATAU pindah saja), plus SALIN/TEMPEL\n"
+            "langkah A-J jadi titik klik tambahan sendiri.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
             .format(APP_NAME, APP_VERSION, MAX_BATCH))
@@ -1362,6 +1832,19 @@ class CutUploaderApp:
                        for k, v in self.posisi.items()},
             "jeda_per": dict(self.jeda_per),
             "jeda_klik_per": dict(self.jeda_klik_per),
+            "gambar_langkah": {k: dict(v)
+                               for k, v in self.gambar_langkah.items()},
+            "langkah_extra": [
+                {"uid": e.get("uid"), "sumber": e.get("sumber"),
+                 "setelah": e.get("setelah"), "label": e.get("label"),
+                 "posisi": (list(e["posisi"]) if e.get("posisi")
+                            else None),
+                 "jeda": float(e.get("jeda", 1.0)),
+                 "jeda_klik": float(e.get("jeda_klik", 0.3)),
+                 "params": dict(e.get("params") or {}),
+                 "gambar": dict(e.get("gambar")
+                                or gambar_langkah_default())}
+                for e in self.langkah_extra],
             "caption_only": False,
         }
 
@@ -1419,22 +1902,59 @@ class CutUploaderApp:
                     "Klik barisnya di tabel LANGKAH MAKRO, lalu klik "
                     "AMBIL (atau isi X,Y manual).".format(label))
                 return
-        # ---- pencarian gambar negara (C) ----
-        if snap["pakai_gambar"]:
-            if not snap["gambar"] or not os.path.isfile(snap["gambar"]):
-                messagebox.showwarning(
+        # ---- v4.2: validasi salinan langkah (posisi boleh kosong) ----
+        kosong = [str(e.get("label") or e.get("uid"))
+                  for e in snap["langkah_extra"] if not e.get("posisi")]
+        if kosong:
+            if not messagebox.askyesno(
                     APP_NAME,
-                    "Pencarian gambar aktif tapi gambar referensi belum "
-                    "dipilih.\n\nKlik POTONG GAMBAR pada langkah C.")
+                    "Ada salinan langkah yang posisinya belum diatur:\n- "
+                    + "\n- ".join(kosong)
+                    + "\n\nLanjut saja? (salinan itu dilewati saat jalan)"):
                 return
+        # ---- v4.2: validasi pencarian gambar per langkah ----
+        def _aktif_gambar(cfg):
+            return bool(cfg and cfg.get("aktif"))
+        ada_gambar = any(_aktif_gambar(c)
+                         for c in snap["gambar_langkah"].values())
+        ada_gambar = ada_gambar or any(
+            _aktif_gambar(e.get("gambar"))
+            for e in snap["langkah_extra"])
+        if ada_gambar:
             if not CV_OK:
                 if not messagebox.askyesno(
                         APP_NAME,
                         "opencv-python belum terpasang sehingga pencarian "
                         "gambar tidak bisa dipakai.\n\n"
-                        "Lanjut dengan KLIK BIASA di titik C?"):
+                        "Lanjut dengan KLIK BIASA di semua titik?"):
                     return
-                snap["pakai_gambar"] = False
+                for c in snap["gambar_langkah"].values():
+                    c["aktif"] = False
+                for e in snap["langkah_extra"]:
+                    if e.get("gambar"):
+                        e["gambar"]["aktif"] = False
+            else:
+                rusak = []
+                for k, c in snap["gambar_langkah"].items():
+                    if _aktif_gambar(c):
+                        p = str(c.get("path") or "")
+                        if not p or not os.path.isfile(p):
+                            rusak.append(LABEL_POSISI.get(k, k))
+                for e in snap["langkah_extra"]:
+                    if _aktif_gambar(e.get("gambar")):
+                        p = str((e.get("gambar") or {}).get("path") or "")
+                        if not p or not os.path.isfile(p):
+                            rusak.append(str(e.get("label")
+                                             or e.get("uid")))
+                if rusak:
+                    messagebox.showwarning(
+                        APP_NAME,
+                        "Pencarian gambar aktif tapi file gambarnya tidak "
+                        "ditemukan pada langkah:\n- "
+                        + "\n- ".join(rusak)
+                        + "\n\nPilih ulang gambar (PILIH/POTONG GAMBAR) "
+                          "pada langkah itu.")
+                    return
         # ---- tanggal-jam rilis (D) ----
         tgl = parse_tanggal(snap["tanggal"])
         if tgl is None:
@@ -1546,6 +2066,193 @@ class CutUploaderApp:
             kunci, _angka(snap["jeda_langkah"], 1.0))))
 
     # ================== MESIN OTOMATIS ==================
+    def _cari_gambar_langkah(self, snap, cfg, titik, jeda_dialog, nama=""):
+        """Dukungan pencarian gambar opsional untuk SATU langkah.
+
+        Kembalikan (aksi, nilai):
+          ("klik", titik)  -> klik titik itu (pusat gambar ketemu /
+                              fallback titik X,Y langkah)
+          ("pindah", None) -> mouse sudah DIPINDAH ke gambar, TANPA klik
+          ("skip", None)   -> langkah ini dilewati
+          ("stop", pesan)  -> alur harus dihentikan
+        """
+        if not cfg or not cfg.get("aktif"):
+            return "klik", titik
+        if not titik:
+            self._set_status("Titik acuan {} belum diatur - langkah "
+                             "dilewati.".format(nama), C_ORANGE)
+            return "skip", None
+        path = str(cfg.get("path") or "").strip()
+        if not path or not os.path.isfile(path) or not CV_OK:
+            self._set_status("Cari gambar {} tidak bisa jalan (file "
+                             "gambar/opencv tidak ada) - pakai klik "
+                             "titik biasa.".format(nama), C_ORANGE)
+            return "klik", titik
+        radius = snap["radius"]
+        if str(cfg.get("radius") or "").strip():
+            radius = int(_angka(cfg.get("radius"), snap["radius"],
+                                50, 2000))
+        mirip = snap["kemiripan"]
+        if str(cfg.get("mirip") or "").strip():
+            mirip = _angka(cfg.get("mirip"), snap["kemiripan"], 0.5, 0.99)
+        hasil = None
+        pesan = ""
+        for percobaan in range(1, 4):
+            self._set_status(
+                "Cari gambar '{}' dalam radius {} px (percobaan {}/3, "
+                "multi-skala)...".format(os.path.basename(path), radius,
+                                         percobaan), C_GREEN)
+            hasil, pesan = cari_di_layar(path, titik[0], titik[1],
+                                         radius, mirip)
+            if hasil:
+                break
+            self._sleep(jeda_dialog)
+        if hasil:
+            x, y, skor = hasil
+            if str(cfg.get("aksi")) == "Pindah saja":
+                try:
+                    self.mouse.position = (x, y)
+                except Exception:
+                    pass
+                self._set_status(
+                    "Gambar {} KETEMU di ({}, {}) - kemiripan {:.0%} - "
+                    "mouse DIPINDAH tanpa klik.".format(nama, x, y, skor),
+                    C_GREEN)
+                return "pindah", None
+            self._set_status(
+                "Gambar {} KETEMU di ({}, {}) - kemiripan {:.0%} - "
+                "diklik.".format(nama, x, y, skor), C_GREEN)
+            return "klik", (x, y)
+        # ---- gambar tidak ketemu ----
+        pilihan = str(cfg.get("gagal") or "Klik titik X,Y")
+        if pilihan == "Stop alur":
+            return "stop", ("Dihentikan: gambar referensi {} tidak ketemu "
+                            "3x. {}".format(nama, pesan))
+        if pilihan == "Lewati langkah":
+            self._set_status("Gambar {} tidak ketemu - langkah dilewati "
+                             "({}).".format(nama, pesan), C_ORANGE)
+            return "skip", None
+        self._set_status("Gambar {} tidak ketemu - pakai klik titik X,Y "
+                         "({}).".format(nama, pesan), C_ORANGE)
+        return "klik", titik
+
+    def _langkah_klik(self, snap, kunci, titik, jeda_dialog, geser=0,
+                      cfg=None, nama=""):
+        """Klik satu titik dengan pencarian gambar opsional.
+
+        Kembalikan (aksi, nilai):
+          ("klik", titik)  - titik sudah DIKLIK (bila titik valid)
+          ("pindah", None) - mouse dipindah, TIDAK diklik
+          ("skip", None)   - langkah dilewati
+          ("stop", pesan)  - alur dihentikan (status sudah diset)
+        """
+        if cfg is None:
+            cfg = snap["gambar_langkah"].get(kunci)
+        aksi, nilai = self._cari_gambar_langkah(snap, cfg, titik,
+                                                jeda_dialog, nama)
+        if aksi == "stop":
+            self._finish(str(nilai), warn=True)
+            return "stop", nilai
+        if aksi in ("pindah", "skip"):
+            return aksi, None
+        if nilai is None:
+            return "skip", None
+        self._klik_off(nilai, geser)
+        return "klik", nilai
+
+    def _ekstra_setelah(self, ekstra_all, anchor):
+        """Salinan langkah yang menempel setelah `anchor` (berantai)."""
+        hasil = []
+
+        def walk(a):
+            for e in ekstra_all:
+                if e.get("setelah") == a and e not in hasil:
+                    hasil.append(e)
+                    walk(e.get("uid"))
+
+        walk(anchor)
+        return hasil
+
+    def _jalankan_ekstra(self, snap, daftar, jumlah, jeda_dialog,
+                         jeda_langkah, geser=0, caption_final=None):
+        """Jalankan salinan langkah (hasil SALIN/TEMPEL) sesuai jenis."""
+        for ek in daftar:
+            if self.stop_event.is_set():
+                return
+            nama = str(ek.get("label") or ek.get("uid"))
+            kind = str(ek.get("sumber") or "")
+            titik = ek.get("posisi")
+            if not titik:
+                self._set_status("{} dilewati (posisi belum diatur)."
+                                 .format(nama), C_ORANGE)
+                continue
+            self._sleep(max(0.0, float(ek.get("jeda", 1.0))))
+            params = ek.get("params") or {}
+            aksi, _nil = self._langkah_klik(
+                snap, None, titik, jeda_dialog, geser=geser,
+                cfg=ek.get("gambar") or {}, nama=nama)
+            if aksi == "stop":
+                return
+            if aksi in ("pindah", "skip"):
+                continue
+            jk_e = max(0.05, float(ek.get("jeda_klik", 0.3)))
+            # klik pertama sudah dilakukan -> aksi tambahan per jenis:
+            if kind == "pos_tanggal":
+                time.sleep(0.3)
+                with self.kb.pressed(Key.ctrl):
+                    self.kb.press("a")
+                    self.kb.release("a")
+                time.sleep(0.15)
+                self.kb.type(str(params.get("teks") or snap["tanggal"]))
+            elif kind == "pos_bebas1":
+                sisa = int(_angka(params.get("klik"), 1, 0, 500)) - 1
+                for _ in range(max(0, sisa)):
+                    if self.stop_event.is_set():
+                        break
+                    self._klik(titik)
+                    time.sleep(jk_e)
+                n_scroll = int(_angka(params.get("scroll"), 0, 0, 50))
+                arah = -3 if snap["arah_scroll"] == "Naik" else 3
+                for _ in range(n_scroll):
+                    if self.stop_event.is_set():
+                        break
+                    try:
+                        self.mouse.scroll(0, arah)
+                    except Exception:
+                        pass
+                    time.sleep(jk_e)
+            elif kind == "pos_video":
+                if jumlah > 1:
+                    time.sleep(0.3)
+                    jeda_panah = max(0.05, jk_e)
+                    with self.kb.pressed(Key.shift):
+                        for _ in range(jumlah - 1):
+                            self.kb.press(Key.down)
+                            self.kb.release(Key.down)
+                            time.sleep(jeda_panah)
+            elif kind == "pos_bebas2":
+                sisa = int(_angka(params.get("klik"), 1, 0, 20)) - 1
+                for _ in range(max(0, sisa)):
+                    if self.stop_event.is_set():
+                        break
+                    self._klik(titik)
+                    time.sleep(jk_e)
+            elif kind == "pos_submit":
+                sisa = int(_angka(params.get("klik"), 1, 1, 10)) - 1
+                for _ in range(max(0, sisa)):
+                    if self.stop_event.is_set():
+                        break
+                    self._klik(titik)
+                    time.sleep(jk_e)
+            elif kind == "pos_judul" and caption_final:
+                time.sleep(0.3)
+                with self.kb.pressed(Key.ctrl):
+                    self.kb.press("a")
+                    self.kb.release("a")
+                time.sleep(0.15)
+                self.kb.type(caption_final)
+            self._sleep(jeda_langkah)
+
     def _worker(self, snap, jumlah, mundur, jeda_dialog, jeda_langkah,
                 tunggu):
         try:
@@ -1556,6 +2263,11 @@ class CutUploaderApp:
             antrian = snap.get("antrian", [])
             jk = snap["jeda_klik_per"]      # jeda antar klik per slot
             jp = snap["jeda_per"]           # jeda sebelum langkah per slot
+            ekstra_all = [e for e in (snap.get("langkah_extra") or [])
+                          if isinstance(e, dict)]
+
+            def ekstra_setelah(anchor):
+                return self._ekstra_setelah(ekstra_all, anchor)
 
             # ---- hitung mundur sebelum mulai ----
             if mundur > 0:
@@ -1585,7 +2297,13 @@ class CutUploaderApp:
                         "rilis'... (jangan sentuh mouse/keyboard!)",
                         C_GREEN)
                     self._sleep(self._jeda_sebelum(snap, "pos_jadwal"))
-                    self._klik(pos["pos_jadwal"])
+                    aksi, _nil = self._langkah_klik(
+                        snap, "pos_jadwal", pos["pos_jadwal"], jeda_dialog,
+                        nama="A (jadwal rilis)")
+                    if aksi == "stop":
+                        return
+                    self._jalankan_ekstra(snap, ekstra_setelah("pos_jadwal"),
+                                          jumlah, jeda_dialog, jeda_langkah)
                     self._sleep(jeda_dialog)
 
                     if self.stop_event.is_set():
@@ -1593,7 +2311,13 @@ class CutUploaderApp:
                                      warn=True)
                         return
                     self._set_status("Klik dropdown 'NEGARA'...", C_GREEN)
-                    self._klik(pos["pos_negara"])
+                    aksi, _nil = self._langkah_klik(
+                        snap, "pos_negara", pos["pos_negara"], jeda_dialog,
+                        nama="B (dropdown negara)")
+                    if aksi == "stop":
+                        return
+                    self._jalankan_ekstra(snap, ekstra_setelah("pos_negara"),
+                                          jumlah, jeda_dialog, jeda_langkah)
                     self._sleep(jeda_dialog)
 
                     # ---- C: pilih negara ----
@@ -1601,37 +2325,14 @@ class CutUploaderApp:
                         self._finish("Dihentikan sebelum memilih negara.",
                                      warn=True)
                         return
-                    if snap["pakai_gambar"]:
-                        hasil = None
-                        for percobaan in range(1, 4):
-                            self._set_status(
-                                "Cari gambar '{}' dalam radius {} px "
-                                "(percobaan {}/3, multi-skala)...".format(
-                                    os.path.basename(snap["gambar"]),
-                                    snap["radius"], percobaan), C_GREEN)
-                            hasil, pesan_gambar = cari_di_layar(
-                                snap["gambar"], pos["pos_pilih_neg"][0],
-                                pos["pos_pilih_neg"][1], snap["radius"],
-                                snap["kemiripan"])
-                            if hasil:
-                                break
-                            self._sleep(jeda_dialog)
-                        if hasil:
-                            x, y, skor = hasil
-                            self._set_status(
-                                "Negara KETEMU di ({}, {}) - kemiripan "
-                                "{:.0%} - diklik.".format(x, y, skor),
-                                C_GREEN)
-                            self._klik((x, y))
-                        else:
-                            self._set_status(
-                                "Gambar negara tidak ketemu 3x ({}). Pakai "
-                                "klik biasa di titik C.".format(pesan_gambar),
-                                C_ORANGE)
-                            self._klik(pos["pos_pilih_neg"])
-                    else:
-                        self._set_status("Klik pilihan negara...", C_GREEN)
-                        self._klik(pos["pos_pilih_neg"])
+                    aksi, _nil = self._langkah_klik(
+                        snap, "pos_pilih_neg", pos["pos_pilih_neg"],
+                        jeda_dialog, nama="C (pilih negara)")
+                    if aksi == "stop":
+                        return
+                    self._jalankan_ekstra(
+                        snap, ekstra_setelah("pos_pilih_neg"),
+                        jumlah, jeda_dialog, jeda_langkah)
                     self._sleep(max(0.0, jp.get(
                         "pos_pilih_neg", jeda_langkah)))
 
@@ -1643,13 +2344,20 @@ class CutUploaderApp:
                     self._set_status(
                         "Ketik tanggal-jam rilis: {}...".format(
                             snap["tanggal"]), C_GREEN)
-                    self._klik(pos["pos_tanggal"])
-                    time.sleep(0.3)
-                    with self.kb.pressed(Key.ctrl):
-                        self.kb.press("a")
-                        self.kb.release("a")
-                    time.sleep(0.15)
-                    self.kb.type(snap["tanggal"])
+                    aksi, _nil = self._langkah_klik(
+                        snap, "pos_tanggal", pos["pos_tanggal"], jeda_dialog,
+                        nama="D (kolom tanggal)")
+                    if aksi == "stop":
+                        return
+                    if aksi == "klik":
+                        time.sleep(0.3)
+                        with self.kb.pressed(Key.ctrl):
+                            self.kb.press("a")
+                            self.kb.release("a")
+                        time.sleep(0.15)
+                        self.kb.type(snap["tanggal"])
+                    self._jalankan_ekstra(snap, ekstra_setelah("pos_tanggal"),
+                                          jumlah, jeda_dialog, jeda_langkah)
                     self._sleep(max(0.0, jp.get("pos_tanggal",
                                                 jeda_langkah)))
 
@@ -1659,7 +2367,13 @@ class CutUploaderApp:
                                      warn=True)
                         return
                     self._set_status("Klik 'OKE'...", C_GREEN)
-                    self._klik(pos["pos_oke"])
+                    aksi, _nil = self._langkah_klik(
+                        snap, "pos_oke", pos["pos_oke"], jeda_dialog,
+                        nama="E (tombol OKE)")
+                    if aksi == "stop":
+                        return
+                    self._jalankan_ekstra(snap, ekstra_setelah("pos_oke"),
+                                          jumlah, jeda_dialog, jeda_langkah)
                     self._sleep(max(0.0, jp.get("pos_oke", jeda_langkah))
                                 + 0.5)
 
@@ -1674,7 +2388,13 @@ class CutUploaderApp:
                     "FASE 2/3 TAMBAH VIDEO - klik '+ Tambah video'...",
                     C_GREEN)
                 self._sleep(self._jeda_sebelum(snap, "pos_tambah"))
-                self._klik(pos["pos_tambah"])
+                aksi, _nil = self._langkah_klik(
+                    snap, "pos_tambah", pos["pos_tambah"], jeda_dialog,
+                    nama="F (tambah video)")
+                if aksi == "stop":
+                    return
+                self._jalankan_ekstra(snap, ekstra_setelah("pos_tambah"),
+                                      jumlah, jeda_dialog, jeda_langkah)
                 self._sleep(jeda_dialog)
 
                 # ---- G: klik bebas 1 + scroll ----
@@ -1691,7 +2411,16 @@ class CutUploaderApp:
                             n_klik1, n_scroll, snap["arah_scroll"]),
                         C_GREEN)
                     arah = -3 if snap["arah_scroll"] == "Naik" else 3
-                    for _ in range(n_klik1):
+                    sisa1 = 0
+                    if n_klik1:
+                        aksi, _nil = self._langkah_klik(
+                            snap, "pos_bebas1", pos["pos_bebas1"],
+                            jeda_dialog, nama="G (klik bebas 1)")
+                        if aksi == "stop":
+                            return
+                        if aksi == "klik":
+                            sisa1 = n_klik1 - 1
+                    for _ in range(sisa1):
                         if self.stop_event.is_set():
                             break
                         self._klik(pos["pos_bebas1"])
@@ -1704,6 +2433,9 @@ class CutUploaderApp:
                         except Exception:
                             pass
                         time.sleep(max(0.05, jk.get("pos_bebas1", 0.3)))
+                    self._jalankan_ekstra(
+                        snap, ekstra_setelah("pos_bebas1"), jumlah,
+                        jeda_dialog, jeda_langkah)
                     self._sleep(max(0.0, jp.get("pos_bebas1",
                                                 jeda_langkah)))
 
@@ -1716,15 +2448,21 @@ class CutUploaderApp:
                     "Klik video pertama + tahan SHIFT + panah bawah {}x "
                     "(memilih {} video dari atas)...".format(
                         max(0, jumlah - 1), jumlah), C_GREEN)
-                self._klik(pos["pos_video"])
-                time.sleep(0.3)
-                if jumlah > 1:
+                aksi, _nil = self._langkah_klik(
+                    snap, "pos_video", pos["pos_video"], jeda_dialog,
+                    nama="H (video pertama)")
+                if aksi == "stop":
+                    return
+                if aksi == "klik" and jumlah > 1:
+                    time.sleep(0.3)
                     jeda_panah = max(0.05, jk.get("pos_video", 0.15))
                     with self.kb.pressed(Key.shift):
                         for _ in range(jumlah - 1):
                             self.kb.press(Key.down)
                             self.kb.release(Key.down)
                             time.sleep(jeda_panah)
+                self._jalankan_ekstra(snap, ekstra_setelah("pos_video"),
+                                      jumlah, jeda_dialog, jeda_langkah)
                 self._sleep(max(0.0, jp.get("pos_video", jeda_langkah)))
 
                 # ---- H2: klik bebas 2 (tombol Buka) ----
@@ -1735,11 +2473,22 @@ class CutUploaderApp:
                 self._set_status(
                     "Klik bebas {}x (tombol 'Buka')...".format(
                         snap["klik_bebas2"]), C_GREEN)
-                for _ in range(snap["klik_bebas2"]):
+                sisa2 = 0
+                if snap["klik_bebas2"]:
+                    aksi, _nil = self._langkah_klik(
+                        snap, "pos_bebas2", pos["pos_bebas2"], jeda_dialog,
+                        nama="H2 (klik bebas 2)")
+                    if aksi == "stop":
+                        return
+                    if aksi == "klik":
+                        sisa2 = snap["klik_bebas2"] - 1
+                for _ in range(sisa2):
                     if self.stop_event.is_set():
                         break
                     self._klik(pos["pos_bebas2"])
                     time.sleep(max(0.05, jk.get("pos_bebas2", 0.3)))
+                self._jalankan_ekstra(snap, ekstra_setelah("pos_bebas2"),
+                                      jumlah, jeda_dialog, jeda_langkah)
                 self._sleep(max(0.0, jp.get("pos_bebas2", jeda_langkah)))
 
                 # ---- tunggu semua video selesai terupload ----
@@ -1801,7 +2550,14 @@ class CutUploaderApp:
                     "[{}/{}] Klik tombol Edit (baris {})...".format(
                         i + 1, n_cap, i + 1), C_GREEN)
                 self._sleep(self._jeda_sebelum(snap, "pos_edit"))
-                self._klik_off(pos["pos_edit"], geser)
+                aksi, _nil = self._langkah_klik(
+                    snap, "pos_edit", pos["pos_edit"], jeda_dialog,
+                    geser=geser, nama="I1 (Edit)")
+                if aksi == "stop":
+                    return
+                self._jalankan_ekstra(snap, ekstra_setelah("pos_edit"),
+                                      jumlah, jeda_dialog, jeda_langkah,
+                                      geser=geser)
                 self._sleep(jeda_dialog)
 
                 # klik kotak caption baris ke-i + ketik caption
@@ -1810,13 +2566,22 @@ class CutUploaderApp:
                 self._set_status(
                     "[{}/{}] Menulis caption: {}".format(
                         i + 1, n_cap, caption_final), C_GREEN)
-                self._klik_off(pos["pos_judul"], geser)
-                time.sleep(0.3)
-                with self.kb.pressed(Key.ctrl):
-                    self.kb.press("a")
-                    self.kb.release("a")
-                time.sleep(0.15)
-                self.kb.type(caption_final)
+                aksi, _nil = self._langkah_klik(
+                    snap, "pos_judul", pos["pos_judul"], jeda_dialog,
+                    geser=geser, nama="I2 (kotak caption)")
+                if aksi == "stop":
+                    return
+                if aksi == "klik":
+                    time.sleep(0.3)
+                    with self.kb.pressed(Key.ctrl):
+                        self.kb.press("a")
+                        self.kb.release("a")
+                    time.sleep(0.15)
+                    self.kb.type(caption_final)
+                self._jalankan_ekstra(snap, ekstra_setelah("pos_judul"),
+                                      jumlah, jeda_dialog, jeda_langkah,
+                                      geser=geser,
+                                      caption_final=caption_final)
                 self._sleep(max(0.0, jp.get("pos_judul", jeda_langkah)))
 
                 # klik tombol Konfirmasi baris ke-i
@@ -1828,7 +2593,14 @@ class CutUploaderApp:
                 self._set_status(
                     "[{}/{}] Klik Konfirmasi...".format(i + 1, n_cap),
                     C_GREEN)
-                self._klik_off(titik_ok, geser)
+                aksi, _nil = self._langkah_klik(
+                    snap, "pos_konfirmasi", titik_ok, jeda_dialog,
+                    geser=geser, nama="I3 (Konfirmasi)")
+                if aksi == "stop":
+                    return
+                self._jalankan_ekstra(snap, ekstra_setelah("pos_konfirmasi"),
+                                      jumlah, jeda_dialog, jeda_langkah,
+                                      geser=geser)
                 self._sleep(max(0.0, jp.get("pos_konfirmasi",
                                             jeda_langkah)) + 0.5)
 
@@ -1850,11 +2622,19 @@ class CutUploaderApp:
                         snap["klik_submit"]), C_GREEN)
                 self._scroll_bottom()
                 self._sleep(jeda_langkah + 0.5)
-                for _ in range(snap["klik_submit"]):
-                    if self.stop_event.is_set():
-                        break
-                    self._klik(pos["pos_submit"])
-                    time.sleep(max(0.05, jk.get("pos_submit", 0.3)))
+                aksi, titik_j = self._langkah_klik(
+                    snap, "pos_submit", pos["pos_submit"], jeda_dialog,
+                    nama="J (Submit)")
+                if aksi == "stop":
+                    return
+                if aksi == "klik":
+                    for _ in range(snap["klik_submit"] - 1):
+                        if self.stop_event.is_set():
+                            break
+                        self._klik(titik_j)
+                        time.sleep(max(0.05, jk.get("pos_submit", 0.3)))
+                self._jalankan_ekstra(snap, ekstra_setelah("pos_submit"),
+                                      jumlah, jeda_dialog, jeda_langkah)
                 self._finish(
                     "Selesai! {} video: jadwal diatur, video ditambahkan "
                     "(Shift+turun), caption ditulis per baris, dan SUBMIT "
@@ -1921,6 +2701,21 @@ class CutUploaderApp:
             "jeda_per": {k: float(v) for k, v in self.jeda_per.items()},
             "jeda_klik_per": {k: float(v)
                               for k, v in self.jeda_klik_per.items()},
+            "gambar_langkah": {k: dict(v)
+                               for k, v in self.gambar_langkah.items()},
+            "langkah_extra": [
+                {"uid": str(e.get("uid")),
+                 "sumber": str(e.get("sumber")),
+                 "setelah": str(e.get("setelah") or ""),
+                 "label": str(e.get("label") or ""),
+                 "posisi": (list(e["posisi"]) if e.get("posisi")
+                            else None),
+                 "jeda": float(e.get("jeda", 1.0)),
+                 "jeda_klik": float(e.get("jeda_klik", 0.3)),
+                 "params": dict(e.get("params") or {}),
+                 "gambar": dict(e.get("gambar")
+                                or gambar_langkah_default())}
+                for e in self.langkah_extra],
             "versi": APP_VERSION,
         }
         return data
@@ -1972,6 +2767,76 @@ class CutUploaderApp:
             if k in jk_baru:
                 jk_baru[k] = _angka(v, 0.3, 0.05, 60)
         self.jeda_klik_per = jk_baru
+        # ---- v4.2: config pencarian gambar per langkah ----
+        gl_baru = {k: gambar_langkah_default() for k in POS_KUNCI}
+        simpan_gl = data.get("gambar_langkah")
+        for k, v in (simpan_gl or {}).items():
+            if k in gl_baru and isinstance(v, dict):
+                c = gl_baru[k]
+                c["aktif"] = bool(v.get("aktif"))
+                c["path"] = str(v.get("path") or "")
+                c["aksi"] = (str(v.get("aksi"))
+                             if str(v.get("aksi")) in GAMBAR_AKSI_OPSI
+                             else "Klik di gambar")
+                c["gagal"] = (str(v.get("gagal"))
+                              if str(v.get("gagal")) in GAMBAR_GAGAL_OPSI
+                              else "Klik titik X,Y")
+                c["radius"] = str(v.get("radius") or "")
+                c["mirip"] = str(v.get("mirip") or "")
+        # migrasi v4.1 -> v4.2: checkbox C global jadi config langkah C
+        if data.get("pakai_gambar") and not simpan_gl:
+            gl_baru["pos_pilih_neg"].update(
+                {"aktif": True,
+                 "path": str(data.get("gambar_ref") or "")})
+        self.gambar_langkah = gl_baru
+        # ---- v4.2: salinan langkah ----
+        ekstra_baru = []
+        for e in (data.get("langkah_extra") or []):
+            if not isinstance(e, dict):
+                continue
+            sumber = str(e.get("sumber") or "")
+            if sumber not in POS_KUNCI:
+                continue
+            p = e.get("posisi")
+            try:
+                pos_e = [int(p[0]), int(p[1])] if p else None
+            except Exception:
+                pos_e = None
+            gambar_e = gambar_langkah_default()
+            g = e.get("gambar")
+            if isinstance(g, dict):
+                gambar_e["aktif"] = bool(g.get("aktif"))
+                gambar_e["path"] = str(g.get("path") or "")
+                gambar_e["aksi"] = (str(g.get("aksi"))
+                                    if str(g.get("aksi"))
+                                    in GAMBAR_AKSI_OPSI
+                                    else "Klik di gambar")
+                gambar_e["gagal"] = (str(g.get("gagal"))
+                                     if str(g.get("gagal"))
+                                     in GAMBAR_GAGAL_OPSI
+                                     else "Klik titik X,Y")
+                gambar_e["radius"] = str(g.get("radius") or "")
+                gambar_e["mirip"] = str(g.get("mirip") or "")
+            params_e = {}
+            for nama_p, _l, _w in PARAM_DEF.get(sumber, []):
+                v_p = (e.get("params") or {}).get(nama_p)
+                params_e[nama_p] = (str(v_p) if v_p is not None
+                                    else PARAM_BAWAAN.get(nama_p, ""))
+            uid = str(e.get("uid") or "x{}".format(len(ekstra_baru) + 1))
+            ekstra_baru.append({
+                "uid": uid,
+                "sumber": sumber,
+                "setelah": str(e.get("setelah") or sumber),
+                "label": str(e.get("label") or (SLOT_KODE.get(
+                    sumber, sumber) + " - salinan")),
+                "posisi": pos_e,
+                "jeda": _angka(e.get("jeda"), 1.0, 0.0, 3600),
+                "jeda_klik": _angka(e.get("jeda_klik"), 0.3, 0.05, 60),
+                "params": params_e,
+                "gambar": gambar_e,
+            })
+        self.langkah_extra = ekstra_baru
+        self._extra_counter = len(ekstra_baru)
         self._loading = True
         pasangan = [
             ("folder", V["folder"]), ("jumlah", V["jumlah"]),

@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Edition (v4.1)
+# CutUploader Pro — Macro Edition (v4.2)
 
-Uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — tampilan editor makro ala **Jitbit Macro Recorder**, jadi **installer Windows** (tanpa Python), **jeda antar klik bisa diatur per langkah**, dan **pencarian gambar negara** yang diperbaiki total.
+Uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — tampilan editor makro ala **Jitbit Macro Recorder**, jadi **installer Windows** (tanpa Python), **jeda antar klik bisa diatur per langkah**, **cari gambar di semua langkah (klik di gambar / pindah saja)**, dan **salin-tempel langkah makro**.
 
 ## Unduh (tanpa install Python)
 
-Dari [halaman Releases](../../releases) rilis **v4.1**:
+Dari [halaman Releases](../../releases) rilis **v4.2**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v4.1.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v4.2.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -32,7 +32,7 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya).
 
-## Fitur utama v4.1
+## Fitur utama v4.2
 
 - **UI ala Jitbit Macro Recorder** — toolbar Jalankan/Berhenti, tabel langkah A–J (kolom DETAIL, JEDA, ULANGI), panel *Properti Langkah* untuk baris terpilih, tema Windows klasik.
 - **Jeda bisa diatur**: `JEDA SEBELUM LANGKAH` per langkah (kolom JEDA), `JEDA ANTAR KLIK` per langkah (klik berulang G/H2/J, panah Shift di H), tombol *Terapkan ke semua langkah*, plus MUNDUR / JEDA DIALOG / TUNGGU UPLOAD global.
@@ -53,6 +53,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v4.2
+
+- **CARI GAMBAR di SEMUA langkah** — dulu hanya langkah C; kini setiap langkah A-J (dan salinannya) punya seksi *Pencarian Gambar* opsional: gambar referensi sendiri, radius/kemiripan sendiri, dan tombol *Tes Cari Langkah Ini*.
+- **Mode SAAT KETEMU**: `Klik di gambar` (klik langsung pusat gambar yang ditemukan) atau `Pindah saja` (mouse dipindah tanpa klik).
+- **Mode SAAT TIDAK KETEMU**: `Klik titik X,Y` (fallback), `Lewati langkah`, atau `Stop alur`.
+- **SALIN / TEMPEL / HAPUS LANGKAH** — langkah A-J bisa digandakan (toolbar, klik kanan, Ctrl+C/Ctrl+V/Del) menjadi titik klik tambahan dengan posisi, jeda, jumlah klik, dan pencarian gambar sendiri. Salinan tampil sebagai baris biru `+` dan dieksekusi di fase langkah asalnya (salinan I ikut loop caption per baris).
+- Konfigurasi gambar per langkah tersimpan di profil makro; setelan lama v4.1 (checkbox C) dimigrasi otomatis.
 
 ## Perubahan v4.1
 

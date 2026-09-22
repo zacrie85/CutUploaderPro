@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v4.1 - MACRO EDITION - PANDUAN LENGKAP
+  CUTUPLOADER PRO v4.2 - MACRO EDITION - PANDUAN LENGKAP
   Uploader video batch otomatis untuk CutMotions (Kwai)
   Tampilan baru ala Jitbit Macro Recorder
 ============================================================
@@ -11,7 +11,7 @@ Ada 3 cara, pilih yang paling gampang:
 
 CARA A - INSTALLER (paling gampang, seperti aplikasi biasa):
   1. Buka  https://github.com/zacrie85/CutUploaderPro/releases
-  2. Download  CutUploaderPro-Setup.exe  (rilis v4.1 ke atas)
+  2. Download  CutUploaderPro-Setup.exe  (rilis v4.2 ke atas)
   3. Kalau muncul biru "Windows protected your PC", klik
      "More info" -> "Run anyway" (ini normal untuk aplikasi
      tanpa tanda tangan digital berbayar).
@@ -45,12 +45,16 @@ pernah diminta atau disimpan). Lakukan sendiri di browser:
 V4.0 bergaya Jitbit Macro Recorder:
   - TOOLBAR paling atas : JALANKAN (F6), BERHENTI (F7),
     TES CARI GAMBAR, POTONG GAMBAR REFERENSI,
+    SALIN LANGKAH, TEMPEL LANGKAH, HAPUS SALINAN,
     SIMPAN PROFIL, BUKA PROFIL.
   - VIDEO & CAPTION     : pilih folder video, jumlah video
     (maks 20), caption dasar, pratinjau caption.
-  - LANGKAH MAKRO       : tabel berisi langkah A-J.
-    KLIK SATU BARIS lalu sunting di panel PROPERTI LANGKAH
-    di bawahnya (posisi, jeda, dan opsi khusus).
+  - LANGKAH MAKRO       : tabel berisi langkah A-J + salinan
+    (baris biru bertanda "+"). KLIK SATU BARIS lalu sunting
+    di panel PROPERTI LANGKAH di bawahnya (posisi, jeda,
+    opsi khusus, pencarian gambar). Klik kanan tabel =
+    Salin / Tempel / Hapus. Ctrl+C = salin, Ctrl+V = tempel,
+    Del = hapus salinan.
   - WAKTU & UNGGAH      : mundur, jeda dialog, jeda antar
     langkah, tunggu upload, tombol terapkan jeda ke semua.
   - STATUSBAR bawah     : kabar jalannya makro.
@@ -133,13 +137,36 @@ Tips penting untuk langkah I:
     diambil.
 
 ------------------------------------------------------------
-7. PENCARIAN GAMBAR (LANGKAH C) - DAN PERBAIKANNYA
+7. PENCARIAN GAMBAR (SEMUA LANGKAH, BARU DI V4.2)
 ------------------------------------------------------------
+Dulu pencarian gambar hanya untuk langkah C (pilih negara).
+Sekarang SEMUA langkah (A-J dan salinannya) bisa memakainya:
+  1. Klik baris langkahnya di tabel.
+  2. Di panel PROPERTI, lihat seksi "PENCARIAN GAMBAR
+     (opsional)" di bagian bawah.
+  3. Centang "Aktifkan CARI GAMBAR pada langkah ini".
+  4. PILIH GAMBAR... atau POTONG GAMBAR... (screenshot layar
+     hidup - paling akurat).
+  5. Atur perilakunya:
+     SAAT KETEMU      : "Klik di gambar" = klik langsung di
+                        pusat gambar yang ditemukan;
+                        "Pindah saja"   = mouse hanya DIPINDAH
+                        ke gambar, TANPA klik (hover/kalibrasi).
+     SAAT TIDAK KETEMU: "Klik titik X,Y" (klik cadangan di
+                        titik langkah), "Lewati langkah",
+                        atau "Stop alur".
+  6. RADIUS & KEMIRIPAN boleh dikosongkan (pakai nilai
+     global) atau diisi khusus untuk langkah ini.
+  7. TES CARI LANGKAH INI = coba dulu tanpa menjalankan
+     seluruh alur (mouse dipindah ke gambar, tidak diklik).
+Titik X,Y langkah tetap penting sebagai PUSAT PENCARIAN
+(radius dihitung dari titik itu) dan klik cadangan.
+
 Cara kerja: aplikasi memotong area layar dalam RADIUS piksel
-dari titik C, lalu mencari gambar referensi Anda (mis.
-potongan tulisan "Indonesia") dengan OpenCV. Kalau ketemu,
-titik temu yang diklik - jadi posisi daftar negara boleh
-bergeser sedikit.
+dari titik acuan, lalu mencari gambar referensi (mis.
+potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
+tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
+diklik/dituju - jadi posisi target boleh bergeser sedikit.
 
 PENYEBAB "CARI GAMBAR ERROR" YANG PALING SERING, DAN SOLUSINYA:
   1. Gambar referensi dipotong dari FILE screenshot yang
@@ -172,6 +199,36 @@ Urutan yang disarankan:
      negaranya (jangan banyak ruang kosong) -> SIMPAN AREA.
   3. Klik TES CARI GAMBAR -> mouse harusnya melompat ke
      tulisan itu. Ulangi sampai sukses, baru JALANKAN.
+
+------------------------------------------------------------
+7b. SALIN / TEMPEL LANGKAH (BARU DI V4.2)
+------------------------------------------------------------
+Langkah A-J bisa DIGANDAKAN jadi titik klik tambahan yang
+Anda atur sendiri (posisi, jeda, jumlah klik, cari gambar):
+  1. Klik baris langkah yang mau disalin.
+  2. Klik SALIN LANGKAH (atau Ctrl+C / klik kanan -> Salin).
+  3. Klik baris acuan tempat salinan mau disisipkan.
+  4. Klik TEMPEL LANGKAH (atau Ctrl+V / klik kanan -> Tempel).
+  5. Salinan muncul sebagai baris BIRU bertanda "+" tepat
+     setelah baris acuan. Posisinya ikut tersalin - ubah
+     dengan AMBIL (5 dtk) atau isi X,Y manual.
+  6. Salinan punya pengaturan sendiri: JEDA, JEDA ANTAR KLIK,
+     JUMLAH KLIK/SCROLL (untuk G/H2/J), TANGGAL (untuk D),
+     dan PENCARIAN GAMBAR sendiri.
+  7. HAPUS SALINAN (tombol / Del / klik kanan) menghapus
+     salinan terpilih. Langkah bawaan A-J tidak bisa dihapus.
+
+Kapan salinan berguna? Contoh:
+  - Butuh 2 titik klik bebas berbeda? Salin G dua kali.
+  - Perlu klik "OKE" sekali lagi di posisi lain? Salin E.
+  - Perlu isi tanggal kedua? Salin D lalu ubah TANGGAL & JAM.
+  - Tombol ke-2 butuh verifikasi gambar? Salin langkah itu,
+    aktifkan cari gambar dengan mode "Klik di gambar".
+Urutan eksekusi salinan mengikuti posisi baris di tabel:
+  salinan ikut FASE langkah asalnya (salinan A-E jalan di
+  fase jadwal, salinan F-H2 di fase tambah video, salinan
+  I1-I3 ikut LOOP caption per baris, salinan J setelah
+  Submit).
 
 ------------------------------------------------------------
 8. PROFIL MAKRO (PENGGANTI DAFTAR BROWSER)
