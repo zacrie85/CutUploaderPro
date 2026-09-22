@@ -1,11 +1,11 @@
 ================================================================
-  CUTUPLOADER PRO v2.0 — PANDUAN LENGKAP
+  CUTUPLOADER PRO v3.0 — PANDUAN LENGKAP
   Uploader video batch otomatis untuk situs CutMotions (Kwai)
 ================================================================
 
-ALUR SITUS YANG DIKOTAK-KATIK OTOMATIS
---------------------------------------
-Aplikasi ini mengikuti alur asli halaman CutMotions:
+ALUR SITUS YANG DIKERJAKAN OTOMATIS (URUTAN POSISI A-J)
+-------------------------------------------------------
+Aplikasi mengikuti alur asli halaman CutMotions:
 
   [Manual sekali di awal]
   1. Login (email + kata sandi)
@@ -14,17 +14,23 @@ Aplikasi ini mengikuti alur asli halaman CutMotions:
      -> masuk ke halaman "Video Bublikasikan"
 
   [Otomatis oleh aplikasi, tekan F6]
-  FASE 1  UPLOAD  : klik "+ Tambah video" -> ketik path file
-                    video di dialog Windows -> Enter -> tunggu
-                    upload selesai -> ulangi untuk video
-                    berikutnya (urut nama A-Z)
-  FASE 2  JADWAL  : (opsional) klik radio "Jadwalkan rilis" +
-                    Negara Indonesia; Zona waktu & Waktu rilis
-                    diatur saat JEDA F8
-  FASE 3  CAPTION : per video -> klik tombol "Edit" -> klik
-                    kotak "Judul video" -> Ctrl+A -> ketik
-                    caption gabungan -> klik "Konfirmasi"
-  FASE 4  KIRIM   : scroll ke bawah -> klik "Kirim"
+  A   Klik tombol "Jadwal rilis / publikasi"
+  B   Klik dropdown "NEGARA"
+  C   Pilih negara — klik biasa ATAU pencarian gambar
+      (gambar referensi dicari di dalam radius lalu diklik)
+  D   Klik kolom tanggal, lalu ketik tanggal-jam otomatis
+      (format: 2026-09-10 02:05:01)
+  E   Klik "OKE"
+  F   Klik "+ Tambah video" (dialog pilih file terbuka)
+  G   Klik bebas berulang (0-500x) dan/atau scroll (0-50x)
+  H   Klik video pertama + tahan SHIFT + panah bawah
+      (jumlah video - 1)x  -> 5 sampai 20 video terpilih
+  H2  Klik bebas (mis. tombol "Buka" pada dialog file)
+  I   Caption per video: klik "Edit" -> klik kotak caption ->
+      ketik caption -> klik "Konfirmasi" — posisi klik otomatis
+      bergeser turun per baris (5 video = diulang 5x,
+      20 video = 20x)
+  J   Klik "SUBMIT"
 
 Batas situs: maksimal 20 video sekali jalan.
 Batas judul video: 250 karakter.
@@ -32,22 +38,63 @@ Caption otomatis:  CAPTION DASAR - NAMA FILE  (contoh:
 "#dangdut - melati", tanpa .mp4)
 
 
+JAWABAN 2 PERTANYAAN PENTING
+----------------------------
+1) "PILIH NEGARA bisa pakai pencarian gambar?" — BISA.
+   - Centang "Pilih negara pakai PENCARIAN GAMBAR" di bawah slot C.
+   - Klik "PILIH GAMBAR..." -> pilih potongan layar tulisan
+     "Indonesia" (screenshot yang dipotong persis tulisannya).
+   - Isi RADIUS CARI (piksel) — jangkauan pencarian dari titik C.
+     Default 300. Kalau daftar negaranya panjang, perbesar
+     (mis. 500-800).
+   - KEMIRIPAN default 0.80. Kalau tidak ketemu, turunkan ke 0.70.
+   - Klik "TES CARI" untuk mencoba: kalau ketemu, mouse akan
+     lompat ke gambar itu (tidak diklik). Kalau TIDAK ketemu,
+     perbaiki gambar referensi / radius / kemiripan.
+   - Saat MULAI: gambar dicari maksimal 3x percobaan; kalau tetap
+     tidak ketemu, aplikasi otomatis memakai KLIK BIASA di titik C
+     (jadi alur tidak berhenti).
+   - Butuh library: pip install opencv-python (JALANKAN.bat sudah
+     memasangkannya otomatis).
+
+2) "KLIK TANGGAL bisa isi tanggal, bulan, tahun, jam?" — BISA.
+   - Di bawah slot D ada kotak "TANGGAL & JAM UPLOAD".
+   - Formatnya:  2026-09-10 02:05:01
+     (TAHUN-BULAN-TANGGAL JAM:MENIT:DETIK)
+   - Detik boleh dilewat (2026-09-10 02:05 juga diterima, detiknya
+     otomatis 00).
+   - Saat MULAI: aplikasi klik kolom tanggal (posisi D), membersihkan
+     isian lama (Ctrl+A), lalu mengetik tanggal-jam itu utuh.
+
+3) Bonus: "Klik EDIT bisa menyesuaikan jumlah video?" — BISA.
+   - Opsi caption (I1/I2/I3) dijalankan SEBANYAK JUMLAH VIDEO:
+     5 video = 5x, 10 = 10x, 20 = 20x.
+   - Karena tiap baris videonya beda posisi, aplikasi menggeser
+     titik klik turun otomatis: baris ke-2 turun sejauh "JARAK
+     ANTAR BARIS" (default 85 piksel), baris ke-3 turun 2x jarak,
+     dst. Ukur jaraknya: jarak vertikal antara tombol Edit baris-1
+     dan tombol Edit baris-2 di layarmu.
+
+
 CARA PASANG (WINDOWS)
 ---------------------
 Cara paling gampang:
   1. Ekstrak semua file ke satu folder, mis. D:\CutUploaderPro
   2. Klik dua kali  JALANKAN.bat
-     (kalau Python/pynput belum ada, akan dicoba pasang otomatis)
+     (kalau Python/pynput/opencv belum ada, dicoba pasang otomatis)
 
 Cara manual:
   1. Install Python 3.8+ dari python.org (centang "Add to PATH")
   2. Buka CMD di folder ini, jalankan:
-       pip install pynput
+       pip install pynput pillow opencv-python
        python cut_uploader.py
 
 Jadi file .exe (opsional):
   - Klik dua kali  build_exe.bat  (butuh internet untuk PyInstaller)
   - Hasil: dist\cut_uploader.exe
+  - Catatan: karena membawa OpenCV, file exe-nya jadi besar
+    (±150-250 MB). Kalau tidak butuh pencarian gambar, hapus saja
+    baris opencv di requirements dan pakai klik biasa di titik C.
 
 
 LANGKAH PERTAMA KALI (SEKALI SAJA)
@@ -56,55 +103,41 @@ LANGKAH PERTAMA KALI (SEKALI SAJA)
    (mis. "Chrome Akun 1"), lalu pilih FOLDER VIDEO-nya.
 2. Buka browser -> login CutMotions -> Versi lama -> Rilis karya.
    Pastikan jendela browser TIDAK dipindah/resize lagi setelah ini.
-3. Ambil 9 posisi klik di bagian 3. Klik AMBIL, lalu dalam 5 detik
-   arahkan mouse ke target dan diamkan:
+3. Ambil 13 posisi klik di bagian 3. Klik AMBIL, lalu dalam 5 detik
+   arahkan mouse ke target dan diamkan. Kondisi halaman saat
+   mengambil tiap posisi:
 
-   Slot  Diarahkan ke                              Kondisi halaman
-   ----  ----------------------------------------  -------------------------------
-   A     Tombol "+ Tambah video"                   halaman Rilis karya biasa
-   B     Tombol "Edit" baris video TERATAS         baris teratas TERTUTUP
-                                                   (tulisan Edit terlihat)
-   C     Kotak "Judul video"                       baris teratas TERBUKA
-                                                   (klik dulu Edit-nya manual)
-   D     Tombol "Konfirmasi"                       masih dalam keadaan terbuka
-   E     Tombol "Kirim"                            scroll halaman sampai BAWAH
-   F     Radio "Jadwalkan rilis"                   (opsional, jadwal otomatis)
-   G     Dropdown "Negara"                         (opsional, jadwal otomatis)
-   H     Item "Indonesia" di dropdown              (opsional; ambil saat
-                                                   dropdown terbuka)
-   I     Tombol "Batal"                            (opsional; isi HANYA kalau
-                                                   setelah tambah video
-                                                   editor-nya terbuka sendiri)
+   Slot  Diarahkan ke                      Kondisi halaman
+   ----  --------------------------------  ------------------------------
+   A     Tombol "Jadwal rilis"             halaman Rilis karya biasa
+   B     Dropdown "NEGARA"                 dialog jadwal terbuka,
+                                           dropdown TERTUTUP
+   C     Item "Indonesia" di daftar        daftar negara TERBUKA
+         negara                            (kalau pakai pencarian
+                                           gambar: titik mana pun dekat
+                                           daftar sebagai acuan radius)
+   D     Kolom tanggal & jam               form/kalender terlihat
+   E     Tombol "OKE"                      masih di dialog jadwal
+   F     Tombol "+ Tambah video"           kembali ke halaman Rilis
+                                           karya (setelah jadwal ok)
+   G     Titik bebas di dialog             dialog pilih file Windows
+         pilih file                        terbuka
+   H     Video PERTAMA di daftar file      masih di dialog pilih file
+   H2    Tombol "Buka" pada dialog         video sudah terpilih
+   I1    Tombol "EDIT" baris video         daftar video di situs,
+         TERATAS                           baris teratas TERTUTUP
+   I2    Kotak caption/judul baris         baris teratas TERBUKA
+         teratas                           (klik dulu Edit-nya manual)
+   I3    Tombol "KONFIRMASI" baris         masih terbuka — KOSONGKAN
+         teratas                           bila letaknya sama dengan
+                                           tombol Edit
+   J     Tombol "SUBMIT"                   scroll halaman sampai BAWAH
 
-   WAJIB: A, B, C, D, E.  F/G/H hanya kalau pakai mode jadwal
-   OTOMATIS.  I boleh dikosongkan.
+   WAJIB: semua kecuali I3 (opsional). Kalau "Lewati langkah
+   JADWAL (A-E)" dicentang, posisi A-E tidak wajib.
 
-RAHASIA TRIK POSISI B/C/D:
-   Setelah satu video di-Konfirmasi, baris video berikutnya NAIK
-   ke posisi yang sama. Jadi cukup SATU set posisi B/C/D untuk
-   semua video (1, 5, 10, sampai 20 video pun tetap pas),
-   selama tinggi tiap baris video sama dan halaman terlihat dari
-   baris teratas. Kalau videonya banyak, kecilkan zoom browser
-   (Ctrl + tanda minus) supaya semua baris muat tanpa scroll.
-
-
-MODE JADWAL RILIS (BAGIAN 5)
-----------------------------
-Isi halaman "Bublikasikan aturan": pilih "Jadwalkan rilis",
-Negara = Indonesia, Zona waktu, dan Waktu rilis (tanggal-jam).
-
-Mode 1 — MANUAL (paling aman, default):
-  - Centang "Jeda F8". Aplikasi akan:
-    upload semua video -> BERHENTI SEBENTAR -> kamu atur sendiri
-    jadwalnya di browser -> tekan F8 -> caption dijalankan ->
-    Kirim.
-  - Atau atur jadwalnya SEBELUM menekan F6 lalu matikan jeda F8.
-
-Mode 2 — OTOMATIS (butuh posisi F, G, H):
-  - Aplikasi klik radio "Jadwalkan rilis" + dropdown Negara +
-    item Indonesia secara otomatis.
-  - Zona waktu & tanggal tetap disarankan diisi saat jeda F8
-    (kalendernya sulit diklik otomatis).
+4. Isi pengaturan di bawah slot: tanggal-jam upload, jumlah klik &
+   scroll G, jumlah klik H2, JARAK ANTAR BARIS, jumlah klik J.
 
 
 CARA PAKAI SETIAP HARI
@@ -112,36 +145,36 @@ CARA PAKAI SETIAP HARI
 1. Buka aplikasi, pilih browser + folder video, isi JUMLAH
    (maks 20) dan CAPTION DASAR.
 2. Buka browser: pastikan sudah login, Versi lama, halaman
-   "Rilis karya" (Video Bublikasikan), dan posisi jendela browser
-   SAMA seperti saat ambil posisi.
-3. Klik MULAI (atau F6). Aplikasi bekerja 4 fase di atas.
+   "Rilis karya", dan posisi jendela browser SAMA seperti saat
+   ambil posisi.
+3. Klik MULAI (atau F6). Aplikasi bekerja 3 fase:
+   FASE 1 JADWAL (A-E) -> FASE 2 TAMBAH & PILIH VIDEO (F-H2) ->
+   FASE 3 CAPTION per baris (I) + SUBMIT (J).
    Jangan sentuh mouse/keyboard sampai selesai.
-4. Hotkey: F6 = mulai | F7 / ESC = berhenti | F8 = lanjut dari
-   jeda jadwal.
+4. Hotkey: F6 = mulai | F7 / ESC = berhenti.
 
-Tombol "Kirim" otomatis: kalau dicentang, aplikasi langsung
-mengklik Kirim setelah semua caption selesai. Matikan centangnya
-kalau mau mengecek dulu secara manual.
+Tombol "Klik SUBMIT otomatis": kalau dicentang (default), aplikasi
+langsung mengklik Submit setelah semua caption selesai. Matikan
+centangnya kalau mau mengecek dulu secara manual.
+
+Lewati langkah jadwal: kalau rilisnya TIDAK dijadwalkan (upload
+langsung), centang "Lewati langkah JADWAL (A-E)" — posisi A-E
+tidak perlu diambil.
 
 
 RIWAYAT & ANTI-DOBEL UPLOAD
 ---------------------------
-- Setiap video yang selesai diupload dicatat otomatis di
-  cutuploader_riwayat.json (per browser + folder).
-- Kalau ada video yang sudah pernah terupload, video itu
-  DILEWATI pada eksekusi berikutnya (centang "Lewati video yang
-  sudah pernah terupload").
+- Semua video yang selesai ditambahkan dicatat otomatis di
+  cutuploader_riwayat.json (per browser + folder) setelah fase
+  upload selesai.
+- Kalau nanti F6 ditekan lagi dan semua video sudah tercatat,
+  aplikasi MENAWARKAN "lanjut LANGSUNG KE FASE CAPTION" — cocok
+  bila kemarin berhenti saat fase caption / upload.
 - Mau upload ulang video yang sama? Klik "Bersihkan riwayat
   browser ini" dulu.
-- Dihentikan di tengah jalan (F7)? Jalankan F6 lagi — upload
-  bersambung dari video yang belum terupload, dan caption
-  diulang dari baris teratas (caption yang sudah jadi otomatis
-  ditimpa dengan isian yang sama, jadi aman).
-- Catatan: kalau berhenti SAAT FASE UPLOAD, urutan caption pada
-  eksekusi lanjutan bisa tidak pas dengan urutan baris. Paling
-  aman: hapus video yang sudah masuk daftar di situs + bersihkan
-  riwayat, lalu ulangi dari awal. Atau lanjutkan saja dan koreksi
-  judul yang meleset lewat tombol Edit secara manual.
+- Kalau berhenti (F7) saat menunggu upload: cek dulu di situs —
+  kalau video sudah masuk semua, jalankan F6 lagi dan pilih
+  lanjut caption.
 
 
 PENGATURAN WAKTU (BAGIAN 4)
@@ -149,14 +182,12 @@ PENGATURAN WAKTU (BAGIAN 4)
 - MUNDUR SEBELUM MULAI      : persiapan pindah ke jendela browser
                               (default 5 detik)
 - JEDA BUKA DIALOG/EDITOR   : tunggu dialog pilih file Windows /
-                              editor video terbuka (default 2)
+                              editor / dropdown terbuka (default 2)
 - JEDA ANTAR LANGKAH        : jeda klik-ketik di situs (default 1)
-- TUNGGU UPLOAD PER VIDEO   : menunggu 1 video selesai terupload
-                              sebelum menambah video berikutnya
-                              (default 60 detik; naikkan kalau
-                              video besar / internet lambat)
-
-Semua pengaturan tersimpan otomatis di cutuploader_settings.json.
+- TUNGGU UPLOAD PER VIDEO   : waktu menunggu 1 video terupload;
+                              TOTAL menunggu = nilai ini x jumlah
+                              video (default 60; naikkan bila video
+                              besar / internet lambat)
 
 
 TIPS PENTING
@@ -164,27 +195,34 @@ TIPS PENTING
 - UJI DULU DENGAN JUMLAH = 1 sampai lancar, baru naik ke 5/10/20.
 - Jangan pindahkan/resize jendela browser setelah ambil posisi.
 - Jangan gunakan mouse/keyboard saat aplikasi berjalan.
-- Zoom out browser (Ctrl + minus) bila videonya banyak supaya
-  baris teratas tetap terlihat.
-- "Menyisipkan link pendek" tidak diisi otomatis (kosong).
-- Judul di batas 250 karakter: pratinjau akan berwarna MERAH bila
+- SEMUA baris video harus terlihat di layar saat fase caption —
+  kalau 20 video tidak muat, kecilkan zoom browser (Ctrl + minus)
+  dan ambil ulang posisi I1/I2/I3.
+- Gambar referensi pencarian negara sebaiknya potongan PERSIS
+  tulisan "Indonesia" di daftar (tidak terlalu banyak latar).
+- Judul di batas 250 karakter: pratinjau berwarna MERAH bila
   melebihi; aplikasi juga memperingatkan saat MULAI.
 
 
 TROUBLESHOOTING
 ---------------
 - "pynput belum terpasang"  -> pip install pynput
-- Klik meleset              -> ambil ulang posisi; pastikan jendela
-                              browser & zoom tidak berubah; layar
-                              tidak boleh ganti resolusi.
-- Upload berulang terus     -> riwayat tidak sinkron; bersihkan
-                              riwayat, hapus daftar video di situs,
-                              ulangi.
-- Dialog file tidak terbuka -> naikkan JEDA BUKA DIALOG/EDITOR.
-- Video gagal masuk semua   -> naikkan TUNGGU UPLOAD PER VIDEO.
-- Antivirus curiga pada exe -> ini normal untuk hasil PyInstaller;
-                              tambahkan pengecualian / jalankan versi
-                              Python saja.
+- Pencarian gambar tidak     -> pip install opencv-python; tes dulu
+  jalan                        lewat tombol TES CARI
+- TES CARI: tidak ketemu     -> perbesar radius, turunkan kemiripan
+                                (0.70), potong ulang gambar sesuai
+                                tampilan layar persis
+- Klik meleset               -> ambil ulang posisi; pastikan jendela
+                                browser & zoom tidak berubah; layar
+                                tidak boleh ganti resolusi
+- Caption baris bawah meleset-> nilai JARAK ANTAR BARIS salah;
+                                ukur ulang (jarak Edit baris-1 ke
+                                Edit baris-2, dalam piksel)
+- Dialog file tidak terbuka  -> naikkan JEDA BUKA DIALOG/EDITOR
+- Video gagal masuk semua    -> naikkan TUNGGU UPLOAD PER VIDEO
+- Antivirus curiga pada exe  -> ini normal untuk hasil PyInstaller;
+                                tambahkan pengecualian / jalankan
+                                versi Python saja
 
 SELAMAT MENCOBA! 🎬
 ================================================================

@@ -36,6 +36,25 @@ if errorlevel 1 (
     )
 )
 
+echo Memeriksa library pillow + opencv (untuk pencarian gambar negara)...
+python -c "import PIL" >nul 2>nul
+if errorlevel 1 (
+    python -m pip install --quiet pillow
+)
+python -c "import cv2" >nul 2>nul
+if errorlevel 1 (
+    echo Ini butuh unduhan cukup besar, mohon tunggu...
+    python -m pip install --quiet opencv-python
+    if errorlevel 1 (
+        echo.
+        echo [PERINGATAN] opencv-python gagal dipasang.
+        echo Pencarian gambar negara tidak bisa dipakai - aplikasi
+        echo tetap jalan dengan KLIK BIASA di titik C.
+        echo Coba manual di CMD:  pip install opencv-python
+        echo.
+    )
+)
+
 echo Memeriksa library pyinstaller (untuk build EXE, opsional)...
 python -c "import PyInstaller" >nul 2>nul
 if errorlevel 1 (

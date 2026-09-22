@@ -1,27 +1,31 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v2.0
+  CUTUPLOADER PRO  v3.0
   Aplikasi desktop uploader video batch otomatis
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
-  Alur situs yang diikuti aplikasi ini (sesuai halaman asli):
+  Alur situs yang diikuti aplikasi ini (urutan posisi A-J):
     1. Login manual (email / kata sandi)
     2. Pilih "Versi lama"  ->  "Rilis karya"
-    3. Halaman "Video Bublikasikan":
-       FASE 1  UPLOAD   : klik "+ Tambah video" per video,
-                          ketik path file di dialog Windows
-       FASE 2  JADWAL   : (opsional) klik radio "Jadwalkan
-                          rilis" + Negara Indonesia, sisanya
-                          zona waktu & waktu rilis diatur
-                          saat jeda F8
-       FASE 3  CAPTION  : per video -> tombol "Edit" ->
-                          kotak "Judul video" -> ketik
-                          caption -> "Konfirmasi"
-                          (baris berikut naik ke posisi yang
-                          sama, jadi 1 set posisi dipakai
-                          untuk semua video)
-       FASE 4  KIRIM    : scroll ke bawah -> klik "Kirim"
+    3. Tekan F6, lalu aplikasi mengerjakan:
+       A  Klik tombol "Jadwal rilis / publikasi"
+       B  Klik dropdown "NEGARA"
+       C  Pilih negara — klik biasa ATAU pencarian gambar
+          referensi dalam radius (mis. tulisan "Indonesia")
+       D  Klik kolom tanggal, lalu ketik tanggal-jam otomatis
+          (format: 2026-09-10 02:05:01)
+       E  Klik "OKE"
+       F  Klik "+ Tambah video" (dialog pilih file terbuka)
+       G  Klik bebas berulang (0-500x) dan/atau scroll (0-50x)
+       H  Klik video pertama + tahan SHIFT + panah bawah
+          (jumlah video - 1)x  -> 5 sampai 20 video terpilih
+       H2 Klik bebas (mis. tombol "Buka" pada dialog file)
+       I  Caption per video: klik "Edit" -> klik kotak
+          caption -> ketik caption -> klik "Konfirmasi";
+          posisi klik otomatis bergeser turun per baris
+          (5 video = diulang 5x, 20 video = 20x)
+       J  Klik "SUBMIT"
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -29,9 +33,9 @@
   Hotkey:
     F6         : Mulai
     F7 / ESC   : Berhenti
-    F8         : Lanjut (dari jeda jadwal rilis)
 
-  Dibuat dengan Python + tkinter + pynput.
+  Dibuat dengan Python + tkinter + pynput (+ OpenCV/Pillow
+  untuk pencarian gambar negara — opsional).
   Fokus utama: Windows desktop.
 ============================================================
 """
@@ -41,6 +45,7 @@ from tkinter import messagebox, filedialog
 import threading
 import time
 import json
+import datetime
 import os
 import sys
 
@@ -65,8 +70,21 @@ try:
 except Exception as _e:
     IMPORT_ERROR = str(_e)
 
+# ------------------------------------------------------------
+# Pencarian gambar di layar (opsional): dipakai untuk memilih
+# NEGARA lewat gambar referensi (template matching OpenCV).
+# ------------------------------------------------------------
+CV_OK = False
+try:
+    import cv2
+    import numpy as np
+    from PIL import ImageGrab
+    CV_OK = True
+except Exception:
+    CV_OK = False
+
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "2.0"
+APP_VERSION = "3.0"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -110,28 +128,38 @@ F_S     = ("Segoe UI", 9)
 F_MONO  = ("Consolas", 10, "bold")
 
 # ------------------------------------------------------------
-# Definisi 9 slot posisi klik di situs CutMotions
+# Definisi 13 slot posisi klik di situs CutMotions (urutan A-J)
 #   (kunci, label pendek, wajib?, nama lengkap)
 # ------------------------------------------------------------
 POSISI_DEF = [
-    ("pos_tambah",     "A · Tambah video",     True,
+    ("pos_jadwal",     "A · Jadwal rilis",        True,
+     "TOMBOL 'JADWAL RILIS / PUBLIKASI'"),
+    ("pos_negara",     "B · Dropdown NEGARA",     True,
+     "DROPDOWN / KOTAK 'NEGARA' (sebelum daftar terbuka)"),
+    ("pos_pilih_neg",  "C · Pilih negara",        True,
+     "ITEM 'INDONESIA' PADA DAFTAR NEGARA (atau titik klik biasa "
+     "bila tidak memakai pencarian gambar)"),
+    ("pos_tanggal",    "D · Kolom tanggal-jam",   True,
+     "KOLOM TANGGAL & JAM RILIS (tanggal-jam diketik otomatis)"),
+    ("pos_oke",        "E · Tombol OKE",          True,
+     "TOMBOL 'OKE' PADA DIALOG JADWAL"),
+    ("pos_tambah",     "F · + Tambah video",      True,
      "TOMBOL '+ TAMBAH VIDEO'"),
-    ("pos_edit",       "B · Edit (baris atas)", True,
+    ("pos_bebas1",     "G · Klik bebas 1",        True,
+     "TITIK KLIK BEBAS DI DIALOG PILIH FILE (bisa diulang + scroll)"),
+    ("pos_video",      "H · Video pertama",       True,
+     "VIDEO PERTAMA DI DAFTAR FILE (diklik, lalu Shift+panah bawah)"),
+    ("pos_bebas2",     "H2 · Klik bebas 2",       True,
+     "TOMBOL 'BUKA/OPEN' / KLIK BEBAS SETELAH VIDEO TERPILIH"),
+    ("pos_edit",       "I1 · EDIT baris-1",       True,
      "TOMBOL 'EDIT' PADA BARIS VIDEO TERATAS"),
-    ("pos_judul",      "C · Kotak Judul video", True,
-     "KOTAK 'JUDUL VIDEO' (saat editor terbuka)"),
-    ("pos_konfirmasi", "D · Tombol Konfirmasi", True,
-     "TOMBOL 'KONFIRMASI' (saat editor terbuka)"),
-    ("pos_kirim",      "E · Tombol Kirim",      True,
-     "TOMBOL 'KIRIM' (halaman sudah discroll ke bawah)"),
-    ("pos_jadwal",     "F · Radio Jadwalkan",   False,
-     "RADIO 'JADWALKAN RILIS'"),
-    ("pos_negara",     "G · Dropdown Negara",   False,
-     "DROPDOWN 'NEGARA'"),
-    ("pos_indonesia",  "H · Item Indonesia",    False,
-     "ITEM 'INDONESIA' DI DAFTAR DROPDOWN NEGARA"),
-    ("pos_batal",      "I · Batal (opsional)",  False,
-     "TOMBOL 'BATAL' (tutup editor video terakhir)"),
+    ("pos_judul",      "I2 · Kotak caption baris-1", True,
+     "KOTAK CAPTION / JUDUL PADA BARIS TERATAS (saat editor terbuka)"),
+    ("pos_konfirmasi", "I3 · Konfirmasi (opsional)", False,
+     "TOMBOL 'KONFIRMASI' BARIS TERATAS — KOSONGKAN bila letaknya "
+     "sama dengan tombol EDIT (I1)"),
+    ("pos_submit",     "J · Tombol SUBMIT",       True,
+     "TOMBOL 'SUBMIT / KIRIM' (halaman sudah discroll ke bawah)"),
 ]
 POS_KUNCI = [p[0] for p in POSISI_DEF]
 POS_WAJIB = [p[0] for p in POSISI_DEF if p[2]]
@@ -168,6 +196,53 @@ def daftar_video(folder):
     return hasil
 
 
+def parse_tanggal(teks):
+    """Rapikan '2026-09-10 02:05:01' (detik boleh dilewat).
+
+    Kembalikan string format '%Y-%m-%d %H:%M:%S',
+    atau None bila formatnya salah.
+    """
+    teks = (teks or "").strip()
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.datetime.strptime(
+                teks, fmt).strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+    return None
+
+
+def cari_di_layar(gambar_path, cx, cy, radius, kemiripan=0.8):
+    """Cari gambar referensi di layar dalam RADIUS piksel dari titik
+    acuan (cx, cy) — dipakai untuk memilih negara lewat gambar.
+
+    Kembalikan (x, y, skor) titik tengah kecocokan terbaik,
+    atau None bila tidak ketemu / OpenCV tidak tersedia.
+    """
+    if not CV_OK:
+        return None
+    try:
+        tpl = cv2.imread(gambar_path)
+        if tpl is None:
+            return None
+        th, tw = tpl.shape[:2]
+        r = max(int(radius), tw // 2 + 20, th // 2 + 20)
+        left = max(0, int(cx) - r)
+        top = max(0, int(cy) - r)
+        grab = ImageGrab.grab(bbox=(left, top, int(cx) + r, int(cy) + r))
+        layar = np.array(grab)[:, :, ::-1].copy()   # RGB -> BGR
+        if layar.shape[0] < th or layar.shape[1] < tw:
+            return None
+        hasil = cv2.matchTemplate(layar, tpl, cv2.TM_CCOEFF_NORMED)
+        _mn, skor, _mnloc, lok = cv2.minMaxLoc(hasil)
+        if skor >= kemiripan:
+            return (left + lok[0] + tw // 2,
+                    top + lok[1] + th // 2, skor)
+    except Exception:
+        return None
+    return None
+
+
 class CutUploaderApp:
     def __init__(self, root):
         self.root = root
@@ -178,7 +253,7 @@ class CutUploaderApp:
 
         self.stop_event = threading.Event()
         self.running = False
-        self._f8 = False  # penanda lanjut dari jeda jadwal (F8)
+        self.gambar_ref = ""  # path gambar referensi negara (pencarian C)
 
         # ---- data browser: satu entri per browser ----
         # {"nama": str, "folder": str,
@@ -228,6 +303,20 @@ class CutUploaderApp:
             ent.insert(0, initial)
         return ent
 
+    def _field_mini(self, parent, label, initial="", width=7):
+        """Entry kecil sebaris (untuk angka: radius, jumlah klik, dll)."""
+        tk.Label(parent, text=label, bg=C_CARD, fg=C_MUTED,
+                 font=F_S).pack(side="left")
+        ent = tk.Entry(parent, bg=C_ENTRY, fg=C_TEXT,
+                       insertbackground=C_TEXT, relief="flat",
+                       font=F_N, width=width, justify="center",
+                       highlightthickness=1, highlightbackground=C_LINE,
+                       highlightcolor=C_ACCENT)
+        ent.pack(side="left", ipady=4, padx=(4, 10))
+        if initial:
+            ent.insert(0, initial)
+        return ent
+
     def _btn(self, parent, text, cmd, bg=C_ENTRY, fg=C_TEXT,
              font=("Segoe UI", 9, "bold"), padx=0):
         b = tk.Button(parent, text=text, command=cmd, bg=bg, fg=fg,
@@ -264,7 +353,8 @@ class CutUploaderApp:
         tk.Label(head, text="CUTUPLOADER PRO", bg=C_BG, fg=C_ACCENT,
                  font=F_TITLE).pack(anchor="w")
         tk.Label(head, text="Uploader batch otomatis CutMotions (Kwai) — "
-                            "Tambah video → Jadwal → Caption (Edit) → Kirim",
+                            "Jadwal → Tambah video (Shift+↓) → Caption → "
+                            "Submit",
                  bg=C_BG, fg=C_MUTED, font=F_SUB).pack(anchor="w")
 
         # ----- Area isi yang bisa digulir (scroll) -----
@@ -375,6 +465,10 @@ class CutUploaderApp:
 
         # ============ 3. POSISI KLIK DI SITUS ============
         c3 = self._card("3. POSISI KLIK DI SITUS (khusus browser ini)")
+        self.var_skip_jadwal = tk.BooleanVar(value=False)
+        self._check(c3, "Lewati langkah JADWAL (A-E) — langsung ke "
+                        "'Tambah video' (kalau rilisnya tidak dijadwalkan)",
+                    self.var_skip_jadwal)
         self.lbl_pos = {}
         self.btn_pos = {}
         for kunci, label, wajib, _ket in POSISI_DEF:
@@ -382,7 +476,7 @@ class CutUploaderApp:
             row.pack(fill="x", pady=(3, 0))
             tk.Label(row, text=label, bg=C_CARD,
                      fg=C_TEXT if wajib else C_MUTED,
-                     font=("Segoe UI", 9), width=22,
+                     font=("Segoe UI", 9), width=26,
                      anchor="w").pack(side="left")
             self.btn_pos[kunci] = tk.Button(
                 row, text="AMBIL", command=lambda k=kunci:
@@ -403,29 +497,124 @@ class CutUploaderApp:
                                            font=("Segoe UI", 8),
                                            width=13, anchor="w")
             self.lbl_pos[kunci].pack(side="left")
+
+            # ---- kontrol tambahan di bawah slot tertentu ----
+            if kunci == "pos_pilih_neg":
+                # C: pilih negara — klik biasa atau pencarian gambar
+                sub = tk.Frame(c3, bg=C_CARD)
+                sub.pack(fill="x", padx=(26, 0))
+                self.var_gambar = tk.BooleanVar(value=False)
+                self._check(sub, "Pilih negara pakai PENCARIAN GAMBAR — "
+                                 "cari potongan layar (mis. tulisan "
+                                 "'Indonesia') dalam radius, lalu diklik",
+                            self.var_gambar)
+                sub2 = tk.Frame(sub, bg=C_CARD)
+                sub2.pack(fill="x", pady=(2, 0))
+                self._btn(sub2, "PILIH GAMBAR...", self._pilih_gambar_ref)
+                self.lbl_gambar = tk.Label(sub2, text="(belum ada gambar)",
+                                           bg=C_CARD, fg=C_YELLOW,
+                                           font=F_S, anchor="w")
+                self.lbl_gambar.pack(side="left", padx=(6, 0))
+                sub3 = tk.Frame(sub, bg=C_CARD)
+                sub3.pack(fill="x", pady=(2, 0))
+                self.ent_radius = self._field_mini(
+                    sub3, "RADIUS CARI (piksel):", "300", width=7)
+                self.ent_kemiripan = self._field_mini(
+                    sub3, "KEMIRIPAN (0.50-0.99):", "0.80", width=7)
+                self._btn(sub3, "TES CARI", self._tes_cari, fg=C_BLUE)
+            elif kunci == "pos_tanggal":
+                # D: tanggal & jam rilis diketik otomatis
+                sub = tk.Frame(c3, bg=C_CARD)
+                sub.pack(fill="x", padx=(26, 0))
+                self.ent_tanggal = self._field(
+                    sub, "TANGGAL & JAM UPLOAD — FORMAT: "
+                         "2026-09-10 02:05:01",
+                    "2026-09-10 02:05:01")
+            elif kunci == "pos_bebas1":
+                # G: klik bebas berulang + scroll
+                sub = tk.Frame(c3, bg=C_CARD)
+                sub.pack(fill="x", padx=(26, 0))
+                self.ent_klik_bebas1 = self._field_mini(
+                    sub, "JUMLAH KLIK (0-500):", "2", width=7)
+                self.ent_scroll_bebas1 = self._field_mini(
+                    sub, "JUMLAH SCROLL (0-50):", "0", width=7)
+                tk.Label(sub, text="ARAH:", bg=C_CARD, fg=C_MUTED,
+                         font=F_S).pack(side="left")
+                self.arah_scroll = tk.StringVar(value="Turun")
+                om = tk.OptionMenu(sub, self.arah_scroll,
+                                   "Turun", "Naik")
+                om.configure(bg=C_ENTRY, fg=C_TEXT, font=F_S,
+                             relief="flat", bd=0, highlightthickness=0,
+                             activebackground=C_LINE,
+                             activeforeground=C_TEXT, cursor="hand2")
+                om["menu"].configure(bg=C_ENTRY, fg=C_TEXT)
+                om.pack(side="left")
+            elif kunci == "pos_bebas2":
+                # H2: jumlah klik bebas kedua
+                sub = tk.Frame(c3, bg=C_CARD)
+                sub.pack(fill="x", padx=(26, 0))
+                self.ent_klik_bebas2 = self._field_mini(
+                    sub, "JUMLAH KLIK (0-20):", "1", width=7)
+                tk.Label(sub, text="mis. tombol 'Buka' pada dialog file",
+                         bg=C_CARD, fg=C_MUTED,
+                         font=F_S).pack(side="left")
+            elif kunci == "pos_konfirmasi":
+                # I: jarak antar baris video
+                sub = tk.Frame(c3, bg=C_CARD)
+                sub.pack(fill="x", padx=(26, 0))
+                self.ent_jarak = self._field_mini(
+                    sub, "JARAK ANTAR BARIS VIDEO (piksel):", "85",
+                    width=7)
+                tk.Label(sub, text="caption mengalir ke baris berikutnya: "
+                                   "5 video = 5x, 20 video = 20x",
+                         bg=C_CARD, fg=C_MUTED,
+                         font=F_S, wraplength=360,
+                         justify="left").pack(side="left")
+            elif kunci == "pos_submit":
+                # J: jumlah klik + submit otomatis
+                sub = tk.Frame(c3, bg=C_CARD)
+                sub.pack(fill="x", padx=(26, 0))
+                self.ent_klik_submit = self._field_mini(
+                    sub, "JUMLAH KLIK (1-10):", "1", width=7)
+                self.kirim_var = tk.BooleanVar(value=True)
+                self._check(sub, "Klik SUBMIT otomatis di akhir "
+                                 "(matikan kalau mau cek dulu manual)",
+                            self.kirim_var)
         self.lbl_ambil = tk.Label(c3, text="", bg=C_CARD, fg=C_YELLOW,
                                   font=F_S, anchor="w", wraplength=560,
                                   justify="left")
         self.lbl_ambil.pack(fill="x", pady=(6, 0))
         tk.Label(c3, text="Ambil posisi = klik AMBIL, lalu dalam 5 detik "
-                          "arahkan mouse ke target di browser dan diamkan. "
-                          "Kondisi halaman saat mengambil:\n"
-                          "• A — halaman Rilis karya seperti biasa.\n"
-                          "• B — baris video TERATAS dalam keadaan TERTUTUP "
-                          "(tombol Edit terlihat di kanan).\n"
-                          "• C & D — baris teratas TERBUKA (klik dulu Edit-nya "
-                          "secara manual): arahkan ke kotak 'Judul video' dan "
-                          "tombol 'Konfirmasi'.\n"
-                          "• E — scroll halaman sampai BAWAH (tombol Kirim "
-                          "terlihat).\n"
-                          "• F/G/H — hanya untuk jadwal OTOMATIS (H diambil "
-                          "saat dropdown negara sedang terbuka).\n"
-                          "• I — hanya kalau setelah tambah video editor-nya "
-                          "terbuka sendiri; kalau tidak, kosongkan saja.\n"
-                          "Trik: setelah Konfirmasi, baris video berikutnya "
-                          "naik ke posisi yang sama — jadi satu set posisi "
-                          "B/C/D dipakai berulang untuk semua video.\n"
-                          "Penting: jangan pindahkan / resize jendela browser "
+                          "arahkan mouse ke target di browser dan "
+                          "diamkan. Urutan otomatis saat MULAI:\n"
+                          "A jadwal → B negara → C pilih negara → "
+                          "D tanggal (diketik otomatis) → E OKE → F tambah "
+                          "video → G klik/scroll → H pilih video "
+                          "(Shift+↓) → H2 Buka → I caption per baris → "
+                          "J Submit.\n"
+                          "Kondisi halaman saat mengambil posisi:\n"
+                          "• A — halaman Rilis karya, tombol 'Jadwal "
+                          "rilis' terlihat.\n"
+                          "• B/C — dialog jadwal terbuka: B saat dropdown "
+                          "negara TERTUTUP; C saat daftar negara TERBUKA "
+                          "(kalau pakai pencarian gambar, C boleh titik "
+                          "mana pun dekat daftar; gambar referensinya "
+                          "potongan layar tulisan 'Indonesia').\n"
+                          "• D & E — form/kalender tanggal terlihat.\n"
+                          "• F, G, H — dialog pilih file Windows terbuka "
+                          "(H = video pertama di daftar file).\n"
+                          "• H2 — tombol 'Buka' pada dialog file.\n"
+                          "• I1 — daftar video di situs, baris teratas "
+                          "TERTUTUP; I2/I3 — baris teratas TERBUKA (klik "
+                          "dulu Edit-nya manual). Kalau Konfirmasi "
+                          "letaknya sama dengan Edit, biarkan I3 belum "
+                          "diatur.\n"
+                          "• J — scroll halaman sampai BAWAH (tombol "
+                          "Submit terlihat).\n"
+                          "PENTING: semua baris video harus terlihat di "
+                          "layar saat fase caption — kecilkan zoom "
+                          "browser (Ctrl + minus) bila 20 video tidak "
+                          "muat. Jangan pindahkan/resize jendela browser "
                           "setelah posisi diambil. Posisi tersimpan per "
                           "browser.",
                  bg=C_CARD, fg=C_MUTED, font=F_S, wraplength=560,
@@ -448,56 +637,21 @@ class CutUploaderApp:
         self.ent_mundur = self._field(f1, "MUNDUR SEBELUM MULAI", "5")
         self.ent_dialog = self._field(f2, "JEDA BUKA DIALOG/EDITOR", "2")
         self.ent_langkah = self._field(f3, "JEDA ANTAR LANGKAH", "1")
-        self.ent_tunggu = self._field(f4, "TUNGGU UPLOAD PER VIDEO", "60")
+        self.ent_tunggu = self._field(f4, "TUNGGU UPLOAD PER VIDEO (x "
+                                          "jumlah video)", "60")
         tk.Label(c4, text="MUNDUR = persiapan sebelum mulai.\n"
                           "JEDA BUKA DIALOG/EDITOR = tunggu dialog pilih file "
-                          "Windows terbuka / editor video terbuka.\n"
+                          "Windows / editor / dropdown terbuka.\n"
                           "JEDA ANTAR LANGKAH = jeda klik-ketik di dalam "
                           "situs.\nTUNGGU UPLOAD PER VIDEO = waktu menunggu "
-                          "satu video selesai terupload sebelum menambah "
-                          "video berikutnya (naikkan bila video berukuran "
-                          "besar / internet lambat).",
+                          "satu video selesai terupload; total menunggu = "
+                          "nilai ini dikali jumlah video (naikkan bila video "
+                          "berukuran besar / internet lambat).",
                  bg=C_CARD, fg=C_MUTED, font=F_S, wraplength=560,
                  justify="left").pack(fill="x", pady=(6, 0))
 
-        # ============ 5. JADWAL RILIS & KIRIM ============
-        c5 = self._card("5. JADWAL RILIS & KIRIM")
-        self.mode_jadwal = tk.StringVar(value="manual")
-        rb1 = tk.Radiobutton(
-            c5, text="Jadwal saya atur sendiri (sebelum mulai, atau saat "
-                     "jeda F8)", variable=self.mode_jadwal, value="manual",
-            bg=C_CARD, fg=C_TEXT, activebackground=C_CARD,
-            activeforeground=C_TEXT, selectcolor=C_ENTRY, font=F_S,
-            bd=0, highlightthickness=0, cursor="hand2", anchor="w",
-            justify="left", wraplength=540)
-        rb1.pack(fill="x")
-        rb2 = tk.Radiobutton(
-            c5, text="Otomatis klik: radio 'Jadwalkan rilis' + Negara "
-                     "Indonesia (butuh posisi F, G, H)",
-            variable=self.mode_jadwal, value="otomatis",
-            bg=C_CARD, fg=C_TEXT, activebackground=C_CARD,
-            activeforeground=C_TEXT, selectcolor=C_ENTRY, font=F_S,
-            bd=0, highlightthickness=0, cursor="hand2", anchor="w",
-            justify="left", wraplength=540)
-        rb2.pack(fill="x", pady=(2, 0))
-        self.f8_var = tk.BooleanVar(value=True)
-        self._check(c5, "Jeda F8 sebelum fase caption (atur Zona waktu & "
-                        "Waktu rilis di browser, lalu tekan F8 untuk "
-                        "lanjut)", self.f8_var)
-        self.kirim_var = tk.BooleanVar(value=True)
-        self._check(c5, "Klik tombol 'Kirim' otomatis di akhir "
-                        "(matikan kalau mau cek dulu secara manual)",
-                    self.kirim_var)
-        tk.Label(c5, text="Isi halaman 'Bublikasikan aturan': pilih "
-                          "'Jadwalkan rilis', Negara = Indonesia, lalu "
-                          "Zona waktu & Waktu rilis (tanggal-jam). Zona & "
-                          "tanggal paling aman diisi saat jeda F8 karena "
-                          "kalendernya sulit diklik otomatis.",
-                 bg=C_CARD, fg=C_MUTED, font=F_S, wraplength=560,
-                 justify="left").pack(fill="x", pady=(6, 0))
-
-        # ============ 6. STATUS ============
-        c6 = self._card("6. STATUS")
+        # ============ 5. STATUS ============
+        c6 = self._card("5. STATUS")
         self.lbl_status = tk.Label(
             c6, text="● Siap — buka situs (Versi lama → Rilis karya), "
                      "ambil posisi, lalu tekan F6",
@@ -535,8 +689,7 @@ class CutUploaderApp:
         # ----- Footer -----
         tk.Label(self.root,
                  text="F6 = Mulai   |   F7 / ESC = Berhenti   |   "
-                      "F8 = Lanjut dari jeda jadwal   |   Pengaturan "
-                      "tersimpan otomatis",
+                      "Pengaturan tersimpan otomatis",
                  bg=C_BG, fg=C_MUTED, font=F_S).pack(side="bottom", pady=8)
 
     # ================== HOTKEY GLOBAL ==================
@@ -546,8 +699,6 @@ class CutUploaderApp:
                 self.root.after(0, self._start)
             elif key in (kb_mod.Key.f7, kb_mod.Key.esc):
                 self.root.after(0, self._stop)
-            elif key == kb_mod.Key.f8:
-                self._f8 = True
         except Exception:
             pass
 
@@ -774,6 +925,86 @@ class CutUploaderApp:
         except Exception:
             pass
 
+    # ================== GAMBAR REFERENSI NEGARA ==================
+    def _pilih_gambar_ref(self):
+        """Pilih potongan layar sebagai gambar referensi negara (C)."""
+        f = filedialog.askopenfilename(
+            title="Pilih gambar referensi (potongan layar tulisan "
+                  "'Indonesia')",
+            filetypes=[("Gambar", "*.png *.jpg *.jpeg *.bmp"),
+                       ("Semua file", "*.*")])
+        if f:
+            self.gambar_ref = f
+            self.lbl_gambar.config(
+                text=os.path.basename(f) + "  (siap)", fg=C_ACCENT)
+            self._save_settings()
+
+    def _tes_cari(self):
+        """Tes pencarian gambar negara tanpa menjalankan seluruh alur."""
+        if not PYNPUT_OK:
+            messagebox.showerror(APP_NAME, "Library pynput belum terpasang.")
+            return
+        if not self.browsers:
+            messagebox.showinfo(APP_NAME,
+                                "Daftarkan dulu minimal satu browser.")
+            return
+        if not CV_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "opencv-python belum terpasang — pencarian gambar tidak "
+                "bisa dipakai.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install opencv-python")
+            return
+        if not self.gambar_ref or not os.path.isfile(self.gambar_ref):
+            messagebox.showinfo(APP_NAME,
+                                "Pilih dulu gambar referensinya "
+                                "(PILIH GAMBAR).")
+            return
+        pos = self.browsers[self.aktif].get("pos_pilih_neg")
+        if not pos:
+            messagebox.showinfo(APP_NAME,
+                                "Atur dulu posisi C sebagai titik acuan "
+                                "pencarian (klik AMBIL pada C).")
+            return
+        try:
+            radius = max(50, min(2000, int(self.ent_radius.get().strip()
+                                           or "300")))
+        except ValueError:
+            radius = 300
+        try:
+            mirip = float(str(self.ent_kemiripan.get()).replace(",", ".")
+                          or "0.8")
+            mirip = max(0.5, min(0.99, mirip))
+        except ValueError:
+            mirip = 0.8
+
+        def kerja():
+            hasil = cari_di_layar(self.gambar_ref, pos[0], pos[1],
+                                  radius, mirip)
+
+            def lapor():
+                if hasil:
+                    x, y, skor = hasil
+                    try:
+                        self.mouse.position = (x, y)
+                    except Exception:
+                        pass
+                    self.lbl_ambil.config(
+                        text="TES: gambar KETEMU di ({}, {}) — kemiripan "
+                             "{:.0%}. Mouse dipindah ke sana "
+                             "(tidak diklik).".format(x, y, skor),
+                        fg=C_ACCENT)
+                else:
+                    self.lbl_ambil.config(
+                        text="TES: gambar TIDAK ketemu. Coba: perbesar "
+                             "RADIUS, turunkan KEMIRIPAN (mis. 0.70), atau "
+                             "potong ulang gambar referensi persis "
+                             "sesuai tampilan di layar.",
+                        fg=C_RED)
+            self.root.after(0, lapor)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
     # ================== FOLDER, JUMLAH, CAPTION ==================
     def _pilih_folder(self):
         folder = filedialog.askdirectory(title="Pilih folder video untuk "
@@ -865,9 +1096,20 @@ class CutUploaderApp:
             "jeda_langkah": self.ent_langkah.get().strip(),
             "tunggu": self.ent_tunggu.get().strip(),
             "skip": bool(self.skip_var.get()),
-            "mode_jadwal": self.mode_jadwal.get(),
-            "jeda_f8": bool(self.f8_var.get()),
+            "skip_jadwal": bool(self.var_skip_jadwal.get()),
+            "pakai_gambar": bool(self.var_gambar.get()),
+            "gambar": self.gambar_ref,
+            "radius": self.ent_radius.get().strip(),
+            "kemiripan": self.ent_kemiripan.get().strip(),
+            "tanggal": self.ent_tanggal.get().strip(),
+            "klik_bebas1": self.ent_klik_bebas1.get().strip(),
+            "scroll_bebas1": self.ent_scroll_bebas1.get().strip(),
+            "arah_scroll": self.arah_scroll.get(),
+            "klik_bebas2": self.ent_klik_bebas2.get().strip(),
+            "jarak_baris": self.ent_jarak.get().strip(),
+            "klik_submit": self.ent_klik_submit.get().strip(),
             "auto_kirim": bool(self.kirim_var.get()),
+            "caption_only": False,
         }
 
     def _start(self):
@@ -910,31 +1152,124 @@ class CutUploaderApp:
                 return
             jumlah = MAX_BATCH
         folder = snap["folder"]
-        if not folder or not os.path.isdir(folder):
-            messagebox.showwarning(APP_NAME,
-                                   "Folder video belum dipilih atau tidak "
-                                   "ada:\n" + (folder or "(kosong)"))
-            return
-        # ---- posisi wajib ----
-        for kunci, label, wajib, _ket in POSISI_DEF:
-            if wajib and not snap["browser"].get(kunci):
+        caption_only = bool(snap.get("caption_only"))
+        if not caption_only:
+            if not folder or not os.path.isdir(folder):
                 messagebox.showwarning(
                     APP_NAME,
-                    "Posisi {} belum diatur.\n\n"
-                    "Lihat petunjuk di bagian 3, lalu klik AMBIL.".format(
-                        label))
+                    "Folder video belum dipilih atau tidak ada:\n"
+                    + (folder or "(kosong)"))
                 return
-        # ---- posisi jadwal otomatis ----
-        if snap["mode_jadwal"] == "otomatis":
-            for kunci in ("pos_jadwal", "pos_negara", "pos_indonesia"):
+            # ---- posisi wajib sesuai alur A-J ----
+            lewati_jadwal = snap["skip_jadwal"]
+            slot_jadwal = ("pos_jadwal", "pos_negara", "pos_pilih_neg",
+                           "pos_tanggal", "pos_oke")
+            for kunci, label, wajib, _ket in POSISI_DEF:
+                if not wajib:
+                    continue
+                if lewati_jadwal and kunci in slot_jadwal:
+                    continue
+                if kunci == "pos_submit" and not snap["auto_kirim"]:
+                    continue
                 if not snap["browser"].get(kunci):
                     messagebox.showwarning(
                         APP_NAME,
-                        "Mode jadwal OTOMATIS butuh posisi F (Radio "
-                        "Jadwalkan), G (Dropdown Negara) dan H (Item "
-                        "Indonesia).\n\nAmbil dulu posisinya, atau ganti "
-                        "mode ke 'saya atur sendiri'.")
+                        "Posisi {} belum diatur.\n\n"
+                        "Lihat petunjuk di bagian 3, lalu klik AMBIL."
+                        .format(label))
                     return
+            # ---- pencarian gambar negara (C) ----
+            if snap["pakai_gambar"]:
+                if not snap["gambar"] or not os.path.isfile(snap["gambar"]):
+                    messagebox.showwarning(
+                        APP_NAME,
+                        "Pencarian gambar aktif tapi gambar referensi "
+                        "belum dipilih.\n\nKlik 'PILIH GAMBAR' di bagian 3 "
+                        "(potongan layar tulisan negaranya).")
+                    return
+                if not CV_OK:
+                    if not messagebox.askyesno(
+                            APP_NAME,
+                            "opencv-python belum terpasang sehingga "
+                            "pencarian gambar tidak bisa dipakai.\n\n"
+                            "Lanjut dengan KLIK BIASA di titik C?"):
+                        return
+                    snap["pakai_gambar"] = False
+            # ---- tanggal-jam rilis (D) ----
+            tgl = parse_tanggal(snap["tanggal"])
+            if tgl is None:
+                messagebox.showwarning(
+                    APP_NAME,
+                    "Format TANGGAL & JAM UPLOAD salah.\n\nContoh yang "
+                    "benar:\n  2026-09-10 02:05:01")
+                return
+            snap["tanggal"] = tgl
+        else:
+            # mode lanjut-caption: cukup posisi I1 & I2 (+ J bila otomatis)
+            for kunci in ("pos_edit", "pos_judul"):
+                if not snap["browser"].get(kunci):
+                    messagebox.showwarning(
+                        APP_NAME,
+                        "Mode lanjut-caption butuh posisi I1 (Edit) dan "
+                        "I2 (Kotak caption).\n\nAmbil dulu di bagian 3.")
+                    return
+            if snap["auto_kirim"] and not snap["browser"].get("pos_submit"):
+                messagebox.showwarning(
+                    APP_NAME,
+                    "Klik SUBMIT otomatis aktif tapi posisi J belum "
+                    "diatur.\n\nAmbil dulu posisinya, atau matikan "
+                    "centang 'Klik SUBMIT otomatis'.")
+                return
+        # ---- angka pelengkap alur ----
+        try:
+            klik_b1 = int(snap["klik_bebas1"])
+            scroll_b1 = int(snap["scroll_bebas1"])
+            klik_b2 = int(snap["klik_bebas2"])
+            jarak = int(snap["jarak_baris"])
+            klik_sub = int(snap["klik_submit"])
+        except ValueError:
+            messagebox.showwarning(
+                APP_NAME,
+                "JUMLAH KLIK / SCROLL / JARAK ANTAR BARIS harus diisi "
+                "dengan angka yang benar.")
+            return
+        if not 0 <= klik_b1 <= 500:
+            messagebox.showwarning(APP_NAME,
+                                   "Jumlah klik G harus 0-500.")
+            return
+        if not 0 <= scroll_b1 <= 50:
+            messagebox.showwarning(APP_NAME,
+                                   "Jumlah scroll G harus 0-50.")
+            return
+        if not 0 <= klik_b2 <= 20:
+            messagebox.showwarning(APP_NAME,
+                                   "Jumlah klik H2 harus 0-20.")
+            return
+        if not 10 <= jarak <= 2000:
+            messagebox.showwarning(
+                APP_NAME, "Jarak antar baris harus 10-2000 piksel.")
+            return
+        if not 1 <= klik_sub <= 10:
+            messagebox.showwarning(APP_NAME,
+                                   "Jumlah klik J harus 1-10.")
+            return
+        snap["klik_bebas1"] = klik_b1
+        snap["scroll_bebas1"] = scroll_b1
+        snap["klik_bebas2"] = klik_b2
+        snap["jarak_baris"] = jarak
+        snap["klik_submit"] = klik_sub
+        if snap["pakai_gambar"]:
+            try:
+                radius = max(50, min(2000, int(snap["radius"] or "300")))
+            except ValueError:
+                radius = 300
+            try:
+                mirip = max(0.5, min(0.99, float(
+                    str(snap["kemiripan"]).replace(",", ".") or "0.8")))
+            except ValueError:
+                mirip = 0.8
+            snap["radius"] = radius
+            snap["kemiripan"] = mirip
         if mundur < 0 or mundur > 60:
             messagebox.showwarning(APP_NAME,
                                    "MUNDUR SEBELUM MULAI harus 0-60 detik.")
@@ -948,27 +1283,49 @@ class CutUploaderApp:
             tunggu = 0
 
         # ---- susun daftar video yang mau diupload ----
-        semua = daftar_video(folder)
-        if not semua:
-            messagebox.showwarning(
-                APP_NAME, "Tidak ada file video (.mp4/.mov/dll) di folder "
-                          "ini.")
-            return
-        if snap["skip"]:
-            sudah = self._riwayat_browser()
-            semua = [f for f in semua if f not in sudah]
+        antrian = []
+        if not caption_only:
+            semua = daftar_video(folder)
             if not semua:
-                messagebox.showinfo(
-                    APP_NAME,
-                    "Semua video di folder ini sudah pernah terupload.\n\n"
-                    "Klik 'Bersihkan riwayat browser ini' bila mau "
-                    "mengulang dari awal.")
+                messagebox.showwarning(
+                    APP_NAME, "Tidak ada file video (.mp4/.mov/dll) di "
+                              "folder ini.")
                 return
-        antrian = semua[:jumlah]
+            if snap["skip"]:
+                sudah = self._riwayat_browser()
+                semua = [f for f in semua if f not in sudah]
+            if not semua:
+                riw = self.riwayat.get(self._kunci_riwayat(), [])
+                if riw and not messagebox.askyesno(
+                        APP_NAME,
+                        "Tidak ada video baru untuk diupload (semua sudah "
+                        "terupload / folder kosong setelah dilewati).\n\n"
+                        "Mau lanjut LANGSUNG KE FASE CAPTION untuk {} "
+                        "video terakhir? (jadwal & tambah video "
+                        "dilewati)".format(min(jumlah, len(riw)))):
+                    return
+                if riw:
+                    jumlah = min(jumlah, len(riw))
+                    snap["caption_only"] = True
+                    caption_only = True
+                else:
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "Tidak ada video untuk diproses.\n\nKlik 'Bersihkan "
+                        "riwayat browser ini' bila mau mengulang dari "
+                        "awal.")
+                    return
+            else:
+                antrian = semua[:jumlah]
 
         # ---- cek panjang caption ----
+        if caption_only:
+            riw = self.riwayat.get(self._kunci_riwayat(), [])
+            cek_caption = list(riw[-jumlah:])
+        else:
+            cek_caption = antrian
         terpanjang = 0
-        for f in antrian:
+        for f in cek_caption:
             terpanjang = max(terpanjang,
                              len(compose_caption(snap["caption"], f)))
         if terpanjang > JUDUL_MAX:
@@ -980,18 +1337,8 @@ class CutUploaderApp:
                         JUDUL_MAX, terpanjang)):
                 return
 
-        if snap["mode_jadwal"] == "manual" and not snap["jeda_f8"]:
-            if not messagebox.askyesno(
-                    APP_NAME,
-                    "Jadwal mode MANUAL tanpa jeda F8.\n"
-                    "Pastikan 'Jadwalkan rilis' + Negara Indonesia + Zona "
-                    "waktu + Waktu rilis SUDAH diatur di browser sebelum "
-                    "klik MULAI.\n\nLanjut?"):
-                return
-
         self._save_settings()
         self.stop_event.clear()
-        self._f8 = False
         self.running = True
         self.btn_start.config(state="disabled")
         self.btn_stop.config(state="normal")
@@ -1020,6 +1367,10 @@ class CutUploaderApp:
         time.sleep(0.2)
         self.mouse.click(Button.left, 1)
 
+    def _klik_off(self, pos, dy=0):
+        """Klik pada posisi (x, y + dy) — untuk baris video ke-n."""
+        self._klik((int(pos[0]), int(pos[1]) + int(dy)))
+
     # ================== MESIN OTOMATIS ==================
     def _worker(self, snap, antrian, jumlah, mundur, jeda_dialog,
                 jeda_langkah, tunggu):
@@ -1028,8 +1379,9 @@ class CutUploaderApp:
             pos = {k: tuple(snap["browser"][k]) for k in POS_KUNCI
                    if snap["browser"].get(k)}
             caption_dasar = snap["caption"]
-            mode_otomatis = snap["mode_jadwal"] == "otomatis"
             kunci = "{}||{}".format(bnama, snap["folder"].lower())
+            caption_only = bool(snap.get("caption_only"))
+            sukses = 0
 
             # ---- hitung mundur sebelum mulai ----
             if mundur > 0:
@@ -1037,141 +1389,208 @@ class CutUploaderApp:
                     if self.stop_event.is_set():
                         self._finish("Dibatalkan sebelum mulai.", warn=True)
                         return
-                    self._set_status(
-                        "Mulai dalam {} detik — buka halaman Rilis karya "
-                        "CutMotions di '{}' sekarang...".format(s, bnama),
-                        C_YELLOW)
+                    if caption_only:
+                        pesan = ("Lanjut CAPTION dalam {} detik — buka "
+                                 "halaman Rilis karya di '{}' sekarang...")
+                    else:
+                        pesan = ("Mulai dalam {} detik — buka halaman Rilis "
+                                 "karya CutMotions di '{}' sekarang...")
+                    self._set_status(pesan.format(s, bnama), C_YELLOW)
                     self._sleep(1.0)
 
             # =================================================
-            # FASE 1 — UPLOAD semua video (tombol Tambah video)
+            # FASE 1 — JADWAL RILIS (A → E)
             # =================================================
-            total = len(antrian)
-            sukses = 0
-            self._set_status(
-                "FASE 1/4 UPLOAD — menambahkan {} video ke '{}' "
-                "(jangan sentuh mouse/keyboard!)".format(total, bnama),
-                C_ACCENT)
-            for i, nama_file in enumerate(antrian):
-                if self.stop_event.is_set():
-                    break
-                path_lengkap = os.path.abspath(
-                    os.path.join(snap["folder"], nama_file))
-                self._set_progress(
-                    "FASE 1 UPLOAD {}/{}   |   {}".format(
-                        i + 1, total, nama_file))
+            if not caption_only:
+                if snap["skip_jadwal"]:
+                    self._set_status("Langkah JADWAL (A-E) dilewati sesuai "
+                                     "pengaturan.", C_YELLOW)
+                else:
+                    self._set_status(
+                        "FASE 1/3 JADWAL RILIS — klik tombol 'Jadwal "
+                        "rilis'... (jangan sentuh mouse/keyboard!)",
+                        C_ACCENT)
+                    self._klik(pos["pos_jadwal"])
+                    self._sleep(jeda_dialog)
 
-                # klik tombol "+ Tambah video" di situs
+                    if self.stop_event.is_set():
+                        self._finish("Dihentikan saat fase jadwal.",
+                                     warn=True)
+                        return
+                    self._set_status("Klik dropdown 'NEGARA'...", C_ACCENT)
+                    self._klik(pos["pos_negara"])
+                    self._sleep(jeda_dialog)
+
+                    # ---- C: pilih negara ----
+                    if self.stop_event.is_set():
+                        self._finish("Dihentikan sebelum memilih negara.",
+                                     warn=True)
+                        return
+                    if snap["pakai_gambar"]:
+                        hasil = None
+                        for percobaan in range(1, 4):
+                            self._set_status(
+                                "Cari gambar '{}' dalam radius {} px "
+                                "(percobaan {}/3)...".format(
+                                    os.path.basename(snap["gambar"]),
+                                    snap["radius"], percobaan), C_ACCENT)
+                            hasil = cari_di_layar(
+                                snap["gambar"],
+                                pos["pos_pilih_neg"][0],
+                                pos["pos_pilih_neg"][1],
+                                snap["radius"], snap["kemiripan"])
+                            if hasil:
+                                break
+                            self._sleep(jeda_dialog)
+                        if hasil:
+                            x, y, skor = hasil
+                            self._set_status(
+                                "Negara KETEMU di ({}, {}) — kemiripan "
+                                "{:.0%} — diklik.".format(x, y, skor),
+                                C_ACCENT)
+                            self._klik((x, y))
+                        else:
+                            self._set_status(
+                                "Gambar negara TIDAK ketemu 3x — pakai "
+                                "klik biasa di titik C.", C_YELLOW)
+                            self._klik(pos["pos_pilih_neg"])
+                    else:
+                        self._set_status("Klik pilihan negara...", C_ACCENT)
+                        self._klik(pos["pos_pilih_neg"])
+                    self._sleep(jeda_langkah)
+
+                    # ---- D: kolom tanggal + ketik tanggal-jam ----
+                    if self.stop_event.is_set():
+                        self._finish("Dihentikan sebelum mengisi tanggal.",
+                                     warn=True)
+                        return
+                    self._set_status(
+                        "Ketik tanggal-jam rilis: {}...".format(
+                            snap["tanggal"]), C_ACCENT)
+                    self._klik(pos["pos_tanggal"])
+                    time.sleep(0.3)
+                    with self.kb.pressed(Key.ctrl):
+                        self.kb.press("a")
+                        self.kb.release("a")
+                    time.sleep(0.15)
+                    self.kb.type(snap["tanggal"])
+                    self._sleep(jeda_langkah)
+
+                    # ---- E: OKE ----
+                    if self.stop_event.is_set():
+                        self._finish("Dihentikan sebelum klik OKE.",
+                                     warn=True)
+                        return
+                    self._set_status("Klik 'OKE'...", C_ACCENT)
+                    self._klik(pos["pos_oke"])
+                    self._sleep(jeda_langkah + 0.5)
+
+            # =================================================
+            # FASE 2 — TAMBAH & PILIH VIDEO (F → H2)
+            # =================================================
+            if not caption_only:
+                if self.stop_event.is_set():
+                    self._finish("Dihentikan.", warn=True)
+                    return
                 self._set_status(
-                    "[{}/{}] Klik '+ Tambah video'...".format(
-                        i + 1, total), C_ACCENT)
+                    "FASE 2/3 TAMBAH VIDEO — klik '+ Tambah video'...",
+                    C_ACCENT)
                 self._klik(pos["pos_tambah"])
                 self._sleep(jeda_dialog)
 
-                # ketik path file di dialog Windows + Enter
+                # ---- G: klik bebas 1 + scroll ----
                 if self.stop_event.is_set():
-                    break
-                self._set_status(
-                    "[{}/{}] Memilih file: {}".format(
-                        i + 1, total, nama_file), C_ACCENT)
-                self.kb.type(path_lengkap)
-                time.sleep(0.15)
-                self.kb.press(Key.enter)
-                self.kb.release(Key.enter)
-                self._sleep(jeda_langkah + 0.5)
+                    self._finish(
+                        "Dihentikan setelah 'Tambah video'. Video belum "
+                        "masuk — aman diulang dari awal.", warn=True)
+                    return
+                n_klik1 = snap["klik_bebas1"]
+                n_scroll = snap["scroll_bebas1"]
+                if n_klik1 or n_scroll:
+                    self._set_status(
+                        "Klik bebas {}x + scroll {}x ({})...".format(
+                            n_klik1, n_scroll, snap["arah_scroll"]),
+                        C_ACCENT)
+                    arah = -3 if snap["arah_scroll"] == "Naik" else 3
+                    for _ in range(n_klik1):
+                        if self.stop_event.is_set():
+                            break
+                        self._klik(pos["pos_bebas1"])
+                        time.sleep(0.3)
+                    for _ in range(n_scroll):
+                        if self.stop_event.is_set():
+                            break
+                        try:
+                            self.mouse.scroll(0, arah)
+                        except Exception:
+                            pass
+                        time.sleep(0.3)
+                    self._sleep(jeda_langkah)
 
-                # tunggu proses upload video selesai
+                # ---- H: klik video pertama + Shift + panah bawah ----
                 if self.stop_event.is_set():
-                    break
-                end = time.time() + tunggu
+                    self._finish("Dihentikan di dialog pilih file.",
+                                 warn=True)
+                    return
+                self._set_status(
+                    "Klik video pertama + tahan SHIFT + panah bawah {}x "
+                    "(memilih {} video dari atas)...".format(
+                        max(0, jumlah - 1), jumlah), C_ACCENT)
+                self._klik(pos["pos_video"])
+                time.sleep(0.3)
+                if jumlah > 1:
+                    with self.kb.pressed(Key.shift):
+                        for _ in range(jumlah - 1):
+                            self.kb.press(Key.down)
+                            self.kb.release(Key.down)
+                            time.sleep(0.15)
+                self._sleep(jeda_langkah)
+
+                # ---- H2: klik bebas 2 (tombol Buka) ----
+                if self.stop_event.is_set():
+                    self._finish("Dihentikan sebelum klik Buka.", warn=True)
+                    return
+                self._set_status(
+                    "Klik bebas {}x (tombol 'Buka')...".format(
+                        snap["klik_bebas2"]), C_ACCENT)
+                for _ in range(snap["klik_bebas2"]):
+                    if self.stop_event.is_set():
+                        break
+                    self._klik(pos["pos_bebas2"])
+                    time.sleep(0.4)
+                self._sleep(jeda_langkah)
+
+                # ---- tunggu semua video selesai terupload ----
+                total_tunggu = max(0.0, tunggu * jumlah)
+                akhir = time.time() + total_tunggu
                 while not self.stop_event.is_set():
-                    sisa = end - time.time()
+                    sisa = akhir - time.time()
                     if sisa <= 0:
                         break
                     self._set_progress(
-                        "FASE 1 UPLOAD {}/{}   |   menunggu upload {}: "
-                        "{:.0f} dtk".format(i + 1, total, nama_file, sisa))
+                        "FASE 2 UPLOAD {} video   |   menunggu: "
+                        "{:.0f} dtk".format(jumlah, sisa))
                     time.sleep(min(0.5, sisa))
                 if self.stop_event.is_set():
-                    break
-
-                # catat riwayat (tersimpan instan)
-                self.riwayat.setdefault(kunci, [])
-                if nama_file not in self.riwayat[kunci]:
-                    self.riwayat[kunci].append(nama_file)
-                self._save_riwayat()
-                sukses += 1
-
-            if self.stop_event.is_set():
-                self._finish(
-                    "Dihentikan saat FASE UPLOAD. Tercatat {} video "
-                    "(riwayat otomatis). Jalankan F6 lagi untuk "
-                    "melanjutkan.".format(sukses), warn=True)
-                return
-
-            # =================================================
-            # FASE 1.5 — tutup editor video terakhir (opsional)
-            # =================================================
-            if "pos_batal" in pos:
-                self._set_status(
-                    "Menutup editor video terakhir (klik Batal)...",
-                    C_ACCENT)
-                self._klik(pos["pos_batal"])
-                self._sleep(jeda_langkah + 0.5)
-
-            # =================================================
-            # FASE 2 — JADWAL RILIS (opsional + jeda F8)
-            # =================================================
-            self._set_status("FASE 2/4 JADWAL RILIS — menggulir ke atas...",
-                             C_ACCENT)
-            self._scroll_top()
-            self._sleep(jeda_langkah)
-
-            if mode_otomatis and "pos_jadwal" in pos and \
-                    "pos_negara" in pos and "pos_indonesia" in pos:
-                self._set_status(
-                    "Klik radio 'Jadwalkan rilis' + Negara Indonesia...",
-                    C_ACCENT)
-                self._klik(pos["pos_jadwal"])
-                self._sleep(jeda_langkah)
-                self._klik(pos["pos_negara"])
-                self._sleep(jeda_dialog)
-                self._klik(pos["pos_indonesia"])
-                self._sleep(jeda_langkah)
-
-            if snap["jeda_f8"]:
-                self._f8 = False
-                self._set_status(
-                    "JEDA F8 — atur di browser: 'Jadwalkan rilis', "
-                    "Negara Indonesia, Zona waktu, dan Waktu rilis "
-                    "(tanggal-jam). Lalu tekan F8 untuk lanjut.",
-                    C_YELLOW)
-                t0 = time.time()
-                while not self.stop_event.is_set() and not self._f8:
-                    self._set_progress(
-                        "FASE 2 JADWAL   |   menunggu F8: {:.0f} dtk "
-                        "(F7/ESC = berhenti)".format(time.time() - t0))
-                    time.sleep(0.2)
-                if self.stop_event.is_set():
                     self._finish(
-                        "Dihentikan saat jeda jadwal. {} video sudah "
-                        "terupload & tercatat di riwayat.".format(sukses),
-                        warn=True)
+                        "Dihentikan saat menunggu upload. Cek dulu di "
+                        "situs: kalau video sudah masuk semua, jalankan "
+                        "F6 lagi — aplikasi menawarkan lanjut ke fase "
+                        "caption.", warn=True)
                     return
-            elif mode_otomatis:
-                self._set_status(
-                    "Jadwal: radio + negara sudah diklik. Zona waktu & "
-                    "Waktu rilis dianggap sudah diatur sebelumnya.",
-                    C_YELLOW)
 
-            if self.stop_event.is_set():
-                self._finish("Dihentikan.", warn=True)
-                return
+                # ---- catat riwayat (tersimpan instan) ----
+                self.riwayat.setdefault(kunci, [])
+                for nama_file in antrian:
+                    if nama_file not in self.riwayat[kunci]:
+                        self.riwayat[kunci].append(nama_file)
+                self._save_riwayat()
+                sukses = len(antrian)
 
             # =================================================
-            # FASE 3 — CAPTION per video (Edit → Judul → Konfirmasi)
+            # FASE 3 — CAPTION per baris (I) lalu SUBMIT (J)
             # =================================================
-            self._set_status("FASE 3/4 CAPTION — menggulir ke atas...",
+            self._set_status("FASE 3/3 CAPTION — menggulir ke atas...",
                              C_ACCENT)
             self._scroll_top()
             self._sleep(jeda_langkah)
@@ -1184,30 +1603,32 @@ class CutUploaderApp:
             else:
                 daftar_caption = list(antrian)
             n_cap = len(daftar_caption)
+            jarak = max(1, int(snap["jarak_baris"]))
             i = 0
 
             for i, nama_file in enumerate(daftar_caption):
                 if self.stop_event.is_set():
                     break
                 caption_final = compose_caption(caption_dasar, nama_file)
+                geser = i * jarak  # baris ke-i turun sejauh i x jarak
                 self._set_progress(
-                    "FASE 3 CAPTION {}/{}   |   {}".format(
-                        i + 1, n_cap, caption_final))
+                    "FASE 3 CAPTION {}/{} (baris {} | geser {} px)   |   "
+                    "{}".format(i + 1, n_cap, i + 1, geser, caption_final))
 
-                # klik tombol Edit pada baris video teratas
+                # klik tombol Edit pada baris video ke-i
                 self._set_status(
-                    "[{}/{}] Klik tombol Edit...".format(i + 1, n_cap),
-                    C_ACCENT)
-                self._klik(pos["pos_edit"])
+                    "[{}/{}] Klik tombol Edit (baris {})...".format(
+                        i + 1, n_cap, i + 1), C_ACCENT)
+                self._klik_off(pos["pos_edit"], geser)
                 self._sleep(jeda_dialog)
 
-                # klik kotak Judul video + ketik caption
+                # klik kotak caption baris ke-i + ketik caption
                 if self.stop_event.is_set():
                     break
                 self._set_status(
-                    "[{}/{}] Menulis judul: {}".format(
+                    "[{}/{}] Menulis caption: {}".format(
                         i + 1, n_cap, caption_final), C_ACCENT)
-                self._klik(pos["pos_judul"])
+                self._klik_off(pos["pos_judul"], geser)
                 time.sleep(0.3)
                 with self.kb.pressed(Key.ctrl):
                     self.kb.press("a")
@@ -1216,41 +1637,49 @@ class CutUploaderApp:
                 self.kb.type(caption_final)
                 self._sleep(jeda_langkah)
 
-                # klik tombol Konfirmasi
+                # klik tombol Konfirmasi baris ke-i
+                # (kalau I3 tidak diatur, klik lagi titik Edit —
+                #  letaknya sama persis dengan tombol Konfirmasi)
                 if self.stop_event.is_set():
                     break
+                titik_ok = pos.get("pos_konfirmasi", pos["pos_edit"])
                 self._set_status(
                     "[{}/{}] Klik Konfirmasi...".format(i + 1, n_cap),
                     C_ACCENT)
-                self._klik(pos["pos_konfirmasi"])
+                self._klik_off(titik_ok, geser)
                 self._sleep(jeda_langkah + 0.5)
 
             if self.stop_event.is_set():
                 self._finish(
-                    "Dihentikan saat FASE CAPTION ({}/{} judul selesai). "
-                    "Jalankan F6 lagi — caption diulang dari baris atas "
-                    "dan yang sudah jadi otomatis ditimpa sama.".format(
-                        i + 1, n_cap), warn=True)
+                    "Dihentikan saat FASE CAPTION ({}/{} caption selesai). "
+                    "Jalankan F6 lagi dan pilih 'lanjut ke fase caption' "
+                    "— caption diulang dari baris atas dan yang sudah "
+                    "jadi otomatis ditimpa sama.".format(i + 1, n_cap),
+                    warn=True)
                 return
 
             # =================================================
-            # FASE 4 — KIRIM
+            # J — SUBMIT
             # =================================================
-            if snap["auto_kirim"] and "pos_kirim" in pos:
+            if snap["auto_kirim"] and "pos_submit" in pos:
                 self._set_status(
-                    "FASE 4/4 KIRIM — menggulir ke bawah lalu klik "
-                    "Kirim...", C_ACCENT)
+                    "Klik SUBMIT {}x (halaman digulir ke bawah)...".format(
+                        snap["klik_submit"]), C_ACCENT)
                 self._scroll_bottom()
                 self._sleep(jeda_langkah + 0.5)
-                self._klik(pos["pos_kirim"])
+                for _ in range(snap["klik_submit"]):
+                    if self.stop_event.is_set():
+                        break
+                    self._klik(pos["pos_submit"])
+                    time.sleep(0.4)
                 self._finish(
-                    "Selesai! {} video: terupload, diberi caption, dan "
-                    "sudah diklik Kirim. Cek status rilis di situs.".format(
-                        n_cap))
+                    "Selesai! {} video: jadwal diatur, video ditambahkan "
+                    "(Shift+↓), caption ditulis per baris, dan SUBMIT "
+                    "sudah diklik. Cek status rilis di situs.".format(n_cap))
             else:
                 self._finish(
                     "Caption {} video selesai! Cek dulu di browser, lalu "
-                    "klik tombol 'Kirim' secara manual.".format(n_cap))
+                    "klik tombol 'Submit' secara manual.".format(n_cap))
         except Exception as e:
             self._finish("Terjadi error: {}".format(e), warn=True)
 
@@ -1282,8 +1711,18 @@ class CutUploaderApp:
             "jeda_langkah": self.ent_langkah.get(),
             "tunggu_upload": self.ent_tunggu.get(),
             "skip_uploaded": bool(self.skip_var.get()),
-            "mode_jadwal": self.mode_jadwal.get(),
-            "jeda_f8": bool(self.f8_var.get()),
+            "skip_jadwal": bool(self.var_skip_jadwal.get()),
+            "pakai_gambar": bool(self.var_gambar.get()),
+            "gambar_ref": self.gambar_ref,
+            "radius_cari": self.ent_radius.get(),
+            "kemiripan_cari": self.ent_kemiripan.get(),
+            "tanggal_jam": self.ent_tanggal.get(),
+            "klik_bebas1": self.ent_klik_bebas1.get(),
+            "scroll_bebas1": self.ent_scroll_bebas1.get(),
+            "arah_scroll": self.arah_scroll.get(),
+            "klik_bebas2": self.ent_klik_bebas2.get(),
+            "jarak_baris": self.ent_jarak.get(),
+            "klik_submit": self.ent_klik_submit.get(),
             "auto_kirim": bool(self.kirim_var.get()),
             "versi": APP_VERSION,
         }
@@ -1307,6 +1746,9 @@ class CutUploaderApp:
             self.browsers = [self._browser_baru("Browser 1")]
             return
         # ---- muat daftar browser (dengan sanitasi) ----
+        # Posisi hanya dimuat bila pengaturan berasal dari v3.0 —
+        # makna slot di versi lama sudah berubah sama sekali.
+        dari_v3 = str(data.get("versi", "")).startswith("3")
         bs = data.get("browsers")
         self.browsers = []
         if isinstance(bs, list):
@@ -1318,7 +1760,7 @@ class CutUploaderApp:
                     "folder": str(b.get("folder") or ""),
                 }
                 for kunci in POS_KUNCI:
-                    pos = b.get(kunci)
+                    pos = b.get(kunci) if dari_v3 else None
                     try:
                         entri[kunci] = [int(pos[0]), int(pos[1])] \
                             if pos else None
@@ -1339,6 +1781,14 @@ class CutUploaderApp:
             ("jeda_langkah", self.ent_langkah),
             ("tunggu_upload", self.ent_tunggu),
             ("tunggu", self.ent_tunggu),  # kompatibel pengaturan lama v1.0
+            ("tanggal_jam", self.ent_tanggal),
+            ("radius_cari", self.ent_radius),
+            ("kemiripan_cari", self.ent_kemiripan),
+            ("klik_bebas1", self.ent_klik_bebas1),
+            ("scroll_bebas1", self.ent_scroll_bebas1),
+            ("klik_bebas2", self.ent_klik_bebas2),
+            ("jarak_baris", self.ent_jarak),
+            ("klik_submit", self.ent_klik_submit),
         ]
         for key, ent in pasangan:
             val = data.get(key)
@@ -1346,10 +1796,15 @@ class CutUploaderApp:
                 ent.delete(0, "end")
                 ent.insert(0, str(val))
         self.skip_var.set(bool(data.get("skip_uploaded", True)))
-        self.mode_jadwal.set(
-            "otomatis" if data.get("mode_jadwal") == "otomatis"
-            else "manual")
-        self.f8_var.set(bool(data.get("jeda_f8", True)))
+        self.var_skip_jadwal.set(bool(data.get("skip_jadwal", False)))
+        self.var_gambar.set(bool(data.get("pakai_gambar", False)))
+        self.gambar_ref = str(data.get("gambar_ref") or "")
+        if self.gambar_ref and os.path.isfile(self.gambar_ref):
+            self.lbl_gambar.config(
+                text=os.path.basename(self.gambar_ref) + "  (siap)",
+                fg=C_ACCENT)
+        arah = str(data.get("arah_scroll") or "Turun")
+        self.arah_scroll.set(arah if arah in ("Turun", "Naik") else "Turun")
         self.kirim_var.set(bool(data.get("auto_kirim", True)))
         # ---- isi UI sesuai browser aktif ----
         self._refresh_browser_list(keep=self.aktif)
