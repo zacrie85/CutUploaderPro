@@ -1,77 +1,67 @@
-# CutUploader Pro
+# CutUploader Pro — Macro Edition (v4.0)
 
-**Uploader Video Batch Otomatis untuk CutMotions (Kwai)** — aplikasi desktop Windows dengan tema dark neon.
+Uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — tampilan editor makro ala **Jitbit Macro Recorder**, jadi **installer Windows** (tanpa Python), **jeda antar klik bisa diatur per langkah**, dan **pencarian gambar negara** yang diperbaiki total.
 
-Aplikasi ini mengikuti alur asli halaman CutMotions: **Jadwal rilis (Negara + tanggal-jam) → Tambah video batch (Shift+↓) → Caption per baris via Edit/Konfirmasi → Submit** — semuanya otomatis setelah kamu menekan F6.
+## Unduh (tanpa install Python)
+
+Dari [halaman Releases](../../releases) rilis **v4.0**:
+
+| File | Untuk apa |
+|---|---|
+| `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
+| `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
+| `CutUploaderPro-v4.0.zip` | Source + skrip build (untuk pengguna Python) |
+
+> Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
+
+Dibangun **otomatis oleh GitHub Actions** (Windows runner: PyInstaller + Inno Setup) setiap kali tag `v*` di-push — lihat `.github/workflows/build-windows.yml`.
+
+## Alur otomatis (urutan posisi A–J)
 
 ```
-Caption dasar : #dangdut
-Nama file     : melati.mp4
-Judul video   : #dangdut - melati   (otomatis!)
+F6 (setelah login manual → Versi lama → Rilis karya)
+
+A  Klik "Jadwal rilis"          F  Klik "+ Tambah video"
+B  Klik dropdown NEGARA         G  Klik bebas 0-500x / scroll
+C  Pilih negara (gambar/Klik)   H  Klik video + SHIFT + ↓ (5-20)
+D  Ketik tanggal-jam otomatis   H2 Klik bebas ("Buka")
+E  Klik "OKE"                   I  Edit → caption → Konfirmasi
+                                  (ulang per video, baris bergeser)
+                               J  Klik "SUBMIT"
 ```
 
-## Fitur (v3.0) — urutan posisi A–J
+Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya).
 
-| Slot | Otomatis |
-|---|---|
-| **A** | Klik tombol **Jadwal rilis/publikasi** |
-| **B** | Klik dropdown **NEGARA** |
-| **C** | Pilih negara — klik biasa **ATAU pencarian gambar referensi dalam radius** (mis. tulisan "Indonesia") dengan tombol **TES CARI** |
-| **D** | Klik kolom tanggal + **ketik tanggal-jam otomatis** — format bebas diisi, contoh `2026-09-10 02:05:01` |
-| **E** | Klik **OKE** |
-| **F** | Klik **+ Tambah video** |
-| **G** | Klik bebas **0–500x** di satu titik dan/atau **scroll 0–50x** (arah Turun/Naik) |
-| **H** | Klik video pertama + **tahan SHIFT + panah bawah** (jumlah−1)x → pilih 5–20 video sekaligus |
-| **H2** | Klik bebas (mis. tombol **Buka**) |
-| **I** | Caption per video: **Edit → kotak caption → ketik → Konfirmasi**, posisi klik **otomatis bergeser turun per baris** — 5 video = 5x, 20 video = 20x |
-| **J** | Klik **SUBMIT** (jumlah klik bisa diatur, bisa dimatikan) |
+## Fitur utama v4.0
 
-- **Pencarian gambar negara (C)**: potongan layar dicari di dalam **radius** dari titik acuan pakai OpenCV template matching — ada pengaturan **radius**, **kemiripan (0.50–0.99)**, dan tombol **TES CARI**. Tidak ketemu 3x? Otomatis fallback ke klik biasa, alur tidak berhenti.
-- **Tanggal-jam rilis (D)**: format `2026-09-10 02:05:01` (detik boleh dilewat), diketik otomatis ke kolom tanggal setelah diklik.
-- **Caption per baris (I)**: cukup atur posisi baris-1 + **JARAK ANTAR BARIS (piksel)** — aplikasi menghitung posisi baris 2, 3, ... sampai 20 sendiri.
-- **Multi-browser**: banyak browser — masing-masing punya **folder video** dan **13 slot posisi klik sendiri** (tersimpan otomatis).
-- **Batas situs dijaga**: maksimal **20 video** sekali jalan + peringatan judul melebihi **250 karakter**.
-- **Riwayat anti-dobel** + **lanjut ke fase caption saja** bila upload kemarin sudah selesai tapi caption belum.
-- **Hotkey global**: `F6` mulai, `F7`/`ESC` berhenti.
+- **UI ala Jitbit Macro Recorder** — toolbar Jalankan/Berhenti, tabel langkah A–J (kolom DETAIL, JEDA, ULANGI), panel *Properti Langkah* untuk baris terpilih, tema Windows klasik.
+- **Jeda bisa diatur**: `JEDA SEBELUM LANGKAH` per langkah (kolom JEDA), `JEDA ANTAR KLIK` per langkah (klik berulang G/H2/J, panah Shift di H), tombol *Terapkan ke semua langkah*, plus MUNDUR / JEDA DIALOG / TUNGGU UPLOAD global.
+- **Pencarian gambar diperbaiki**: multi-skala (tahan beda zoom 70–125%), pesan error yang jelas (skor kemiripan terbaik dilaporkan), dan alat **POTONG GAMBAR** (screenshot layar hidup → seret kotak → PNG 1:1) — menghilangkan penyebab error paling umum. OpenCV **ikut terbungkus** di EXE/Setup.
+- **Tanggal & jam otomatis** langkah D, format `2026-09-10 02:05:01` (detik opsional).
+- **Pilih video batch** langkah H: klik video pertama + tahan SHIFT + panah bawah otomatis.
+- **Caption per baris** langkah I: Edit → kotak caption → ketik → Konfirmasi, bergeser `JARAK ANTAR BARIS` px per baris, diulang sebanyak jumlah video.
+- **Profil makro**: simpan/muat posisi+jeda per browser/akun (`.json`).
+- **Riwayat + lewati yang sudah terupload**, lanjut-fase-caption otomatis setelah stop.
+- Hotkey global: **F6 mulai, F7/ESC berhenti**, failsafe pojok kiri-atas.
 
-## Alur manual yang tetap kamu lakukan
+## Menjalankan dari source (opsional)
 
-1. Login ke CutMotions (email/kata sandi)
-2. Pilih **Versi lama** → **Rilis karya**
-3. Tekan F6 — sisanya dikerjakan aplikasi (A sampai J)
+```bat
+JALANKAN.bat          :: auto-install pynput + pillow + opencv lalu jalan
+build_exe.bat         :: bangun dist\CutUploaderPro.exe (OpenCV ikut dibungkus)
+BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 6)
+```
 
-## Cara pakai cepat
+`requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
 
-1. Install [Python](https://www.python.org/downloads/) (centang *Add Python to PATH*)
-2. Klik dua kali **`JALANKAN.bat`** — otomatis pasang library & buka aplikasi
-3. Ikuti langkah setup di **`PANDUAN.txt`**: daftar browser → pilih folder → ambil 13 posisi (A–J) → isi jumlah & caption → F6
+## Perubahan v4.0
 
-> ⚠️ Uji dulu dengan **JUMLAH = 1** sampai lancar, baru naik ke 5/10/20.
+- UI ditulis ulang ala Jitbit Macro Recorder (tabel makro + panel properti).
+- Jeda antar klik & jeda per langkah yang dapat disetel sendiri.
+- Perbaikan besar fitur cari gambar (multi-skala + alat potong gambar + pesan error + OpenCV terbungkus di EXE; `build_exe.bat` lama mengecualikan PIL/numpy sehingga fitur mati diam-diam di EXE buatan sendiri).
+- Distribusi Windows: Setup.exe (Inno Setup) + EXE portabel, dibangun otomatis GitHub Actions.
+- Profil makro menggantikan daftar browser; posisi v3.0 dimigrasi otomatis.
 
-## Build EXE (opsional)
+## Keamanan
 
-Klik dua kali **`build_exe.bat`** — hasilnya `dist/cut_uploader.exe`. Karena membawa OpenCV (untuk pencarian gambar), ukuran exe cukup besar; kalau tidak pakai fitur gambar, hapus `opencv-python` dari requirements dan pakai klik biasa di titik C.
-
-## Struktur file
-
-| File | Fungsi |
-|---|---|
-| `cut_uploader.py` | Aplikasi utama (Python + tkinter + pynput + OpenCV/Pillow opsional) |
-| `JALANKAN.bat` | Launcher cepat + auto-install pynput/pillow/opencv |
-| `build_exe.bat` | Membuat `.exe` dengan PyInstaller |
-| `PANDUAN.txt` | Panduan lengkap Bahasa Indonesia |
-| `requirements.txt` | Daftar library |
-
-`cutuploader_settings.json` (pengaturan) dan `cutuploader_riwayat.json` (riwayat upload) dibuat otomatis di sebelah aplikasi — tidak ikut tersimpan di repo.
-
-## Changelog
-
-- **v3.0** — Urutan posisi baru **A–J** sesuai alur situs terkini: jadwal rilis pindah ke **awal** (A jadwal → B negara → C pilih negara → D tanggal → E OKE), lalu F tambah video → G klik bebas/scroll → H pilih video dengan **Shift+panah bawah** (batch 5–20 sekaligus, bukan ketik path satu-satu) → H2 Buka → I caption **per baris dengan jarak piksel yang bisa diatur** → J Submit. Fitur baru: **pencarian gambar negara** (radius + kemiripan + TES CARI, fallback klik biasa), **input tanggal-jam otomatis** `2026-09-10 02:05:01`, **klik bebas 0–500x / scroll**, **jarak antar baris**, mode lanjut-caption, lewati-jadwal. Posisi lama v2.0 tidak dimigrasi (makna slot berubah) — ambil ulang posisi sekali lagi.
-- **v2.0** — Alur halaman asli: fase jadwal + jeda F8, caption per video lewat Edit→Judul→Konfirmasi, 9 slot posisi, batas 20 video.
-- **v1.0** — Versi awal (caption + kirim per video).
-
-## Catatan
-
-- Gunakan sesuai kebijakan platform yang kamu ikuti; kamu bertanggung jawab atas konten yang diupload.
-- Kalau tampilan situs berubah, cukup ambil ulang posisi klik — tidak perlu update aplikasi.
-- Proyek saudaran: [AutoTyperPro](https://github.com/zacrie85/AutoTyperPro) (auto-typer dengan nomor berurutan).
+Login dilakukan **manual** oleh pengguna — aplikasi tidak pernah meminta, menampilkan, atau menyimpan email/password/cookie. Data lokal (profil, riwayat) berupa JSON di folder aplikasi.

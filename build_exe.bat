@@ -16,19 +16,23 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Memasang / memperbarui pyinstaller dan pynput...
-python -m pip install --upgrade pyinstaller pynput
+echo Memasang / memperbarui pyinstaller + pynput + pillow + opencv...
+echo (opencv-python ukurannya besar, tunggu sebentar)
+python -m pip install --upgrade pyinstaller pynput pillow opencv-python
 if errorlevel 1 (
-    echo [ERROR] Gagal memasang pyinstaller.
+    echo [ERROR] Gagal memasang library.
     pause
     exit /b 1
 )
 
 echo.
-echo Mulai membangun EXE (tunggu 1-3 menit)...
+echo Mulai membangun EXE (tunggu 3-8 menit)...
+echo PENTING: pillow + opencv IKUT dibungkus supaya fitur
+echo "Pencarian Gambar" (langkah C) jalan di dalam EXE.
 python -m PyInstaller --onefile --windowed --name CutUploaderPro ^
-    --exclude-module matplotlib --exclude-module numpy ^
-    --exclude-module PyQt5 --exclude-module PIL ^
+    --icon icon.ico ^
+    --collect-all cv2 ^
+    --hidden-import pynput.keyboard --hidden-import pynput.mouse ^
     cut_uploader.py
 
 if errorlevel 1 (
@@ -41,10 +45,11 @@ if errorlevel 1 (
 echo.
 echo ============================================
 echo   SELESAI!
-echo   File EXE ada di folder: dist\CutUploaderPro.exe
-echo   Boleh dipindah ke mana saja.
-echo   Simpan bersama file ini agar mudah dicari.
-echo ============================================
+echo   File EXE ada di: dist\CutUploaderPro.exe
+echo   EXE ini sudah menyatukan semua library -
+echo   bisa dipakai di PC lain TANPA install Python.
 echo.
-echo Catatan: ikon jendela hitam build boleh ditutup.
+echo   Mau jadi INSTALLER (Setup.exe)? Jalankan
+echo   BANGUN-INSTALLER.bat setelah ini.
+echo ============================================
 pause

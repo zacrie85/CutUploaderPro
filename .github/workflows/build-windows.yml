@@ -1,0 +1,53 @@
+name: Build Windows EXE & Installer
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v4
+
+      - name: Siapkan Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Pasang dependensi
+        run: |
+          python -m pip install --upgrade pip
+          pip install pynput pillow opencv-python pyinstaller
+
+      - name: Bangun EXE portabel (PyInstaller)
+        run: pyinstaller --onefile --windowed --name CutUploaderPro --icon icon.ico cut_uploader.py
+
+      - name: Pasang Inno Setup 6
+        run: choco install innosetup -y --no-progress
+
+      - name: Bangun installer Setup.exe (Inno Setup)
+        shell: pwsh
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
+
+      - name: Unggah artifact build
+        uses: actions/upload-artifact@v4
+        with:
+          name: CutUploaderPro-Windows-x64
+          path: |
+            dist/CutUploaderPro.exe
+            dist/CutUploaderPro-Setup.exe
+
+      - name: Lampirkan EXE + Setup ke GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/CutUploaderPro.exe
+            dist/CutUploaderPro-Setup.exe
