@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v4.0 - MACRO EDITION - PANDUAN LENGKAP
+  CUTUPLOADER PRO v4.1 - MACRO EDITION - PANDUAN LENGKAP
   Uploader video batch otomatis untuk CutMotions (Kwai)
   Tampilan baru ala Jitbit Macro Recorder
 ============================================================
@@ -11,7 +11,7 @@ Ada 3 cara, pilih yang paling gampang:
 
 CARA A - INSTALLER (paling gampang, seperti aplikasi biasa):
   1. Buka  https://github.com/zacrie85/CutUploaderPro/releases
-  2. Download  CutUploaderPro-Setup.exe  (rilis v4.0 ke atas)
+  2. Download  CutUploaderPro-Setup.exe  (rilis v4.1 ke atas)
   3. Kalau muncul biru "Windows protected your PC", klik
      "More info" -> "Run anyway" (ini normal untuk aplikasi
      tanpa tanda tangan digital berbayar).
@@ -149,6 +149,10 @@ PENYEBAB "CARI GAMBAR ERROR" YANG PALING SERING, DAN SOLUSINYA:
      aplikasi screenshot layar yang HIDUP, Anda seret kotak
      di atas tulisan negaranya, SIMPAN. Ukurannya dijamin
      cocok 1:1.
+     v4.1: potongan otomatis tersimpan ke folder data
+     %LOCALAPPDATA%\CutUploaderPro (bukan folder Program
+     Files yang terkunci Windows - dulu ini penyebab error
+     "Errno 13 Permission denied" saat SIMPAN AREA).
   2. Zoom browser berubah sejak gambar dipotong.
      SOLUSI v4.0: pencarian sekarang MULTI-SKALA (mencoba
      70% - 125%), tapi tetap paling akurat bila zoom tetap.
@@ -178,7 +182,7 @@ Karena posisinya kini banyak (A-J), v4.0 memakai cara Jitbit:
   - BUKA PROFIL    : muat kembali. Mau pakai 2 browser/akun?
     Simpan 2 profil, buka sesuai kebutuhan.
   - Pengaturan terakhir otomatis tersimpan juga
-    (cutuploader_settings.json di folder aplikasi).
+    (di folder data: %LOCALAPPDATA%\CutUploaderPro).
 
 ------------------------------------------------------------
 9. RIWAYAT & LEWATI YANG SUDAH TERUPLOAD
@@ -207,6 +211,15 @@ Karena posisinya kini banyak (A-J), v4.0 memakai cara Jitbit:
 ------------------------------------------------------------
 - Klik meleset       : zoom/ukuran jendela browser berubah
                        sejak posisi diambil. Ambil ulang.
+- SIMPAN AREA potongan gambar error "Errno 13 Permission
+  denied" (versi lama): itu karena dulu potongan disimpan
+  ke folder aplikasi di C:\Program Files yang dikunci
+  Windows. SUDAH DIPERBAIKI di v4.1 - potongan sekarang
+  otomatis tersimpan ke folder data yang bebas tulis:
+  %LOCALAPPDATA%\CutUploaderPro
+  (lihat keterangan di bawah jendela potong). Kalau tetap
+  gagal, muncul dialog pilih lokasi sendiri (Documents/
+  Desktop). Upgrade ke Setup.exe v4.1.
 - TES CARI gagal     : potong ulang gambar dengan POTONG
                        GAMBAR, perbesar radius, turunkan
                        kemiripan ke 0.70.

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v4.0  -  MACRO EDITION
+  CUTUPLOADER PRO  v4.1  -  MACRO EDITION
   Aplikasi desktop uploader video batch otomatis
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -61,6 +61,7 @@ import json
 import datetime
 import os
 import sys
+import shutil
 
 # Tampilan tajam & koordinat presisi di layar Windows High-DPI.
 # Penting supaya posisi klik dan hasil screenshot cocok 1:1
@@ -106,7 +107,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "4.0"
+APP_VERSION = "4.1"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -122,8 +123,50 @@ def app_dir():
     return os.path.dirname(os.path.abspath(__file__))
 
 
-SETTINGS_FILE = os.path.join(app_dir(), "cutuploader_settings.json")
-RIWAYAT_FILE = os.path.join(app_dir(), "cutuploader_riwayat.json")
+def data_dir():
+    """Folder data milik user yang SELALU bisa ditulisi.
+
+    PENTING: saat aplikasi ter-install di C:\\Program Files,
+    Windows melarang user biasa menulis file ke folder itu
+    (Errno 13 Permission denied). Semua file yang DITULIS
+    aplikasi - settings, riwayat, gambar referensi hasil
+    potongan - wajib disimpan di folder data ini, BUKAN di
+    folder aplikasi.
+    """
+    base = os.getenv("LOCALAPPDATA") or os.getenv("APPDATA")
+    if base:
+        d = os.path.join(base, "CutUploaderPro")
+    else:
+        d = os.path.join(os.path.expanduser("~"), ".cutuploaderpro")
+    try:
+        os.makedirs(d, exist_ok=True)
+        # pastikan benar-benar bisa ditulisi (uji tulis kecil)
+        probe = os.path.join(d, ".tes_tulis")
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+    except Exception:
+        d = app_dir()
+    return d
+
+
+def _migrasi_file_lama(nama):
+    """Pindahkan settings/riwayat lama dari folder aplikasi
+    (mis. Program Files / folder EXE lama) ke folder data user,
+    sekali saja - supaya pengguna lama tidak kehilangan setting."""
+    try:
+        lama = os.path.join(app_dir(), nama)
+        baru = os.path.join(data_dir(), nama)
+        if os.path.isfile(lama) and not os.path.isfile(baru):
+            shutil.copyfile(lama, baru)
+    except Exception:
+        pass
+
+
+SETTINGS_FILE = os.path.join(data_dir(), "cutuploader_settings.json")
+RIWAYAT_FILE = os.path.join(data_dir(), "cutuploader_riwayat.json")
+_migrasi_file_lama("cutuploader_settings.json")
+_migrasi_file_lama("cutuploader_riwayat.json")
 
 # ------------------------------------------------------------
 # Tema warna: Windows klasik ala Jitbit Macro Recorder
@@ -2057,6 +2100,9 @@ class JendelaPotong(tk.Toplevel):
         tk.Button(bar, text="BATAL", command=self.destroy, bg=C_BG,
                   fg=C_MUTED, font=F_XS, relief="raised",
                   cursor="hand2").pack(side="left", ipadx=8, ipady=3)
+        tk.Label(self, text="Tersimpan otomatis ke folder data: "
+                 + data_dir(), bg=C_BG, fg=C_MUTED, font=F_XS,
+                 anchor="w").pack(fill="x", padx=10, pady=(0, 8))
 
     def _tekan(self, ev):
         self.mulai = (ev.x, ev.y)
@@ -2092,14 +2138,39 @@ class JendelaPotong(tk.Toplevel):
         kotak = (int(min(x1, x2) / s), int(min(y1, y2) / s),
                  int(max(x1, x2) / s), int(max(y1, y2) / s))
         nama = self.ent.get().strip() or "referensi_negara.png"
+        # bersihkan karakter yang tidak sah untuk nama file Windows
+        for ch in '\\/:*?"<>|':
+            nama = nama.replace(ch, "_")
         if not nama.lower().endswith(".png"):
             nama += ".png"
-        path = os.path.join(app_dir(), nama)
+
+        # 1) Simpan ke folder data milik user (SELALU bisa ditulisi,
+        #    walau aplikasi ter-install di C:\Program Files).
+        #    Dulu disimpan ke folder aplikasi -> Errno 13
+        #    Permission denied saat aplikasi ter-install.
+        path = os.path.join(data_dir(), nama)
         try:
             self.img.crop(kotak).save(path)
-        except Exception as e:
-            messagebox.showerror(APP_NAME, "Gagal menyimpan:\n" + str(e))
-            return
+        except Exception:
+            # 2) Kalau tetap gagal, biarkan user memilih lokasinya
+            #    sendiri (Documents / Desktop, dll).
+            path = filedialog.asksaveasfilename(
+                title="Simpan gambar referensi",
+                initialfile=nama,
+                defaultextension=".png",
+                filetypes=[("Gambar PNG", "*.png"),
+                           ("Semua file", "*.*")])
+            if not path:
+                return
+            try:
+                self.img.crop(kotak).save(path)
+            except Exception as e:
+                messagebox.showerror(
+                    APP_NAME,
+                    "Gagal menyimpan:\n{}\n\nCoba simpan ke folder "
+                    "lain (mis. Documents atau Desktop)."
+                    .format(e))
+                return
         self.grab_release()
         self.destroy()
         self.on_simpan(path)

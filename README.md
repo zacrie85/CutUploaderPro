@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Edition (v4.0)
+# CutUploader Pro — Macro Edition (v4.1)
 
 Uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — tampilan editor makro ala **Jitbit Macro Recorder**, jadi **installer Windows** (tanpa Python), **jeda antar klik bisa diatur per langkah**, dan **pencarian gambar negara** yang diperbaiki total.
 
 ## Unduh (tanpa install Python)
 
-Dari [halaman Releases](../../releases) rilis **v4.0**:
+Dari [halaman Releases](../../releases) rilis **v4.1**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v4.0.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v4.1.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -32,7 +32,7 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya).
 
-## Fitur utama v4.0
+## Fitur utama v4.1
 
 - **UI ala Jitbit Macro Recorder** — toolbar Jalankan/Berhenti, tabel langkah A–J (kolom DETAIL, JEDA, ULANGI), panel *Properti Langkah* untuk baris terpilih, tema Windows klasik.
 - **Jeda bisa diatur**: `JEDA SEBELUM LANGKAH` per langkah (kolom JEDA), `JEDA ANTAR KLIK` per langkah (klik berulang G/H2/J, panah Shift di H), tombol *Terapkan ke semua langkah*, plus MUNDUR / JEDA DIALOG / TUNGGU UPLOAD global.
@@ -54,6 +54,13 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
 
+## Perubahan v4.1
+
+- **Perbaikan error "Errno 13 Permission denied" saat SIMPAN AREA di jendela POTONG GAMBAR**: sebelumnya potongan disimpan ke folder aplikasi (`C:\Program Files\...`) yang dikunci Windows bila aplikasi ter-install. Kini semua file yang ditulis aplikasi (potongan gambar, settings, riwayat) disimpan ke folder data user `%LOCALAPPDATA%\CutUploaderPro` yang selalu bisa ditulisi.
+- Kalau simpan tetap gagal, muncul dialog **pilih lokasi sendiri** (Documents/Desktop) dan pesan error yang lebih jelas.
+- Label lokasi tersimpan ditampilkan di bawah jendela potong; nama file otomatis dibersihkan dari karakter terlarang Windows.
+- Settings & riwayat versi lama **dimigrasi otomatis** dari folder aplikasi ke folder data user.
+
 ## Perubahan v4.0
 
 - UI ditulis ulang ala Jitbit Macro Recorder (tabel makro + panel properti).
@@ -64,4 +71,4 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 
 ## Keamanan
 
-Login dilakukan **manual** oleh pengguna — aplikasi tidak pernah meminta, menampilkan, atau menyimpan email/password/cookie. Data lokal (profil, riwayat) berupa JSON di folder aplikasi.
+Login dilakukan **manual** oleh pengguna — aplikasi tidak pernah meminta, menampilkan, atau menyimpan email/password/cookie. Data lokal (profil, riwayat, gambar referensi) berupa file di folder data user `%LOCALAPPDATA%\CutUploaderPro` (bukan folder instalasi Program Files).
