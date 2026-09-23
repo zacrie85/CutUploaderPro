@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.0  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v5.1  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -23,6 +23,11 @@
        sepotong alur (mis. caption per baris video)
      - Placeholder teks: {caption} {video} {no}
      - Makro disimpan/muat ke file JSON + auto-save
+     - v5.1: POTONG GAMBAR kini LANGSUNG DI LAYAR - layar
+       dibekukan fullscreen, tinggal SERET kotak di area yang
+       diinginkan (hanya area itu yang disimpan). Setiap
+       potongan jadi file BARU, jadi CARI GAMBAR bisa dipakai
+       berkali-kali dengan referensi berbeda-beda
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -144,13 +149,13 @@ except Exception:
 
 PIL_OK = False
 try:
-    from PIL import Image, ImageTk
+    from PIL import Image, ImageTk, ImageEnhance
     PIL_OK = True
 except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.0"
+APP_VERSION = "5.1"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -210,6 +215,62 @@ SETTINGS_FILE = os.path.join(data_dir(), "cutuploader_settings.json")
 RIWAYAT_FILE = os.path.join(data_dir(), "cutuploader_riwayat.json")
 _migrasi_file_lama("cutuploader_settings.json")
 _migrasi_file_lama("cutuploader_riwayat.json")
+
+# ------------------------------------------------------------
+# v5.1: gambar referensi CARI GAMBAR
+#   - folder khusus "referensi" di dalam folder data (v4.1:
+#     selalu bisa ditulisi, aman walau di C:\Program Files)
+#   - setiap potongan disimpan sebagai FILE BARU unik
+#     (ref_tanggal_jam.png) sehingga menu CARI GAMBAR bisa
+#     dipakai berkali-kali dengan referensi berbeda-beda
+#   - thumbnail kecil ditampilkan di panel properti langkah
+# ------------------------------------------------------------
+OVERLAY_POTONG_AKTIF = []   # daftar layar potong yang sedang terbuka
+
+
+def folder_referensi():
+    """Folder khusus gambar referensi di dalam folder data."""
+    d = os.path.join(data_dir(), "referensi")
+    try:
+        os.makedirs(d, exist_ok=True)
+    except Exception:
+        d = data_dir()
+    return d
+
+
+def nama_referensi_unik(prefiks="ref"):
+    """Nama file PNG unik: ref_YYYYMMDD_HHMMSS.png (anti-timpa).
+
+    Setiap kali POTONG GAMBAR dipakai, hasilnya jadi file BARU -
+    gambar referensi langkah yang lain TIDAK ikut tertimpa.
+    """
+    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    dasar = "{}_{}".format(prefiks, stamp)
+    nama = dasar + ".png"
+    n = 1
+    while (os.path.isfile(os.path.join(folder_referensi(), nama))
+           and n < 1000):
+        nama = "{}_{}.png".format(dasar, n)
+        n += 1
+    return nama
+
+
+def muat_thumbnail(path, maks_w=190, maks_h=54):
+    """Muat gambar referensi sebagai PhotoImage kecil (atau None)."""
+    if not PIL_OK or not path or not os.path.isfile(path):
+        return None
+    try:
+        with Image.open(path) as im:
+            w, h = im.size
+            if w < 1 or h < 1:
+                return None
+            s = min(1.0, float(maks_w) / w, float(maks_h) / h)
+            im2 = im.convert("RGB").resize(
+                (max(1, int(w * s)), max(1, int(h * s))))
+            return ImageTk.PhotoImage(im2)
+    except Exception:
+        return None
+
 
 # ------------------------------------------------------------
 # Tema warna: Windows klasik ala Jitbit Macro Recorder
@@ -845,7 +906,8 @@ class CutMotionsTab:
             m_alat = tk.Menu(menubar, tearoff=0)
             m_alat.add_command(label="Tes Cari Gambar (langkah C)",
                                command=self._tes_cari)
-            m_alat.add_command(label="Potong Gambar Referensi (screenshot)",
+            m_alat.add_command(label="Potong Gambar Referensi (seret "
+                               "langsung di layar)",
                                command=self._potong_gambar)
             m_alat.add_separator()
             m_alat.add_command(label="Lihat Riwayat Upload...",
@@ -1460,6 +1522,19 @@ class CutMotionsTab:
                        lambda k=iid: self._pilih_gambar_ref(k))
         self._btn_prop(r, "POTONG GAMBAR...",
                        lambda k=iid: self._potong_gambar(("langkah", k)))
+        # v5.1: pratinjau gambar referensi langkah ini
+        self.pv["g_thumb"] = tk.Label(self.prop_body, bg=C_PANEL,
+                                      relief="solid", bd=1, anchor="w")
+        self.pv["g_thumb"].pack(anchor="w", padx=18, pady=(3, 2))
+        _thumb = muat_thumbnail(str((cfg_g or {}).get("path") or ""))
+        if _thumb is not None:
+            self.pv["g_thumb"].configure(image=_thumb)
+            self.pv["g_thumb"].image = _thumb
+        else:
+            self.pv["g_thumb"].configure(
+                text="  Belum ada gambar referensi - klik POTONG GAMBAR, "
+                     "lalu SERET kotak langsung di layar  ",
+                fg=C_MUTED, font=F_XS)
         r = self._baris_prop("SAAT KETEMU:")
         tk.OptionMenu(r, self.pv["g_aksi"],
                       *GAMBAR_AKSI_OPSI).pack(side="left")
@@ -1474,11 +1549,15 @@ class CutMotionsTab:
                  fg=C_MUTED, font=F_XS).pack(side="left", padx=6)
         self._btn_prop(r, "TES CARI LANGKAH INI", self._tes_cari)
         tk.Label(self.prop_body,
-                 text="Tips: pakai POTONG GAMBAR supaya ukuran gambar "
-                      "PERSIS seperti tampilan layar. Zoom browser "
-                      "jangan diubah setelah gambar dipotong. Mode "
-                      "'Pindah saja' tidak mengklik - cocok untuk "
-                      "hover atau hanya kalibrasi posisi.",
+                 text="v5.1: POTONG GAMBAR = layar dibekukan sejenak, lalu "
+                      "SERET kotak LANGSUNG di area yang diinginkan "
+                      "(hanya area itu yang disimpan; ESC = batal). "
+                      "Setiap potongan jadi file BARU di folder "
+                      "data\\referensi, jadi bisa dipakai berkali-kali "
+                      "dengan referensi berbeda-beda. Zoom browser jangan "
+                      "diubah setelah gambar dipotong. Mode 'Pindah saja' "
+                      "tidak mengklik - cocok untuk hover atau hanya "
+                      "kalibrasi posisi.",
                  bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
                  wraplength=860, justify="left").pack(
                      fill="x", pady=(4, 0))
@@ -1489,8 +1568,10 @@ class CutMotionsTab:
         self.lbl_ambil.pack(fill="x", pady=(4, 0))
 
         # ---- sambungkan perubahan -> simpan ----
+        # (v5.1: lewati widget non-variable seperti pv["g_thumb"])
         for var in self.pv.values():
-            var.trace_add("write", self._terapkan_prop)
+            if isinstance(var, tk.Variable):
+                var.trace_add("write", self._terapkan_prop)
         self._loading_prop = False
 
     def _terapkan_prop(self, *_):
@@ -1679,14 +1760,15 @@ class CutMotionsTab:
             self._pasang_gambar_langkah(iid, f)
 
     def _potong_gambar(self, target=None):
-        """Screenshot layar -> user seret kotak -> simpan PNG referensi.
+        """v5.1: potong gambar referensi LANGSUNG DI LAYAR.
 
-        Ini kunci perbaikan 'cari gambar error': gambar referensi
-        dipotong PERSIS dari tampilan layar yang hidup, ukurannya
-        cocok 1:1 dengan hasil pencarian.
+        Aplikasi disembunyikan sejenak, layar dibekukan fullscreen,
+        lalu user MENYERET kotak langsung di area yang diinginkan -
+        hanya area yang diseret yang disimpan (bukan seluruh layar).
+        Hasil selalu file BARU di folder data\\referensi sehingga
+        bisa dipakai berkali-kali dengan referensi berbeda-beda.
 
-        v4.2: target menentukan langkah yang dipasangi gambar -
-        bila dikosongkan, gambar dipasang pada langkah terpilih.
+        Gambar dipasang pada LANGKAH TERPILIH (v4.2).
         """
         if not PIL_OK or not CV_OK:
             messagebox.showwarning(
@@ -1702,18 +1784,42 @@ class CutMotionsTab:
             try:
                 for s in range(3, 0, -1):
                     self.root.after(0, lambda s=s: self._set_status(
-                        "Screenshot layar dalam {} detik - pastikan area "
-                        "yang mau dipotong terlihat...".format(s),
+                        "Layar akan DIBEKUKAN dalam {} detik - pastikan "
+                        "area yang mau dipotong terlihat...".format(s),
                         C_ORANGE))
                     time.sleep(1)
+                # v5.1: sembunyikan jendela aplikasi dulu supaya area
+                # di baliknya juga bisa dipotong
+                induk = self.root.winfo_toplevel()
+                self.root.after(0, induk.withdraw)
+                time.sleep(0.4)
                 img = ImageGrab.grab()
-                self.root.after(0, lambda: JendelaPotong(
-                    self.root, img, self._gambar_terpotong))
             except Exception as e:
                 self.root.after(0, lambda: messagebox.showerror(
                     APP_NAME, "Gagal mengambil screenshot:\n{}".format(e)))
+                self.root.after(0, self._tampil_lagi)
+                return
+
+            def tampil():
+                try:
+                    OverlayPotong(self.root, img, self._gambar_terpotong)
+                except Exception as e:
+                    messagebox.showerror(
+                        APP_NAME,
+                        "Gagal membuka layar potong:\n{}".format(e))
+                finally:
+                    self._tampil_lagi()
+
+            self.root.after(0, tampil)
 
         threading.Thread(target=kerja, daemon=True).start()
+
+    def _tampil_lagi(self):
+        """Tampilkan kembali jendela utama setelah potong selesai."""
+        try:
+            self.root.winfo_toplevel().deiconify()
+        except Exception:
+            pass
 
     def _gambar_terpotong(self, path):
         target = getattr(self, "_potong_target", None)
@@ -3918,6 +4024,19 @@ class StudioMakroTab:
                            lambda: self._pilih_gambar(l["uid"]))
             self._btn_prop(r, "POTONG GAMBAR...",
                            lambda: self._potong_gambar(l["uid"]))
+            # v5.1: pratinjau gambar referensi langkah ini
+            self.pv["g_thumb"] = tk.Label(self.prop_body, bg=C_PANEL,
+                                          relief="solid", bd=1, anchor="w")
+            self.pv["g_thumb"].pack(anchor="w", padx=18, pady=(3, 2))
+            _thumb = muat_thumbnail(str(g.get("path") or ""))
+            if _thumb is not None:
+                self.pv["g_thumb"].configure(image=_thumb)
+                self.pv["g_thumb"].image = _thumb
+            else:
+                self.pv["g_thumb"].configure(
+                    text="  Belum ada gambar - klik POTONG GAMBAR, lalu "
+                         "SERET kotak langsung di layar  ",
+                    fg=C_MUTED, font=F_XS)
             r = self._baris_prop("SAAT KETEMU:")
             tk.OptionMenu(r, self.pv["g_aksi"],
                           *GAMBAR_AKSI_OPSI).pack(side="left")
@@ -3930,9 +4049,14 @@ class StudioMakroTab:
             self._ent_prop(r, self.pv["g_mirip"], 6)
             self._btn_prop(r, "TES CARI LANGKAH INI", self._tes_cari)
             tk.Label(self.prop_body,
-                     text="Tips: pakai POTONG GAMBAR supaya ukurannya "
-                          "PERSIS tampilan layar. Zoom browser jangan "
-                          "diubah setelah gambar dipotong.",
+                     text="v5.1: POTONG GAMBAR = layar dibekukan sejenak, "
+                          "lalu SERET kotak LANGSUNG di area yang "
+                          "diinginkan (hanya area itu yang disimpan; "
+                          "ESC = batal). Setiap potongan jadi file BARU "
+                          "di folder data\\referensi - gambar langkah "
+                          "lain TIDAK tertimpa, jadi bisa dipakai "
+                          "berkali-kali dengan referensi berbeda-beda. "
+                          "Zoom browser jangan diubah setelah dipotong.",
                      bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(
                          fill="x", pady=(4, 0))
@@ -4041,8 +4165,10 @@ class StudioMakroTab:
                                   fg=C_ORANGE, font=F_XS, anchor="w",
                                   wraplength=860, justify="left")
         self.lbl_ambil.pack(fill="x", pady=(4, 0))
+        # (v5.1: lewati widget non-variable seperti pv["g_thumb"])
         for var in self.pv.values():
-            var.trace_add("write", self._terapkan_prop)
+            if isinstance(var, tk.Variable):
+                var.trace_add("write", self._terapkan_prop)
         self._loading_prop = False
 
     def _terapkan_prop(self, *_):
@@ -4191,6 +4317,19 @@ class StudioMakroTab:
         self._potong_gambar(None)
 
     def _potong_gambar(self, uid=None):
+        """v5.1: potong gambar referensi LANGSUNG DI LAYAR.
+
+        Aplikasi disembunyikan sejenak, layar dibekukan fullscreen,
+        lalu user MENYERET kotak langsung di area yang diinginkan -
+        hanya area yang diseret yang disimpan (bukan seluruh layar).
+
+        - Bila langkah CARI GAMBAR terpilih: gambar dipasang pada
+          langkah itu (gambar langkah lain TIDAK tertimpa).
+        - Bila TIDAK ada langkah CARI GAMBAR terpilih: ditawarkan
+          membuat LANGKAH CARI GAMBAR BARU dari hasil potongan -
+          sehingga menu ini bisa dipakai berkali-kali dengan
+          referensi berbeda-beda.
+        """
         if not PIL_OK or not CV_OK:
             messagebox.showwarning(
                 APP_NAME,
@@ -4201,41 +4340,90 @@ class StudioMakroTab:
         uid = uid or self.sel
         l = self._get(uid)
         if not l or l["jenis"] != "GAMBAR":
-            messagebox.showinfo(
-                APP_NAME,
-                "POTONG GAMBAR dipakai untuk langkah CARI GAMBAR.\n\n"
-                "Klik dulu baris CARI GAMBAR di tabel (atau tambah "
-                "lewat tombol '+ CARI GAMBAR').")
-            return
-        self._potong_uid = uid
+            if not messagebox.askyesno(
+                    APP_NAME,
+                    "Tidak ada langkah CARI GAMBAR yang terpilih.\n\n"
+                    "Setelah kamu MENYERET kotak di layar, buat LANGKAH "
+                    "CARI GAMBAR BARU dengan gambar hasil potongan "
+                    "itu?\n\nYes = buat langkah baru\nNo = batal"):
+                return
+            self._potong_uid = None   # mode: buat langkah CARI GAMBAR baru
+        else:
+            self._potong_uid = uid
 
         def kerja():
             try:
                 for s in range(3, 0, -1):
                     self.root.after(0, lambda s=s: self._set_status(
-                        "Screenshot layar dalam {} detik - pastikan area "
-                        "yang mau dipotong terlihat...".format(s),
+                        "Layar akan DIBEKUKAN dalam {} detik - pastikan "
+                        "area yang mau dipotong terlihat...".format(s),
                         C_ORANGE))
                     time.sleep(1)
+                # v5.1: sembunyikan jendela aplikasi dulu supaya area
+                # di baliknya juga bisa dipotong
+                induk = self.root.winfo_toplevel()
+                self.root.after(0, induk.withdraw)
+                time.sleep(0.4)
                 img = ImageGrab.grab()
-                self.root.after(0, lambda: JendelaPotong(
-                    self.wadah, img, self._gambar_terpotong))
             except Exception as e:
                 self.root.after(0, lambda: messagebox.showerror(
                     APP_NAME,
                     "Gagal mengambil screenshot:\n{}".format(e)))
+                self.root.after(0, self._tampil_lagi)
+                return
+
+            def tampil():
+                try:
+                    OverlayPotong(self.wadah, img, self._gambar_terpotong,
+                                  on_batal=self._potong_batal)
+                except Exception as e:
+                    messagebox.showerror(
+                        APP_NAME,
+                        "Gagal membuka layar potong:\n{}".format(e))
+                finally:
+                    self._tampil_lagi()
+
+            self.root.after(0, tampil)
 
         threading.Thread(target=kerja, daemon=True).start()
 
+    def _tampil_lagi(self):
+        """Tampilkan kembali jendela utama setelah potong selesai."""
+        try:
+            self.root.winfo_toplevel().deiconify()
+        except Exception:
+            pass
+
+    def _potong_batal(self):
+        self._set_status("Potong gambar dibatalkan (ESC).", C_MUTED)
+
     def _gambar_terpotong(self, path):
-        l = self._get(getattr(self, "_potong_uid", None))
+        uid = getattr(self, "_potong_uid", None)
+        l = self._get(uid)
         if l:
+            # mode: pasang pada langkah CARI GAMBAR terpilih
             l.setdefault("gambar", {})["path"] = path
             self._refresh_tabel()
             if self.sel == l["uid"]:
                 self._render_properti()
-        self._set_status("Gambar referensi tersimpan: {}".format(path),
-                         C_GREEN)
+            self._set_status("Gambar referensi baru tersimpan: {}  (langkah "
+                             "lain tidak tertimpa)".format(path), C_GREEN)
+            return
+        # v5.1: mode tanpa langkah terpilih -> buat langkah CARI
+        # GAMBAR baru otomatis dari hasil potongan
+        l = studio_langkah_baru("GAMBAR", self._uid_baru())
+        l["gambar"]["path"] = path
+        self.langkah.append(l)
+        self.sel = l["uid"]
+        self._refresh_tabel()
+        try:
+            self.tree.selection_set(l["uid"])
+            self.tree.see(l["uid"])
+        except Exception:
+            pass
+        self._render_properti()
+        self._set_status("Langkah CARI GAMBAR baru dibuat dengan gambar: "
+                         "{}".format(path), C_GREEN)
 
     def _tes_cari(self):
         if not PYNPUT_OK:
@@ -4846,107 +5034,199 @@ class StudioMakroTab:
 
 
 # ------------------------------------------------------------
-# Jendela potong gambar referensi (screenshot -> seret kotak)
+# v5.1: potong gambar referensi LANGSUNG DI LAYAR (fullscreen).
+# Layar dibekukan memenuhi seluruh monitor, lalu user MENYERET
+# kotak langsung di area yang diinginkan - hanya area yang
+# diseret yang disimpan (bukan seluruh layar). ESC / klik kanan
+# = batal. Pengganti JendelaPotong lama (screenshot diperkecil
+# dalam jendela, lalu harus tekan SIMPAN AREA).
 # ------------------------------------------------------------
-class JendelaPotong(tk.Toplevel):
-    def __init__(self, induk, img, on_simpan):
+class OverlayPotong(tk.Toplevel):
+    def __init__(self, induk, img, on_simpan, on_batal=None):
         super().__init__(induk)
-        self.title("Potong gambar referensi - seret kotak, lalu SIMPAN")
-        self.configure(bg=C_BG)
-        self.resizable(False, False)
-        self.transient(induk)
-        self.grab_set()
         self.img = img
         self.on_simpan = on_simpan
-        self.kotak_id = None
-        self.mulai = (0, 0)
+        self.on_batal = on_batal
+        self.mulai = None
         self.akhir = (0, 0)
-        skala = min(1.0, 1100.0 / max(1, img.width),
-                    560.0 / max(1, img.height))
-        self.skala = skala
-        w, h = int(img.width * skala), int(img.height * skala)
-        self.tampil = ImageTk.PhotoImage(img.resize((w, h)))
-        self.cv = tk.Canvas(self, width=w, height=h, cursor="crosshair",
-                            highlightthickness=1,
-                            highlightbackground=C_LINE)
-        self.cv.pack(padx=10, pady=(10, 4))
-        self.cv.create_image(0, 0, image=self.tampil, anchor="nw")
-        self.cv.create_text(10, 12, anchor="w", fill="#FF3333",
-                            font=("Segoe UI", 10, "bold"),
-                            text="Seret kotak di atas tulisan negara "
-                                 "(potong SEMPIT, tanpa ruang kosong)")
+        self.kotak_id = None
+        self.buka_id = None
+        self.info_id = None
+
+        sw = max(1, self.winfo_screenwidth())
+        sh = max(1, self.winfo_screenheight())
+        # Peta koordinat tampilan -> koordinat gambar asli
+        # (mengatasi High-DPI / layar berbeda resolusi)
+        self.skala = min(1.0, float(sw) / max(1, img.width),
+                         float(sh) / max(1, img.height))
+        w = max(1, int(round(img.width * self.skala)))
+        h = max(1, int(round(img.height * self.skala)))
+
+        self.overrideredirect(True)
+        self.geometry("{}x{}+0+0".format(sw, sh))
+        self.attributes("-topmost", True)
+        self.configure(bg="black")
+
+        # Layar gelap: seluruh screenshot diredupkan; area yang
+        # diseret akan DITAMPILKAN TERANG kembali (efek snipping)
+        try:
+            gelap = ImageEnhance.Brightness(
+                img.convert("RGB")).enhance(0.45)
+        except Exception:
+            gelap = img.convert("RGB")
+        if self.skala != 1.0:
+            gelap = gelap.resize((w, h))
+        self.ph_gelap = ImageTk.PhotoImage(gelap)
+
+        self.cv = tk.Canvas(self, width=sw, height=sh, bg="black",
+                            highlightthickness=0, cursor="crosshair")
+        self.cv.pack(fill="both", expand=True)
+        self.cv.create_image(0, 0, image=self.ph_gelap, anchor="nw")
+        self.cv.create_rectangle(0, 0, sw, 46, fill="#1C1C1C",
+                                 outline="#1C1C1C")
+        self.banner_id = self.cv.create_text(
+            sw // 2, 23,
+            text="SERET kotak LANGSUNG di area yang diinginkan  -  "
+                 "hanya area yang diseret yang disimpan  |  "
+                 "ESC = batal",
+            fill="#FFD34D", font=("Segoe UI", 13, "bold"))
+
         self.cv.bind("<ButtonPress-1>", self._tekan)
         self.cv.bind("<B1-Motion>", self._geser)
         self.cv.bind("<ButtonRelease-1>", self._lepas)
-        bar = tk.Frame(self, bg=C_BG)
-        bar.pack(fill="x", padx=10, pady=(2, 10))
-        tk.Label(bar, text="Nama file:", bg=C_BG, fg=C_MUTED,
-                 font=F_XS).pack(side="left")
-        self.ent = tk.Entry(bar, bg=C_PANEL, fg=C_TEXT, font=F_XS,
-                            relief="solid", bd=1)
-        self.ent.insert(0, "referensi_negara.png")
-        self.ent.pack(side="left", padx=6, ipady=2)
-        tk.Button(bar, text="SIMPAN AREA", command=self._simpan,
-                  bg=C_BLUE, fg="white", font=F_XS, relief="flat",
-                  cursor="hand2", activebackground=C_BLUE_D).pack(
-                      side="left", padx=4, ipadx=8, ipady=3)
-        tk.Button(bar, text="BATAL", command=self.destroy, bg=C_BG,
-                  fg=C_MUTED, font=F_XS, relief="raised",
-                  cursor="hand2").pack(side="left", ipadx=8, ipady=3)
-        tk.Label(self, text="Tersimpan otomatis ke folder data: "
-                 + data_dir(), bg=C_BG, fg=C_MUTED, font=F_XS,
-                 anchor="w").pack(fill="x", padx=10, pady=(0, 8))
+        self.bind("<Escape>", lambda e: self._batal())
+        self.cv.bind("<Button-3>", lambda e: self._batal())
 
+        self.deiconify()
+        self.lift()
+        try:
+            self.focus_force()
+            self.grab_set()
+        except Exception:
+            pass
+        OVERLAY_POTONG_AKTIF.append(self)
+
+    # ---------- util ----------
+    def _peta(self, a, b):
+        """Kotak koordinat tampilan -> kotak koordinat gambar asli."""
+        s = self.skala
+        x1 = max(0, int(round(min(a[0], b[0]) / s)))
+        y1 = max(0, int(round(min(a[1], b[1]) / s)))
+        x2 = min(self.img.width, int(round(max(a[0], b[0]) / s)))
+        y2 = min(self.img.height, int(round(max(a[1], b[1]) / s)))
+        x2 = max(x1 + 1, x2)
+        y2 = max(y1 + 1, y2)
+        return x1, y1, x2, y2
+
+    def _pulihkan_banner(self):
+        try:
+            self.cv.itemconfigure(
+                self.banner_id,
+                text="SERET kotak LANGSUNG di area yang diinginkan  -  "
+                     "hanya area yang diseret yang disimpan  |  "
+                     "ESC = batal",
+                fill="#FFD34D")
+        except Exception:
+            pass
+
+    def _bersihkan_kotak(self):
+        if self.kotak_id:
+            self.cv.delete(self.kotak_id)
+            self.kotak_id = None
+        if self.buka_id:
+            self.cv.delete(self.buka_id)
+            self.buka_id = None
+        if self.info_id:
+            self.cv.delete(self.info_id)
+            self.info_id = None
+
+    def _tutup(self):
+        self.mulai = None
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        if self in OVERLAY_POTONG_AKTIF:
+            OVERLAY_POTONG_AKTIF.remove(self)
+        self.destroy()
+
+    # ---------- event seret ----------
     def _tekan(self, ev):
         self.mulai = (ev.x, ev.y)
         self.akhir = (ev.x, ev.y)
         self._gambar_kotak()
 
     def _geser(self, ev):
-        self.akhir = (ev.x, ev.y)
-        self._gambar_kotak()
-
-    def _lepas(self, ev):
+        if not self.mulai:
+            return
         self.akhir = (ev.x, ev.y)
         self._gambar_kotak()
 
     def _gambar_kotak(self):
-        if self.kotak_id:
-            self.cv.delete(self.kotak_id)
-        x1, y1 = self.mulai
-        x2, y2 = self.akhir
-        self.kotak_id = self.cv.create_rectangle(
-            min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2),
-            outline="#FF3333", width=2)
-
-    def _simpan(self):
-        x1, y1 = self.mulai
-        x2, y2 = self.akhir
-        if abs(x2 - x1) < 4 or abs(y2 - y1) < 4:
-            messagebox.showinfo(APP_NAME,
-                                "Seret dulu kotak di atas tulisan "
-                                "negaranya.")
+        if not self.mulai:
             return
-        s = self.skala
-        kotak = (int(min(x1, x2) / s), int(min(y1, y2) / s),
-                 int(max(x1, x2) / s), int(max(y1, y2) / s))
-        nama = self.ent.get().strip() or "referensi_negara.png"
-        # bersihkan karakter yang tidak sah untuk nama file Windows
-        for ch in '\\/:*?"<>|':
-            nama = nama.replace(ch, "_")
-        if not nama.lower().endswith(".png"):
-            nama += ".png"
-
-        # 1) Simpan ke folder data milik user (SELALU bisa ditulisi,
-        #    walau aplikasi ter-install di C:\Program Files).
-        #    Dulu disimpan ke folder aplikasi -> Errno 13
-        #    Permission denied saat aplikasi ter-install.
-        path = os.path.join(data_dir(), nama)
+        self._bersihkan_kotak()
+        d1, d2 = self.mulai, self.akhir
+        dx1, dy1 = min(d1[0], d2[0]), min(d1[1], d2[1])
+        dx2, dy2 = max(d1[0], d2[0]), max(d1[1], d2[1])
+        self.kotak_id = self.cv.create_rectangle(
+            dx1, dy1, dx2, dy2, outline="#00E676", width=2)
+        # tampilkan kembali area terpilih dalam warna asli (terang)
         try:
-            self.img.crop(kotak).save(path)
+            ix1, iy1, ix2, iy2 = self._peta(d1, d2)
+            pot = self.img.convert("RGB").crop((ix1, iy1, ix2, iy2))
+            if self.skala != 1.0:
+                pot = pot.resize((max(1, dx2 - dx1),
+                                  max(1, dy2 - dy1)))
+            self.ph_buka = ImageTk.PhotoImage(pot)
+            self.buka_id = self.cv.create_image(dx1, dy1,
+                                                image=self.ph_buka,
+                                                anchor="nw")
         except Exception:
-            # 2) Kalau tetap gagal, biarkan user memilih lokasinya
-            #    sendiri (Documents / Desktop, dll).
+            self.buka_id = None
+        self.info_id = self.cv.create_text(
+            dx1 + 4, max(52, dy1 - 12), anchor="w", fill="#00E676",
+            font=("Segoe UI", 10, "bold"),
+            text="{} x {} px".format(dx2 - dx1, dy2 - dy1))
+
+    def _lepas(self, ev):
+        if not self.mulai:
+            return
+        a, b = self.mulai, (ev.x, ev.y)
+        self.mulai = None
+        if abs(b[0] - a[0]) < 6 or abs(b[1] - a[1]) < 6:
+            # seretan terlalu kecil - jangan simpan, beri tahu user
+            self._bersihkan_kotak()
+            try:
+                self.cv.itemconfigure(
+                    self.banner_id,
+                    text="Kotak terlalu kecil - SERET dari satu titik ke "
+                         "titik lain, lalu lepas  |  ESC = batal",
+                    fill="#FF6B6B")
+                self.after(3000, self._pulihkan_banner)
+            except Exception:
+                pass
+            return
+        self._simpan_area(a, b)
+
+    # ---------- simpan / batal ----------
+    def _simpan_area(self, a, b):
+        ix1, iy1, ix2, iy2 = self._peta(a, b)
+        try:
+            pot = self.img.crop((ix1, iy1, ix2, iy2))
+        except Exception as e:
+            self._tutup()
+            messagebox.showerror(APP_NAME,
+                                 "Gagal memotong gambar:\n{}".format(e))
+            return
+        nama = nama_referensi_unik()
+        path = os.path.join(folder_referensi(), nama)
+        gagal = False
+        try:
+            pot.save(path)
+        except Exception:
+            # fallback (warisan v4.1): biarkan user memilih lokasi
+            # sendiri (Documents / Desktop, dll)
             path = filedialog.asksaveasfilename(
                 title="Simpan gambar referensi",
                 initialfile=nama,
@@ -4954,19 +5234,27 @@ class JendelaPotong(tk.Toplevel):
                 filetypes=[("Gambar PNG", "*.png"),
                            ("Semua file", "*.*")])
             if not path:
+                self._tutup()
                 return
             try:
-                self.img.crop(kotak).save(path)
+                pot.save(path)
             except Exception as e:
+                gagal = True
+                self._tutup()
                 messagebox.showerror(
                     APP_NAME,
-                    "Gagal menyimpan:\n{}\n\nCoba simpan ke folder "
-                    "lain (mis. Documents atau Desktop)."
-                    .format(e))
-                return
-        self.grab_release()
-        self.destroy()
-        self.on_simpan(path)
+                    "Gagal menyimpan:\n{}\n\nCoba simpan ke folder lain "
+                    "(mis. Documents atau Desktop).".format(e))
+        if not gagal:
+            self._tutup()
+            if self.on_simpan:
+                self.on_simpan(path)
+
+    def _batal(self):
+        cb = self.on_batal
+        self._tutup()
+        if cb:
+            cb()
 
 
 # ============================================================
@@ -5091,8 +5379,8 @@ class ShellApp:
         menubar.add_cascade(label="Studio", menu=m_lang)
 
         m_alat = tk.Menu(menubar, tearoff=0)
-        m_alat.add_command(label="Potong Gambar Referensi (langkah "
-                                 "Studio terpilih)",
+        m_alat.add_command(label="Potong Gambar - seret langsung di "
+                                 "layar (langkah Studio terpilih)",
                            command=self.tab_studio._potong_dari_menu)
         m_alat.add_command(label="Tes Cari Gambar (langkah Studio "
                                  "terpilih)",
@@ -5133,6 +5421,10 @@ class ShellApp:
 
     def _on_key(self, key):
         try:
+            # v5.1: saat layar potong gambar terbuka (fullscreen),
+            # abaikan hotkey F6/F7 supaya alur tidak mulai tiba-tiba
+            if OVERLAY_POTONG_AKTIF:
+                return
             if key == kb_mod.Key.f6:
                 self.root.after(0, lambda: self.tab_aktif()._start())
             elif key in (kb_mod.Key.f7, kb_mod.Key.esc):
@@ -5154,6 +5446,9 @@ class ShellApp:
             "tersendiri di atas (+ Klik, + Jeda, + Cari Gambar,\n"
             "+ Ketik Teks, + Tekan Tombol, + Scroll, + Ulangi) dan\n"
             "tabel kosong di bawahnya untuk menyusun alur sendiri.\n\n"
+            "v5.1: POTONG GAMBAR seret langsung di layar (fullscreen)\n"
+            "dan setiap potongan jadi file baru - referensi CARI\n"
+            "GAMBAR bisa dipakai berkali-kali, beda-beda gambarnya.\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."

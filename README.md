@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.0)
+# CutUploader Pro — Macro Studio Edition (v5.1)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **klik di gambar / pindah saja**, salin-tempel langkah, dan kini **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **klik di gambar / pindah saja**, salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, dan kini **potong gambar referensi langsung di layar** (seret kotak fullscreen, tanpa screenshot manual).
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.0**:
+Dari halaman [Releases](../../releases) rilis **v5.1**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.0.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.1.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -68,6 +68,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.1
+
+- **POTONG GAMBAR LANGSUNG DI LAYAR (fullscreen)** — dulu: seluruh layar di-screenshot lalu ditampilkan dalam jendela kecil, seret, tekan SIMPAN AREA. Kini: aplikasi disembunyikan sejenak → layar dibekukan memenuhi monitor → **tinggal MENYERET kotak langsung di area yang diinginkan** → lepas mouse, **langsung tersimpan**. Hanya area yang diseret yang disimpan (bukan seluruh layar); area sekitar tampil gelap, area terpilih tampil terang, ada label ukuran piksel. `ESC`/klik kanan = batal, seretan terlalu kecil ditolak dengan peringatan.
+- **CARI GAMBAR bisa dipakai berkali-kali dengan referensi berbeda-beda** — setiap potongan otomatis menjadi **file baru** `ref_tanggal-jam.png` di `%LOCALAPPDATA%\CutUploaderPro\referensi` (tidak pernah menimpa gambar langkah lain). Tambah langkah CARI GAMBAR sebanyak apa pun, masing-masing dengan referensinya sendiri.
+- **Thumbnail referensi** — panel PROPERTI langkah CARI GAMBAR menampilkan pratinjau gambar referensi langkah itu (dua tab).
+- **POTONG = bikin langkah baru (Studio)** — kalau belum ada langkah CARI GAMBAR terpilih saat menekan POTONG GAMBAR, aplikasi menawarkan membuat **langkah CARI GAMBAR baru** langsung dengan gambar hasil potongan.
+- Hotkey F6/F7 otomatis diabaikan selagi layar potong terbuka (alur tidak mulai tak sengaja).
 
 ## Perubahan v5.0
 

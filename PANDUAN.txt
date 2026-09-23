@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.0 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.1 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -293,8 +293,10 @@ GAMBAR" tersendiri:
      CARI GAMBAR (Studio).
   3. Centang "Aktifkan CARI GAMBAR pada langkah ini"
      (tab CutMotions).
-  4. PILIH GAMBAR... atau POTONG GAMBAR... (screenshot layar
-     hidup - paling akurat).
+  4. PILIH GAMBAR... atau POTONG GAMBAR... (v5.1: layar
+     DIBEKUKAN fullscreen, lalu Anda SERET kotak langsung di
+     area yang diinginkan - lepas mouse, langsung tersimpan.
+     Paling akurat dan paling cepat).
   5. Atur perilakunya:
      SAAT KETEMU      : "Klik di gambar" = klik langsung di
                         pusat gambar yang ditemukan;
@@ -316,17 +318,35 @@ potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
 
+BARU DI V5.1 - POTONG LANGSUNG DI LAYAR + REFERENSI BANYAK:
+  - POTONG GAMBAR kini fullscreen: aplikasi disembunyikan
+    sejenak, layar dibekukan (terlihat gelap), lalu Anda
+    MENYERET kotak langsung di area yang diinginkan. Hanya
+    area yang diseret yang disimpan - bukan seluruh layar.
+    ESC atau klik kanan = batal. Tidak perlu mengetik nama
+    file / menekan SIMPAN AREA lagi.
+  - Setiap potongan disimpan sebagai FILE BARU otomatis
+    (ref_tanggal_jam.png) di %LOCALAPPDATA%\CutUploaderPro\
+    referensi - gambar referensi langkah lain TIDAK tertimpa.
+    Jadi langkah CARI GAMBAR boleh ada BANYAK, masing-masing
+    dengan gambar referensi yang berbeda-beda.
+  - Panel PROPERTI langkah CARI GAMBAR sekarang menampilkan
+    pratinjau (thumbnail) gambar referensinya.
+  - Studio Makro: bila belum ada langkah CARI GAMBAR yang
+    dipilih saat POTONG GAMBAR, aplikasi menawarkan membuat
+    LANGKAH CARI GAMBAR BARU dari hasil potongan itu.
+
 PENYEBAB "CARI GAMBAR ERROR" YANG PALING SERING, DAN SOLUSINYA:
   1. Gambar referensi dipotong dari FILE screenshot yang
      ukurannya beda dengan layar asli (mis. screenshot 80%
      atau di-scale Windows).
-     SOLUSI: tombol POTONG GAMBAR - aplikasi screenshot
-     layar yang HIDUP, Anda seret kotak di atas tulisannya,
-     SIMPAN. Ukurannya dijamin cocok 1:1. Potongan otomatis
-     tersimpan ke folder data %LOCALAPPDATA%\CutUploaderPro
-     (bukan folder Program Files yang terkunci Windows -
-     dulu ini penyebab error "Errno 13 Permission denied"
-     saat SIMPAN AREA; sudah diperbaiki sejak v4.1).
+     SOLUSI: tombol POTONG GAMBAR - layar dibekukan, Anda
+     seret kotak langsung di atas tulisannya, lepas -
+     tersimpan. Ukurannya dijamin cocok 1:1. Potongan otomatis
+     tersimpan ke folder data %LOCALAPPDATA%\CutUploaderPro\
+     referensi (bukan folder Program Files yang terkunci
+     Windows - dulu ini penyebab error "Errno 13 Permission
+     denied" saat SIMPAN AREA; sudah diperbaiki sejak v4.1).
   2. Zoom browser berubah sejak gambar dipotong.
      SOLUSI: pencarian MULTI-SKALA (mencoba 70% - 125%),
      tapi tetap paling akurat bila zoom tetap.
@@ -341,8 +361,9 @@ PENYEBAB "CARI GAMBAR ERROR" YANG PALING SERING, DAN SOLUSINYA:
      gamblang (mis. "kemiripan terbaik 62%, ambang 80%").
 Urutan yang disarankan:
   1. Buka daftar negara di situs.
-  2. Klik POTONG GAMBAR -> seret kotak SEMPIT di atas tulisan
-     negaranya (jangan banyak ruang kosong) -> SIMPAN AREA.
+  2. Klik POTONG GAMBAR -> layar membeku -> seret kotak
+     SEMPIT di atas tulisan negaranya (jangan banyak ruang
+     kosong) -> lepas mouse, langsung tersimpan.
   3. Klik TES CARI -> mouse harusnya melompat ke tulisan itu.
      Ulangi sampai sukses, baru JALANKAN.
 
@@ -425,11 +446,12 @@ bisa diurut ulang (NAIK/TURUN), dihapus, dan ditambah bebas.
 ------------------------------------------------------------
 - Klik meleset       : zoom/ukuran jendela browser berubah
                        sejak posisi diambil. Ambil ulang.
-- SIMPAN AREA potongan gambar error "Errno 13 Permission
+- Simpan potongan gambar error "Errno 13 Permission
   denied" (versi lama): sudah diperbaiki sejak v4.1 -
   potongan otomatis tersimpan ke folder data yang bebas
-  tulis: %LOCALAPPDATA%\CutUploaderPro. Kalau tetap gagal,
-  muncul dialog pilih lokasi sendiri (Documents/Desktop).
+  tulis: %LOCALAPPDATA%\CutUploaderPro\referensi. Kalau
+  tetap gagal, muncul dialog pilih lokasi sendiri
+  (Documents/Desktop).
 - TES CARI gagal     : potong ulang gambar dengan POTONG
                        GAMBAR, perbesar radius, turunkan
                        kemiripan ke 0.70.
