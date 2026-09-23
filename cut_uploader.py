@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.2  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v5.3  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -32,6 +32,11 @@
        tanggal-jam rilis, nilainya dari tab CutMotions atau
        ketik sendiri) dan ISI VIDEO & CAPTION (mengisi jumlah
        video, atau caption dasar + nama video yang diambil)
+     - v5.3: CARI GAMBAR TANPA X,Y - gambar referensi dicari
+       lalu LANGSUNG DIKLIK; daerah pencariannya diatur lewat
+       AREA FOKUS yang dipilih dengan MENYERET kotak di layar
+       (opsional - kosong = seluruh layar). Makro lama dengan
+       titik acuan X,Y tetap jalan (otomatis jadi area)
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -159,7 +164,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.2"
+APP_VERSION = "5.3"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -354,6 +359,10 @@ SLOT_KODE = {
 GAMBAR_AKSI_OPSI = ("Klik di gambar", "Pindah saja")
 GAMBAR_GAGAL_OPSI = ("Klik titik X,Y", "Lewati langkah", "Stop alur")
 
+# v5.3 (Studio): tidak ada lagi titik X,Y - fallback tanpa posisi
+GAMBAR_GAGAL_OPSI_STUDIO = ("Lewati langkah", "Klik tengah area",
+                            "Stop alur")
+
 
 def gambar_langkah_default():
     """Config pencarian gambar untuk SATU langkah (bawaan/salinan)."""
@@ -488,8 +497,8 @@ def studio_langkah_baru(jenis, uid, **isi):
         "ikut_video": False,   # ikut jumlah video tab CutMotions
         # GAMBAR
         "gambar": {"path": "", "aksi": "Klik di gambar",
-                   "gagal": "Klik titik X,Y", "radius": "300",
-                   "mirip": "0.80"},
+                   "gagal": "Lewati langkah", "radius": "300",
+                   "mirip": "0.80", "fokus": None},
     }
     # nilai bawaan khusus per jenis (sebelum isi menimpa)
     if jenis == "TANGGAL_JAM":
@@ -533,11 +542,27 @@ def studio_bersihkan(daftar):
                                            if aksi in GAMBAR_AKSI_OPSI
                                            else "Klik di gambar")
                     gagal = str(g.get("gagal") or "")
-                    l["gambar"]["gagal"] = (gagal
-                                            if gagal in GAMBAR_GAGAL_OPSI
-                                            else "Klik titik X,Y")
+                    if gagal in GAMBAR_GAGAL_OPSI_STUDIO:
+                        l["gambar"]["gagal"] = gagal
+                    elif gagal == "Klik titik X,Y":
+                        # makro lama v5.2: titik acuan jadi area
+                        l["gambar"]["gagal"] = "Klik tengah area"
+                    else:
+                        l["gambar"]["gagal"] = "Lewati langkah"
                     l["gambar"]["radius"] = str(g.get("radius") or "300")
                     l["gambar"]["mirip"] = str(g.get("mirip") or "0.80")
+                    # v5.3: AREA FOKUS [x1,y1,x2,y2] atau None
+                    f = g.get("fokus")
+                    if isinstance(f, (list, tuple)) and len(f) == 4:
+                        try:
+                            fx = [int(float(v)) for v in f]
+                            l["gambar"]["fokus"] = [
+                                min(fx[0], fx[2]), min(fx[1], fx[3]),
+                                max(fx[0], fx[2]), max(fx[1], fx[3])]
+                        except (ValueError, TypeError):
+                            l["gambar"]["fokus"] = None
+                    else:
+                        l["gambar"]["fokus"] = None
             elif k == "aktif":
                 # langkah tanpa kunci "aktif" dianggap AKTIF
                 l[k] = bool(e.get(k, True))
@@ -567,6 +592,36 @@ def studio_bersihkan(daftar):
                 l[k] = str(e.get(k) if e.get(k) is not None else l[k])
         hasil.append(l)
     return hasil
+
+
+def area_dari_langkah(l):
+    """v5.3: hitung AREA FOKUS pencarian gambar dari sebuah langkah.
+
+    Urutan prioritas:
+      1. l["gambar"]["fokus"]  - kotak [x1,y1,x2,y2] pilihan user.
+      2. l["posisi"] + radius  - makro lama v5.2 (titik acuan)
+         dikonversi jadi kotak persegi, supaya makro lama tetap
+         berjalan tanpa diubah.
+      3. None                  - cari di seluruh layar.
+    """
+    g = l.get("gambar") or {}
+    f = g.get("fokus")
+    if isinstance(f, (list, tuple)) and len(f) == 4:
+        try:
+            fx = [int(v) for v in f]
+            return [min(fx[0], fx[2]), min(fx[1], fx[3]),
+                    max(fx[0], fx[2]), max(fx[1], fx[3])]
+        except (ValueError, TypeError):
+            pass
+    titik = l.get("posisi")
+    if titik:
+        try:
+            px, py = int(titik[0]), int(titik[1])
+        except (ValueError, TypeError, IndexError):
+            return None
+        r = int(_angka(g.get("radius"), 300, 10, 4000))
+        return [max(0, px - r), max(0, py - r), px + r, py + r]
+    return None
 
 
 def isi_placeholder(teks, idx, caption, videos, jumlah=None):
@@ -640,13 +695,19 @@ def template_cutmotions_steps(cfg, mulai_uid=0):
             posisi=P("pos_negara"))
         g = cfg.get("gambar_c")
         if g and g.get("aktif") and g.get("path"):
+            gagal_c = str(g.get("gagal") or "")
+            if gagal_c not in GAMBAR_GAGAL_OPSI_STUDIO:
+                gagal_c = ("Klik tengah area"
+                           if gagal_c == "Klik titik X,Y"
+                           else "Lewati langkah")
             add("GAMBAR", nama="C - Pilih negara (cari gambar)",
                 posisi=P("pos_pilih_neg"),
                 gambar={"path": str(g.get("path") or ""),
                         "aksi": g.get("aksi") or "Klik di gambar",
-                        "gagal": g.get("gagal") or "Klik titik X,Y",
+                        "gagal": gagal_c,
                         "radius": str(g.get("radius") or "300"),
-                        "mirip": str(g.get("mirip") or "0.80")})
+                        "mirip": str(g.get("mirip") or "0.80"),
+                        "fokus": None})
         else:
             add("KLIK", nama="C - Pilih negara", posisi=P("pos_pilih_neg"))
         add("KLIK", nama="D - Klik kolom tanggal", posisi=P("pos_tanggal"))
@@ -826,6 +887,84 @@ def cari_di_layar(gambar_path, cx, cy, radius, kemiripan=0.8):
         return None, ("Gambar tidak ditemukan (kemiripan terbaik "
                       "{:.0%}, ambang {:.0%}). Coba: potong ulang gambar "
                       "lewat tombol POTONG GAMBAR, perbesar RADIUS, atau "
+                      "turunkan KEMIRIPAN ke 0.70.".format(
+                          skor_b, kemiripan))
+    except Exception as e:
+        return None, "Error pencarian gambar: {}".format(e)
+
+
+def cari_di_layar_area(gambar_path, area, kemiripan=0.8):
+    """v5.3: cari gambar referensi di dalam AREA FOKUS persegi.
+
+    area = [x1, y1, x2, y2] koordinat layar (boleh terbalik,
+    dinormalkan di sini), atau None = cari di SELURUH LAYAR.
+    Tidak butuh titik acuan X,Y lagi - gambar referensi bisa
+    langsung diklik begitu ketemu.
+
+    Kembalikan ((x, y, skor), "") saat ketemu,
+    atau (None, pesan_penjelasan) saat gagal.
+    """
+    if not CV_OK:
+        return None, ("opencv-python belum terpasang. Install lewat CMD: "
+                      "pip install opencv-python  (atau pakai versi EXE "
+                      "yang sudah menyatukannya)")
+    try:
+        tpl = cv2.imread(gambar_path)
+        if tpl is None:
+            return None, ("File gambar tidak bisa dibaca: "
+                          + str(gambar_path))
+        th, tw = tpl.shape[:2]
+        if tw < 6 or th < 6:
+            return None, "Gambar referensi terlalu kecil (minimal 6x6 px)."
+        if float(tpl.std(axis=(0, 1)).max()) < 2.0:
+            # warna rata membuat matchTemplate tidak valid (false 100%)
+            return None, ("Gambar referensi polos (warna rata tanpa "
+                          "tulisan/gambar) - potong ulang bagian yang "
+                          "berisi tulisan atau tombol.")
+        x1 = y1 = 0
+        bbox = None
+        if area:
+            try:
+                ax = [int(v) for v in area]
+                x1, y1 = max(0, min(ax[0], ax[2])), max(0, min(ax[1],
+                                                               ax[3]))
+                x2, y2 = max(0, max(ax[0], ax[2])), max(0,
+                                                        max(ax[1], ax[3]))
+                bbox = (x1, y1, max(x1 + 1, x2), max(y1 + 1, y2))
+            except (ValueError, TypeError, IndexError):
+                bbox = None
+        grab = ImageGrab.grab(bbox=bbox) if bbox else ImageGrab.grab()
+        layar = np.array(grab)[:, :, ::-1].copy()   # RGB -> BGR
+        if layar.shape[0] < th or layar.shape[1] < tw:
+            return None, ("Area fokus lebih kecil dari gambar referensi - "
+                          "perbesar AREA FOKUS.")
+        terbaik = None
+        # Multi-skala: zoom browser saat memotong gambar bisa berbeda
+        # dengan zoom saat pencarian (penyebab error paling umum).
+        for skala in (1.0, 0.9, 1.1, 0.8, 1.25, 0.7):
+            if skala == 1.0:
+                t = tpl
+            else:
+                try:
+                    t = cv2.resize(tpl, (max(6, int(tw * skala)),
+                                         max(6, int(th * skala))))
+                except Exception:
+                    continue
+            hh, ww = t.shape[:2]
+            if layar.shape[0] < hh or layar.shape[1] < ww:
+                continue
+            hasil = cv2.matchTemplate(layar, t, cv2.TM_CCOEFF_NORMED)
+            _mn, skor, _mnloc, lok = cv2.minMaxLoc(hasil)
+            kandidat = (x1 + lok[0] + ww // 2,
+                        y1 + lok[1] + hh // 2, skor)
+            if terbaik is None or skor > terbaik[2]:
+                terbaik = kandidat
+            if skor >= kemiripan:
+                return kandidat, ""
+        skor_b = terbaik[2] if terbaik else 0.0
+        return None, ("Gambar tidak ditemukan (kemiripan terbaik "
+                      "{:.0%}, ambang {:.0%}). Coba: potong ulang gambar "
+                      "lewat POTONG GAMBAR, perbesar AREA FOKUS, atau "
                       "turunkan KEMIRIPAN ke 0.70.".format(
                           skor_b, kemiripan))
     except Exception as e:
@@ -3705,7 +3844,13 @@ class StudioMakroTab:
                 if g.get("path") else "(gambar belum dipilih)"
             aksi_t = ("pindah saja"
                       if g.get("aksi") == "Pindah saja" else "klik gambar")
-            return "{} | {} | {}".format(pos_t, gm, aksi_t)
+            f = g.get("fokus")
+            if isinstance(f, (list, tuple)) and len(f) == 4:
+                fokus_t = "fokus ({},{})-({},{})".format(
+                    f[0], f[1], f[2], f[3])
+            else:
+                fokus_t = "cari di seluruh layar"
+            return "{} | {} | {}".format(fokus_t, gm, aksi_t)
         if jenis == "KETIK":
             t = str(l.get("teks") or "")
             if len(t) > 42:
@@ -4009,7 +4154,7 @@ class StudioMakroTab:
         self._ent_prop(r, self.pv["jeda"], 6)
 
         pos = l.get("posisi")
-        if jenis in ("KLIK", "GAMBAR", "TANGGAL_JAM", "VIDEO_CAPTION"):
+        if jenis in ("KLIK", "TANGGAL_JAM", "VIDEO_CAPTION"):
             self.pv["x"] = tk.StringVar(value=str(pos[0]) if pos else "")
             self.pv["y"] = tk.StringVar(value=str(pos[1]) if pos else "")
             r = self._baris_prop("POSISI KLIK DULU (opsional) X , Y")
@@ -4071,15 +4216,21 @@ class StudioMakroTab:
                 else "Klik di gambar")
             self.pv["g_gagal"] = tk.StringVar(
                 value=g.get("gagal") if g.get("gagal")
-                in GAMBAR_GAGAL_OPSI else "Klik titik X,Y")
-            self.pv["g_radius"] = tk.StringVar(
-                value=str(g.get("radius") or "300"))
+                in GAMBAR_GAGAL_OPSI_STUDIO else "Lewati langkah")
             self.pv["g_mirip"] = tk.StringVar(
                 value=str(g.get("mirip") or "0.80"))
+            f = g.get("fokus")
+            if isinstance(f, (list, tuple)) and len(f) == 4:
+                fokus_teks = "({},{}) - ({},{})".format(
+                    f[0], f[1], f[2], f[3])
+            else:
+                fokus_teks = "Seluruh layar (tidak dibatasi)"
+            self.pv["g_fokus"] = tk.StringVar(value=fokus_teks)
             tk.Label(self.prop_body,
-                     text="Cari potongan gambar di layar dalam radius "
-                          "titik acuan X,Y. SAAT KETEMU bisa LANGSUNG "
-                          "DIKLIK atau hanya DIPINDAH tanpa klik.",
+                     text="TANPA perlu mengisi X,Y lagi: gambar referensi "
+                          "dicari lalu LANGSUNG DIKLIK (atau hanya "
+                          "dipindah). AREA FOKUS opsional untuk "
+                          "membatasi daerah pencariannya.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             r = self._baris_prop("GAMBAR REFERENSI")
@@ -4101,26 +4252,37 @@ class StudioMakroTab:
                     text="  Belum ada gambar - klik POTONG GAMBAR, lalu "
                          "SERET kotak langsung di layar  ",
                     fg=C_MUTED, font=F_XS)
+            # v5.3: AREA FOKUS (opsional) - dipilih dengan menyeret
+            r = self._baris_prop("AREA FOKUS (opsional)")
+            self._ent_prop(r, self.pv["g_fokus"], 26, tengah=False)
+            self._btn_prop(r, "PILIH AREA FOKUS...",
+                           lambda: self._pilih_area_fokus(l["uid"]))
+            self._btn_prop(r, "KOSONGKAN",
+                           lambda: self._fokus_kosongkan(l["uid"]),
+                           bg=C_BG)
+            tk.Label(r, text="diisi dengan MENYERET kotak di layar",
+                     bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left",
+                                                          padx=6)
             r = self._baris_prop("SAAT KETEMU:")
             tk.OptionMenu(r, self.pv["g_aksi"],
                           *GAMBAR_AKSI_OPSI).pack(side="left")
             tk.Label(r, text="SAAT TIDAK KETEMU:", bg=C_BG, fg=C_MUTED,
                      font=F_XS).pack(side="left", padx=(12, 4))
             tk.OptionMenu(r, self.pv["g_gagal"],
-                          *GAMBAR_GAGAL_OPSI).pack(side="left")
-            r = self._baris_prop("RADIUS (px) | KEMIRIPAN:")
-            self._ent_prop(r, self.pv["g_radius"], 6)
+                          *GAMBAR_GAGAL_OPSI_STUDIO).pack(side="left")
+            r = self._baris_prop("KEMIRIPAN:")
             self._ent_prop(r, self.pv["g_mirip"], 6)
             self._btn_prop(r, "TES CARI LANGKAH INI", self._tes_cari)
             tk.Label(self.prop_body,
-                     text="v5.1: POTONG GAMBAR = layar dibekukan sejenak, "
-                          "lalu SERET kotak LANGSUNG di area yang "
-                          "diinginkan (hanya area itu yang disimpan; "
-                          "ESC = batal). Setiap potongan jadi file BARU "
-                          "di folder data\\referensi - gambar langkah "
-                          "lain TIDAK tertimpa, jadi bisa dipakai "
-                          "berkali-kali dengan referensi berbeda-beda. "
-                          "Zoom browser jangan diubah setelah dipotong.",
+                     text="v5.3: tidak perlu POSISI X,Y lagi - gambar "
+                          "dicari di AREA FOKUS (atau seluruh layar bila "
+                          "kosong) lalu diklik tepat di gambarnya. PILIH "
+                          "AREA FOKUS = layar dibekukan, SERET kotak di "
+                          "daerah tempat gambar biasanya muncul (mis. "
+                          "daftar negara saja, bukan seluruh halaman) - "
+                          "pencarian lebih cepat & lebih akurat. Potongan "
+                          "jadi file BARU di folder data\\referensi; "
+                          "zoom browser jangan diubah setelah dipotong.",
                      bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(
                          fill="x", pady=(4, 0))
@@ -4347,10 +4509,10 @@ class StudioMakroTab:
             g["aksi"] = (aksi if aksi in GAMBAR_AKSI_OPSI
                          else "Klik di gambar")
             gagal = self.pv["g_gagal"].get()
-            g["gagal"] = (gagal if gagal in GAMBAR_GAGAL_OPSI
-                          else "Klik titik X,Y")
-            g["radius"] = self.pv["g_radius"].get().strip()
+            g["gagal"] = (gagal if gagal in GAMBAR_GAGAL_OPSI_STUDIO
+                          else "Lewati langkah")
             g["mirip"] = self.pv["g_mirip"].get().strip()
+            # fokus diatur lewat tombol PILIH AREA FOKUS / KOSONGKAN
         elif jenis == "KETIK":
             l["teks"] = self.pv["teks"].get()
             l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
@@ -4580,6 +4742,90 @@ class StudioMakroTab:
         self._set_status("Langkah CARI GAMBAR baru dibuat dengan gambar: "
                          "{}".format(path), C_GREEN)
 
+    # ---------- v5.3: AREA FOKUS pencarian gambar ----------
+    def _pilih_area_fokus(self, uid=None):
+        """Pilih AREA FOKUS pencarian dengan MENYERET kotak di layar.
+
+        Layar dibekukan fullscreen (teknik sama dengan POTONG GAMBAR),
+        tapi hasilnya KOORDINAT [x1,y1,x2,y2] - bukan file gambar.
+        """
+        if not PIL_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "Fitur area fokus butuh Pillow.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install pillow")
+            return
+        uid = uid or self.sel
+        l = self._get(uid)
+        if not l or l["jenis"] != "GAMBAR":
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu baris CARI GAMBAR yang mau diberi AREA "
+                "FOKUS.")
+            return
+        self._fokus_uid = uid
+
+        def kerja():
+            try:
+                for s in range(3, 0, -1):
+                    self.root.after(0, lambda s=s: self._set_status(
+                        "Layar akan DIBEKUKAN dalam {} detik - siapkan "
+                        "halaman tempat gambar biasanya muncul...".format(
+                            s), C_ORANGE))
+                    time.sleep(1)
+                induk = self.root.winfo_toplevel()
+                self.root.after(0, induk.withdraw)
+                time.sleep(0.4)
+                img = ImageGrab.grab()
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror(
+                    APP_NAME,
+                    "Gagal mengambil screenshot:\n{}".format(e)))
+                self.root.after(0, self._tampil_lagi)
+                return
+
+            def tampil():
+                try:
+                    OverlayPotong(self.wadah, img, None,
+                                  on_batal=self._potong_batal,
+                                  mode="area",
+                                  on_area=self._area_terpilih)
+                except Exception as e:
+                    messagebox.showerror(
+                        APP_NAME,
+                        "Gagal membuka layar pilih area:\n{}".format(e))
+                finally:
+                    self._tampil_lagi()
+
+            self.root.after(0, tampil)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    def _area_terpilih(self, koord):
+        l = self._get(getattr(self, "_fokus_uid", None))
+        if not l:
+            return
+        l.setdefault("gambar", {})["fokus"] = list(koord)
+        self._refresh_tabel()
+        if self.sel == l["uid"]:
+            self._render_properti()
+        self._set_status(
+            "AREA FOKUS tersimpan: ({},{}) - ({},{})  - gambar dicari "
+            "hanya di dalam kotak itu.".format(koord[0], koord[1],
+                                               koord[2], koord[3]),
+            C_GREEN)
+
+    def _fokus_kosongkan(self, uid):
+        l = self._get(uid)
+        if not l:
+            return
+        l.setdefault("gambar", {})["fokus"] = None
+        self._refresh_tabel()
+        if self.sel == uid:
+            self._render_properti()
+        self._set_status("Area fokus dikosongkan - gambar dicari di "
+                         "seluruh layar.", C_GREEN)
+
     def _tes_cari(self):
         if not PYNPUT_OK:
             messagebox.showerror(APP_NAME, "Library pynput belum "
@@ -4600,7 +4846,6 @@ class StudioMakroTab:
             return
         g = l.get("gambar") or {}
         path = str(g.get("path") or "").strip()
-        pos = l.get("posisi")
         nama = str(l.get("nama") or "") or LABEL_JENIS["GAMBAR"]
         if not path or not os.path.isfile(path):
             messagebox.showinfo(
@@ -4609,21 +4854,19 @@ class StudioMakroTab:
                 "termudah: klik 'POTONG GAMBAR...', lalu seret kotak "
                 "di atas tulisan/tombolnya.".format(nama))
             return
-        if not pos:
-            messagebox.showinfo(
-                APP_NAME,
-                "Atur dulu POSISI X,Y langkah {} sebagai titik acuan "
-                "pencarian (tombol AMBIL).".format(nama))
-            return
-        radius = int(_angka(g.get("radius"), 300, 50, 2000))
         mirip = _angka(g.get("mirip"), 0.8, 0.5, 0.99)
+        area = area_dari_langkah(l)
+        if area:
+            desk = "area fokus ({},{})-({},{})".format(area[0], area[1],
+                                                       area[2], area[3])
+        else:
+            desk = "seluruh layar"
 
         def kerja():
             self.root.after(0, lambda: self._set_status(
-                "Mencari '{}' dalam radius {} px (multi-skala)...".format(
-                    os.path.basename(path), radius), C_ORANGE))
-            hasil, pesan = cari_di_layar(path, pos[0], pos[1], radius,
-                                         mirip)
+                "Mencari '{}' di {} (multi-skala)...".format(
+                    os.path.basename(path), desk), C_ORANGE))
+            hasil, pesan = cari_di_layar_area(path, area, mirip)
 
             def lapor():
                 if hasil:
@@ -4863,8 +5106,8 @@ class StudioMakroTab:
         if butuh_cv and not CV_OK:
             if not messagebox.askyesno(
                     APP_NAME,
-                    "opencv-python belum terpasang sehingga CARI GAMBAR "
-                    "tidak bisa jalan (akan klik titik acuan saja).\n\n"
+                    "opencv-python belum terpasang sehingga langkah CARI "
+                    "GAMBAR akan DILEWATI (yang lain tetap jalan).\n\n"
                     "Lanjut?"):
                 return
         cut = self.shell.tab_cut if self.shell is not self else None
@@ -4956,32 +5199,40 @@ class StudioMakroTab:
                 time.sleep(jk)
 
     def _studio_gambar(self, l):
-        """Kembalikan "stop" bila alur harus dihentikan."""
-        titik = l.get("posisi")
+        """Kembalikan "stop" bila alur harus dihentikan.
+
+        v5.3: TANPA titik acuan X,Y - gambar dicari di AREA FOKUS
+        (atau seluruh layar) lalu diklik / dituju tepat di gambarnya.
+        """
         g = l.get("gambar") or {}
         path = str(g.get("path") or "").strip()
         nama = str(l.get("nama") or "") or LABEL_JENIS["GAMBAR"]
-        if not titik:
-            self._set_status("Titik acuan '{}' belum diatur - langkah "
-                             "dilewati.".format(nama), C_ORANGE)
+        if not path or not os.path.isfile(path):
+            self._set_status(
+                "Gambar referensi '{}' belum ada - langkah dilewati "
+                "(klik POTONG GAMBAR di panel properti).".format(nama),
+                C_ORANGE)
             return None
-        if not path or not os.path.isfile(path) or not CV_OK:
-            self._set_status("Gambar/opencv tidak tersedia untuk '{}' - "
-                             "klik titik acuan X,Y.".format(nama),
-                             C_ORANGE)
-            self._klik_titik(titik)
+        if not CV_OK:
+            self._set_status(
+                "opencv-python belum terpasang - langkah CARI GAMBAR "
+                "'{}' dilewati.".format(nama), C_ORANGE)
             return None
-        radius = int(_angka(g.get("radius"), 300, 50, 2000))
         mirip = _angka(g.get("mirip"), 0.8, 0.5, 0.99)
+        area = area_dari_langkah(l)
+        if area:
+            desk = "area fokus ({},{})-({},{})".format(area[0], area[1],
+                                                       area[2], area[3])
+        else:
+            desk = "seluruh layar"
         hasil = None
         pesan = ""
         for percobaan in range(1, 4):
             self._set_status(
-                "Cari gambar '{}' dalam radius {} px (percobaan {}/3, "
-                "multi-skala)...".format(os.path.basename(path), radius,
+                "Cari gambar '{}' di {} (percobaan {}/3, "
+                "multi-skala)...".format(os.path.basename(path), desk,
                                          percobaan), C_GREEN)
-            hasil, pesan = cari_di_layar(path, titik[0], titik[1],
-                                         radius, mirip)
+            hasil, pesan = cari_di_layar_area(path, area, mirip)
             if hasil:
                 break
             self._sleep(1.0)
@@ -5002,18 +5253,20 @@ class StudioMakroTab:
                 "diklik.".format(nama, x, y, skor), C_GREEN)
             self._klik_titik((x, y))
             return None
-        pilihan = str(g.get("gagal") or "Klik titik X,Y")
+        pilihan = str(g.get("gagal") or "Lewati langkah")
         if pilihan == "Stop alur":
             self._finish("Dihentikan: gambar '{}' tidak ketemu 3x. {}"
                          .format(os.path.basename(path), pesan), warn=True)
             return "stop"
-        if pilihan == "Lewati langkah":
-            self._set_status("Gambar '{}' tidak ketemu - langkah "
-                             "dilewati. {}".format(nama, pesan), C_ORANGE)
+        if pilihan == "Klik tengah area" and area:
+            tengah = ((area[0] + area[2]) // 2, (area[1] + area[3]) // 2)
+            self._set_status(
+                "Gambar '{}' tidak ketemu - klik tengah area fokus {}. "
+                "{}".format(nama, tengah, pesan), C_ORANGE)
+            self._klik_titik(tengah)
             return None
-        self._set_status("Gambar '{}' tidak ketemu - pakai klik titik "
-                         "acuan. {}".format(nama, pesan), C_ORANGE)
-        self._klik_titik(titik)
+        self._set_status("Gambar '{}' tidak ketemu - langkah dilewati. "
+                         "{}".format(nama, pesan), C_ORANGE)
         return None
 
     def _ketik(self, teks, ctrl_a=False, enter=False):
@@ -5270,11 +5523,15 @@ class StudioMakroTab:
 # dalam jendela, lalu harus tekan SIMPAN AREA).
 # ------------------------------------------------------------
 class OverlayPotong(tk.Toplevel):
-    def __init__(self, induk, img, on_simpan, on_batal=None):
+    def __init__(self, induk, img, on_simpan, on_batal=None,
+                 mode="gambar", on_area=None):
         super().__init__(induk)
         self.img = img
         self.on_simpan = on_simpan
         self.on_batal = on_batal
+        self.mode = mode          # "gambar" = simpan PNG;
+                                  # "area" = kembalikan koordinat
+        self.on_area = on_area
         self.mulai = None
         self.akhir = (0, 0)
         self.kotak_id = None
@@ -5314,9 +5571,12 @@ class OverlayPotong(tk.Toplevel):
                                  outline="#1C1C1C")
         self.banner_id = self.cv.create_text(
             sw // 2, 23,
-            text="SERET kotak LANGSUNG di area yang diinginkan  -  "
-                 "hanya area yang diseret yang disimpan  |  "
-                 "ESC = batal",
+            text=("SERET kotak = AREA FOKUS pencarian gambar  -  gambar "
+                  "referensi dicari DI DALAM kotak ini  |  ESC = batal"
+                  if self.mode == "area" else
+                  "SERET kotak LANGSUNG di area yang diinginkan  -  "
+                  "hanya area yang diseret yang disimpan  |  "
+                  "ESC = batal"),
             fill="#FFD34D", font=("Segoe UI", 13, "bold"))
 
         self.cv.bind("<ButtonPress-1>", self._tekan)
@@ -5350,9 +5610,13 @@ class OverlayPotong(tk.Toplevel):
         try:
             self.cv.itemconfigure(
                 self.banner_id,
-                text="SERET kotak LANGSUNG di area yang diinginkan  -  "
-                     "hanya area yang diseret yang disimpan  |  "
-                     "ESC = batal",
+                text=("SERET kotak = AREA FOKUS pencarian gambar  -  "
+                      "gambar referensi dicari DI DALAM kotak ini  |  "
+                      "ESC = batal"
+                      if self.mode == "area" else
+                      "SERET kotak LANGSUNG di area yang diinginkan  -  "
+                      "hanya area yang diseret yang disimpan  |  "
+                      "ESC = batal"),
                 fill="#FFD34D")
         except Exception:
             pass
@@ -5440,6 +5704,13 @@ class OverlayPotong(tk.Toplevel):
     # ---------- simpan / batal ----------
     def _simpan_area(self, a, b):
         ix1, iy1, ix2, iy2 = self._peta(a, b)
+        if self.mode == "area":
+            # v5.3: mode AREA FOKUS - hasil koordinat, bukan file
+            koord = [ix1, iy1, ix2, iy2]
+            self._tutup()
+            if self.on_area:
+                self.on_area(koord)
+            return
         try:
             pot = self.img.crop((ix1, iy1, ix2, iy2))
         except Exception as e:
@@ -5683,6 +5954,9 @@ class ShellApp:
             "v5.2: 2 MENU BARU di Studio - ISI TANGGAL-JAM (mengisi\n"
             "kolom tanggal-jam rilis otomatis) dan ISI VIDEO & CAPTION\n"
             "(mengisi jumlah video, atau caption dasar + nama video).\n\n"
+            "v5.3: CARI GAMBAR TANPA X,Y - gambar referensi langsung\n"
+            "diklik begitu ketemu; daerah pencarian dibatasi AREA\n"
+            "FOKUS yang dipilih dengan menyeret kotak di layar.\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."

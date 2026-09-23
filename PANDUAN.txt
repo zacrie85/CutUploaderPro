@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.2 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.3 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -77,10 +77,12 @@ MENUIS LANGKAH DI TOOLBAR ATAS (baris pertama):
   + KLIK          klik kiri/kanan/dobel di satu titik
                   (bisa diulang, ada jeda antar klik)
   + JEDA          tunggu beberapa detik
-  + CARI GAMBAR   cari potongan gambar di layar; hasilnya
-                  bisa LANGSUNG DIKLIK atau hanya DIPINDAH
-                  tanpa klik; kalau tidak ketemu: klik titik
-                  acuan / lewati / stop
+  + CARI GAMBAR   cari potongan gambar di layar; TIDAK PERLU
+                  mengisi X,Y lagi (v5.3) - gambar dicari di
+                  AREA FOKUS (opsional, diseret di layar) atau
+                  seluruh layar, lalu LANGSUNG DIKLIK atau hanya
+                  DIPINDAH tanpa klik; kalau tidak ketemu:
+                  klik tengah area / lewati / stop
   + KETIK         mengetik teks (opsional Ctrl+A dulu dan
                   Enter setelahnya)
   + TANGGAL-JAM   (v5.2) mengisi kolom TANGGAL & JAM RILIS
@@ -119,11 +121,13 @@ PANEL PROPERTI LANGKAH (menyesuaikan jenis langkah):
                KLIK (kiri/kanan/dobel), JUMLAH KLIK, JEDA
                ANTAR KLIK, GESER PER PUTARAN ULANGI (px).
   - JEDA     : TUNGGU BERAPA DETIK.
-  - CARI GAMBAR: POSISI acuan X,Y, GAMBAR REFERENSI (PILIH/
-               POTONG), SAAT KETEMU (Klik di gambar / Pindah
-               saja), SAAT TIDAK KETEMU (Klik titik X,Y /
-               Lewati langkah / Stop alur), RADIUS,
-               KEMIRIPAN, TES CARI LANGKAH INI.
+  - CARI GAMBAR: GAMBAR REFERENSI (PILIH/POTONG), AREA FOKUS
+               (opsional - PILIH AREA FOKUS = seret kotak di
+               layar; kosong = seluruh layar), SAAT KETEMU (Klik
+               di gambar / Pindah saja), SAAT TIDAK KETEMU
+               (Klik tengah area / Lewati langkah / Stop alur),
+               KEMIRIPAN, TES CARI LANGKAH INI. TIDAK ADA lagi
+               isian POSISI X,Y - kini otomatis.
   - KETIK    : TEKS YANG DIKETIK + placeholder (lihat di
                bawah), Ctrl+A dulu, Enter setelahnya.
   - ISI TANGGAL-JAM: POSISI KLIK DULU (opsional - kosongkan
@@ -336,6 +340,33 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V5.3 - CARI GAMBAR TANPA X,Y + AREA FOKUS:
+  Keluhan lama: "sudah memilih gambar referensi masih tetap
+  harus mengisi posisi X,Y". Sekarang TIDAK PERLU lagi:
+  - Gambar referensi dicari LALU LANGSUNG DIKLIK begitu
+    ketemu (atau hanya dipindah, sesuai pilihan SAAT KETEMU).
+  - ISIAN POSISI X,Y dan RADIUS di langkah CARI GAMBAR
+    DIHAPUS dari panel properti.
+  - Penggantinya: AREA FOKUS (opsional) - daerah persegi
+    tempat gambar dicari. Cara isi: klik 'PILIH AREA
+    FOKUS...' -> layar dibekukan -> SERET kotak di daerah
+    tempat gambar biasanya muncul (mis. hanya daftar negara,
+    bukan seluruh halaman) -> lepas, tersimpan. KOSONGKAN =
+    cari di seluruh layar.
+  Manfaat area fokus: pencarian lebih CEPAT (layar tidak
+  di-scan penuh), lebih AKURAT (gambar mirip di luar area
+  tidak ikut terdeteksi), dan gambar bisa berpindah posisi
+  di dalam area (mis. daftar bergeser sedikit) - tetap
+  ketemu, karena yang dicari adalah gambarnya, bukan titik.
+  Makro lama v5.2 ke bawah yang masih memakai titik acuan
+  X,Y + radius OTOMATIS dikonversi jadi area persegi saat
+  dijalankan / dimuat - tidak perlu diubah satu per satu.
+  Pilihan SAAT TIDAK KETEMU di Studio kini: Lewati langkah /
+  Klik tengah area (pengganti 'Klik titik X,Y' lama) /
+  Stop alur. Gambar referensi yang warnanya rata (polos,
+  tanpa tulisan) ditolak dengan pesan - potong ulang bagian
+  yang berisi tulisan/tombol.
 
 BARU DI V5.2 - ISI TANGGAL-JAM & ISI VIDEO & CAPTION:
   Dua menu baru di toolbar Studio Makro yang menyelesaikan

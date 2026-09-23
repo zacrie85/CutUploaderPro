@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.2)
+# CutUploader Pro — Macro Studio Edition (v5.3)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **klik di gambar / pindah saja**, salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar** (seret kotak fullscreen), dan 2 menu pintar baru: **ISI TANGGAL-JAM** dan **ISI VIDEO & CAPTION**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, dan menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.2**:
+Dari halaman [Releases](../../releases) rilis **v5.3**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.2.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.3.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -28,7 +28,7 @@ Persis konsep Jitbit Macro Recorder: **semua jenis aksi jadi menu tersendiri di 
 |---|---|
 | `+ KLIK` | Klik kiri/kanan/dobel di satu titik (jumlah klik + jeda antar klik) |
 | `+ JEDA` | Tunggu N detik |
-| `+ CARI GAMBAR` | Cari potongan gambar di layar → **langsung diklik** atau **hanya dipindah tanpa klik**; tak ketemu → klik titik acuan / lewati / stop |
+| `+ CARI GAMBAR` | Cari potongan gambar di layar **tanpa perlu X,Y** → diklik langsung begitu ketemu atau hanya dipindah; daerah pencarian dibatasi **AREA FOKUS** opsional (seret kotak di layar); tak ketemu → klik tengah area / lewati / stop |
 | `+ KETIK` | Ketik teks (opsional Ctrl+A dulu, Enter setelahnya) |
 | `+ TANGGAL-JAM` | **Baru v5.2** — isi kolom tanggal-jam rilis otomatis (dari setelan tab CutMotions atau nilai tetap) |
 | `+ VIDEO+CAPTION` | **Baru v5.2** — isi jumlah video, atau caption dasar + nama video ke-i (`#dangdut - melati`), atau nama video saja |
@@ -70,6 +70,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.3
+
+- **CARI GAMBAR TANPA X,Y** — isian POSISI X,Y dan RADIUS di langkah CARI GAMBAR Studio **dihapus**. Gambar referensi yang sudah dipotong langsung dicari dan **diklik otomatis** begitu ketemu (atau hanya dipindah, sesuai pilihan SAAT KETEMU) — tidak ada lagi langkah mengisi posisi acuan.
+- **AREA FOKUS (opsional)** — pengganti titik acuan: daerah persegi tempat gambar dicari. Klik `PILIH AREA FOKUS...` → layar dibekukan fullscreen → **seret kotak** di daerah tempat gambar biasanya muncul → lepas, tersimpan sebagai koordinat. `KOSONGKAN` = cari di seluruh layar. Pencarian jadi lebih cepat (tidak scan layar penuh), lebih akurat (gambar mirip di luar area tak ikut terdeteksi), dan tetap jalan walau gambar bergeser di dalam area.
+- **Makro lama tetap jalan** — langkah CARI GAMBAR versi lama (titik acuan X,Y + radius) otomatis dikonversi jadi area persegi saat dimuat/dijalankan; pilihan lama "Klik titik X,Y" dimapkan ke "Klik tengah area".
+- **Penjagaan gambar polos** — referensi yang warnanya rata (tanpa tulisan/gambar) ditolak dengan pesan jelas, karena template matching pada gambar konstan menghasilkan positif-palsu 100%.
+- Saat opencv tidak terpasang, langkah CARI GAMBAR kini dilewati dengan pesan (dulu fallback klik titik acuan yang sudah tidak ada).
 
 ## Perubahan v5.2
 
