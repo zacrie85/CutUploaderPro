@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.3)
+# CutUploader Pro — Macro Studio Edition (v5.4)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, dan menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, dan menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.3**:
+Dari halaman [Releases](../../releases) rilis **v5.4**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.3.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.4.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -26,6 +26,7 @@ Persis konsep Jitbit Macro Recorder: **semua jenis aksi jadi menu tersendiri di 
 
 | Menu | Aksi |
 |---|---|
+| `● REKAM AKSI` | **Baru v5.4** — MEREKAM: klik/ketikan/scroll Anda di aplikasi mana pun terekam otomatis jadi langkah makro; F8 = berhenti |
 | `+ KLIK` | Klik kiri/kanan/dobel di satu titik (jumlah klik + jeda antar klik) |
 | `+ JEDA` | Tunggu N detik |
 | `+ CARI GAMBAR` | Cari potongan gambar di layar **tanpa perlu X,Y** → diklik langsung begitu ketemu atau hanya dipindah; daerah pencarian dibatasi **AREA FOKUS** opsional (seret kotak di layar); tak ketemu → klik tengah area / lewati / stop |
@@ -70,6 +71,18 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.4
+
+- **● REKAM AKSI (macro recorder)** — sekarang Anda tidak perlu menyusun langkah satu per satu. Klik tombol merah `● REKAM AKSI` (atau menu *Studio → Rekam Aksi*) → konfirmasi → hitung mundur 3 detik → jendela aplikasi tersembunyi, muncul **banner kecil "● MEREKAM AKSI"** di pojok kanan bawah (hitungan aksi live, bisa digeser, klik di atasnya tidak dihitung sebagai aksi). Kerjakan aksimu di aplikasi mana pun, lalu tekan **F8** (atau ESC) — jendela tampil lagi dan **semuanya sudah jadi langkah di tabel Studio**, ditambah di akhir alur tanpa menimpa yang lama.
+- **Yang direkam & caranya digabung cerdas**:
+  - Klik kiri → langkah **KLIK TITIK** (posisi persis); **klik dobel dikenali otomatis** (2 klik < 0,45 dtk di posisi hampir sama) → mode `Klik dobel`; klik kanan pun terekam.
+  - Huruf/angka berurutan digabung jadi **SATU langkah KETIK TEKS** (mis. `#dangdut - melati`).
+  - Enter/Tab/Backspace/Delete/panah/Home/End/Page Up/Page Down/F2/F4/F5 → langkah **TEKAN TOMBOL**; kombinasi **Ctrl+A/C/V/S/Z** juga terekam. Shift+↑/↓ dikenali sebagai Shift+Panah.
+  - Gulungan mouse searah berurutan (< 1,5 dtk) digabung jadi **SATU langkah SCROLL** dengan jumlah gulungan digabung.
+  - **Jeda antar aksi terekam otomatis** jadi kolom JEDA (dibatasi 0,1–10 detik) — ritme aksi asli terjaga, tinggal disunting bila perlu.
+- **Aman & rapi**: F6/F7/ESC diabaikan selagi merekam (tidak bisa tak sengaja menjalankan/menghentikan makro); kejadian dobel sisa driver keyboard dibuang otomatis (dedup < 20 ms) tanpa memengaruhi huruf kembar sungguhan seperti `ll`; hasil rekaman ikut tersimpan di file makro (SIMPAN MAKRO + auto-save) dan bebas disalin/diurutkan/dimatikan seperti langkah biasa.
+- Hotkey baru: **F8 / ESC = berhenti merekam** (tertera di banner & tombol).
 
 ## Perubahan v5.3
 

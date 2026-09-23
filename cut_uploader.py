@@ -37,6 +37,14 @@
        AREA FOKUS yang dipilih dengan MENYERET kotak di layar
        (opsional - kosong = seluruh layar). Makro lama dengan
        titik acuan X,Y tetap jalan (otomatis jadi area)
+     - v5.4: REKAM AKSI - rekam klik/ketikan/scroll LANGSUNG
+       jadi langkah makro. Klik ● REKAM AKSI, jendela aplikasi
+       tersembunyi, kerjakan aksimu di aplikasi lain (browser,
+       form, dll) - SEMUA klik (klik dobel dikenali), huruf/
+       angka yang diketik, tombol Enter/Tab/panah, dan gulungan
+       mouse terekam otomatis jadi langkah + jeda antar langkah.
+       Tekan F8 (atau ESC) untuk berhenti - hasil DITAMBAH di
+       akhir alur kerja, tinggal disunting lalu JALANKAN (F6)
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -61,6 +69,7 @@
   Hotkey:
     F6         : Mulai (tab yang sedang aktif)
     F7 / ESC   : Berhenti
+    F8 / ESC   : Berhenti MEREKAM (saat mode REKAM AKSI)
 
   Distribusi:
     - Installer Windows : CutUploaderPro-Setup.exe (tanpa Python)
@@ -100,6 +109,7 @@ PYNPUT_OK = False
 IMPORT_ERROR = ""
 try:
     from pynput import keyboard as kb_mod
+    from pynput import mouse as mouse_mod
     from pynput.keyboard import Controller as KeyboardController, Key
     from pynput.mouse import Controller as MouseController, Button
     PYNPUT_OK = True
@@ -125,8 +135,10 @@ if not PYNPUT_OK:
         ctrl = _NamaPalsu("Key.ctrl")
         shift = _NamaPalsu("Key.shift")
         alt = _NamaPalsu("Key.alt")
+        alt_gr = _NamaPalsu("Key.alt_gr")
         enter = _NamaPalsu("Key.enter")
         esc = _NamaPalsu("Key.esc")
+        f8 = _NamaPalsu("Key.f8")
         space = _NamaPalsu("Key.space")
         tab = _NamaPalsu("Key.tab")
         backspace = _NamaPalsu("Key.backspace")
@@ -164,7 +176,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.3"
+APP_VERSION = "5.4"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -459,6 +471,24 @@ TOMBOL_MAP = {
     "F2": ("", "f2"), "F4": ("", "f4"), "F5": ("", "f5"),
 }
 
+# v5.4: tombol khusus yang DIREKAM saat REKAM AKSI
+# (kunci = objek Key pynput/stub, nilai = nama di TOMBOL_KB_OPSI)
+TOMBOL_REKAM_MAP = {
+    Key.enter: "Enter", Key.tab: "Tab",
+    Key.backspace: "Backspace", Key.delete: "Delete",
+    Key.home: "Home", Key.end: "End",
+    Key.page_up: "Page Up", Key.page_down: "Page Down",
+    Key.up: "Panah Atas", Key.down: "Panah Bawah",
+    Key.left: "Panah Kiri", Key.right: "Panah Kanan",
+    Key.f2: "F2", Key.f4: "F4", Key.f5: "F5",
+}
+
+# v5.4: kombinasi Shift+Panah yang dikenali saat merekam
+TOMBOL_REKAM_SHIFT = {
+    "Panah Atas": "Shift+Panah Atas",
+    "Panah Bawah": "Shift+Panah Bawah",
+}
+
 
 def studio_langkah_baru(jenis, uid, **isi):
     """Satu langkah generik Studio Makro dengan nilai bawaan aman."""
@@ -592,6 +622,138 @@ def studio_bersihkan(daftar):
                 l[k] = str(e.get(k) if e.get(k) is not None else l[k])
         hasil.append(l)
     return hasil
+
+
+# ------------------------------------------------------------
+# v5.4 REKAM AKSI - ubah kejadian mentah hasil rekaman menjadi
+# langkah Studio Makro. Dipisah dari GUI supaya bisa diuji
+# otomatis tanpa layar / pynput.
+# ------------------------------------------------------------
+def perekam_bangun_langkah(kejadian, mulai_uid=0, jeda_maks=10.0):
+    """Ubah urutan kejadian rekaman menjadi langkah Studio Makro.
+
+    kejadian = list dict hasil rekaman (urut waktu):
+      {"tipe": "klik", "x": .., "y": .., "tombol": "kiri"/"kanan",
+       "waktu": waktu_unix}
+      {"tipe": "char", "teks": "a", "waktu": ..}   (karakter tercetak)
+      {"tipe": "tombol", "nama": "Enter", "waktu": ..}
+      {"tipe": "scroll", "arah": "Turun"/"Naik", "waktu": ..}
+
+    Aturan penggabungan:
+      - Huruf/angka berurutan digabung jadi SATU langkah KETIK.
+      - 2 klik kiri < 0,45 detik di posisi hampir sama = Klik dobel.
+      - Gulungan mouse searah berurutan (< 1,5 detik) jadi SATU
+        langkah SCROLL dengan jumlah gulungan digabung.
+      - Jeda antar langkah = jarak waktu kejadian asli, dibatasi
+        0,1 - jeda_maks detik (biarkan user menyunting).
+
+    Mengembalikan (daftar_langkah, uid_terakhir_dipakai).
+    """
+    langkah = []
+    uid = int(mulai_uid)
+    terakhir = [None]     # waktu kejadian sebelumnya (list = mutable)
+
+    def jeda_dari(waktu):
+        if terakhir[0] is None:
+            return 0.2
+        return round(_angka(waktu - terakhir[0], 0.1, 0.1, jeda_maks), 1)
+
+    def tambah(jenis, waktu, **isi):
+        nonlocal uid
+        uid += 1
+        l = studio_langkah_baru(jenis, uid, **isi)
+        l["jeda"] = jeda_dari(waktu)
+        langkah.append(l)
+        return l
+
+    teks_buf = []                      # huruf berurutan belum dilucutkan
+    teks_mulai = [None]
+    teks_akhir = [None]
+    scroll_buf = [None]                # gulungan berurutan belum dilucutkan
+    klik_terakhir = [None]             # utk deteksi klik dobel
+
+    def flush_teks():
+        """Lucutkan huruf terkumpul jadi satu langkah KETIK."""
+        if not teks_buf:
+            return None
+        l = tambah("KETIK", teks_mulai[0], teks="".join(teks_buf))
+        terakhir[0] = teks_akhir[0]
+        teks_buf.clear()
+        teks_mulai[0] = teks_akhir[0] = None
+        return l
+
+    def flush_scroll():
+        """Lucutkan gulungan terkumpul jadi satu langkah SCROLL."""
+        if scroll_buf[0] is None:
+            return None
+        s = scroll_buf[0]
+        l = tambah("SCROLL", s["waktu"], arah=s["arah"],
+                   jumlah_scroll=s["jumlah"])
+        terakhir[0] = s["waktu_akhir"]
+        scroll_buf[0] = None
+        return l
+
+    for ev in kejadian:
+        if not isinstance(ev, dict):
+            continue
+        tipe = ev.get("tipe")
+        waktu = _angka(ev.get("waktu"), 0.0, 0, 1e18)
+        if tipe == "klik":
+            flush_teks()
+            flush_scroll()
+            x = int(_angka(ev.get("x"), 0, 0, 100000))
+            y = int(_angka(ev.get("y"), 0, 0, 100000))
+            kanan = (ev.get("tombol") == "kanan")
+            # deteksi klik dobel: klik kiri berikutnya < 0,45 dtk dan
+            # posisinya hampir sama (<= 6 px) -> ubah langkah sebelumnya
+            kt = klik_terakhir[0]
+            if (not kanan and kt is not None
+                    and abs(waktu - kt["waktu"]) <= 0.45
+                    and abs(x - kt["x"]) <= 6
+                    and abs(y - kt["y"]) <= 6):
+                kt["langkah"]["tombol_mouse"] = "Klik dobel"
+                klik_terakhir[0] = None
+                terakhir[0] = waktu
+                continue
+            l = tambah("KLIK", waktu, posisi=[x, y],
+                       tombol_mouse="Klik kanan" if kanan
+                       else "Klik kiri")
+            klik_terakhir[0] = None if kanan else {
+                "langkah": l, "x": x, "y": y, "waktu": waktu}
+            terakhir[0] = waktu
+        elif tipe == "char":
+            ch = str(ev.get("teks") or "")
+            if not ch:
+                continue
+            if not teks_buf:
+                flush_scroll()
+                teks_mulai[0] = waktu
+            teks_buf.append(ch)
+            teks_akhir[0] = waktu
+            klik_terakhir[0] = None
+        elif tipe == "tombol":
+            flush_teks()
+            flush_scroll()
+            nama = str(ev.get("nama") or "")
+            if nama:
+                tambah("TOMBOL", waktu, tombol_kb=nama)
+            terakhir[0] = waktu
+        elif tipe == "scroll":
+            flush_teks()
+            arah = "Naik" if ev.get("arah") == "Naik" else "Turun"
+            s = scroll_buf[0]
+            if (s is not None and s["arah"] == arah
+                    and abs(waktu - s["waktu_akhir"]) <= 1.5):
+                s["jumlah"] += 1
+                s["waktu_akhir"] = waktu
+            else:
+                flush_scroll()
+                scroll_buf[0] = {"arah": arah, "jumlah": 1,
+                                 "waktu": waktu, "waktu_akhir": waktu}
+            klik_terakhir[0] = None
+    flush_teks()
+    flush_scroll()
+    return langkah, uid
 
 
 def area_dari_langkah(l):
@@ -3588,6 +3750,71 @@ C_UNGU = "#6B4FA0"     # langkah TEKAN TOMBOL / ULANGI
 C_TEAL = "#0E7C86"     # langkah SCROLL
 
 
+# ------------------------------------------------------------
+# v5.4: jendela kecil melayang penanda REKAM berlangsung.
+# Selalu paling atas di pojok kanan bawah, menampilkan hitungan
+# aksi yang sudah terekam, bisa digeser (seretan di jendela ini
+# TIDAK direkam sebagai langkah).
+# ------------------------------------------------------------
+class BannerRekam(tk.Toplevel):
+    def __init__(self, induk):
+        super().__init__(induk)
+        self.overrideredirect(True)
+        try:
+            self.attributes("-topmost", True)
+        except Exception:
+            pass
+        self.configure(bg="#7A1010")
+        sw = max(1, self.winfo_screenwidth())
+        sh = max(1, self.winfo_screenheight())
+        self.w, self.h = 316, 116
+        self.geometry("{}x{}+{}+{}".format(
+            self.w, self.h, max(0, sw - self.w - 16),
+            max(0, sh - self.h - 64)))
+        f = tk.Frame(self, bg="#7A1010")
+        f.pack(fill="both", expand=True, padx=10, pady=6)
+        l1 = tk.Label(f, text="●  MEREKAM AKSI...", bg="#7A1010",
+                      fg="#FF6B6B", font=("Segoe UI", 13, "bold"))
+        l1.pack(anchor="w")
+        self.lbl_hitung = tk.Label(
+            f, text="Klik: 0   Teks/tombol: 0   Scroll: 0",
+            bg="#7A1010", fg="white", font=("Segoe UI", 10, "bold"))
+        self.lbl_hitung.pack(anchor="w", pady=(2, 0))
+        l3 = tk.Label(f, text="Tekan F8 (atau ESC) untuk BERHENTI.\n"
+                              "Seret jendela ini bila menghalangi.",
+                      bg="#7A1010", fg="#FFD3D3", font=("Segoe UI", 8),
+                      justify="left", anchor="w")
+        l3.pack(anchor="w", pady=(2, 0))
+        # seret jendela (seretan di sini tidak dihitung sebagai aksi)
+        self._geser_awal = None
+        for wdg in (self, f, l1, self.lbl_hitung, l3):
+            wdg.bind("<ButtonPress-1>", self._tekan)
+            wdg.bind("<B1-Motion>", self._geser)
+
+    def _tekan(self, ev):
+        self._geser_awal = (ev.x_root, ev.y_root,
+                            self.winfo_x(), self.winfo_y())
+
+    def _geser(self, ev):
+        if not self._geser_awal:
+            return
+        dx = ev.x_root - self._geser_awal[0]
+        dy = ev.y_root - self._geser_awal[1]
+        self.geometry("+{}+{}".format(self._geser_awal[2] + dx,
+                                      self._geser_awal[3] + dy))
+
+    def perbarui(self, n_klik, n_teks, n_scroll):
+        self.lbl_hitung.config(
+            text="Klik: {}   Teks/tombol: {}   Scroll: {}".format(
+                n_klik, n_teks, n_scroll))
+
+    def tutup(self):
+        try:
+            self.destroy()
+        except Exception:
+            pass
+
+
 class StudioMakroTab:
     """Tab STUDIO MAKRO - susun alur kerja klik sendiri satu per satu.
 
@@ -3610,6 +3837,13 @@ class StudioMakroTab:
         self.pv = {}
         self._loading_prop = False
         self.lbl_ambil = None
+        # v5.4: state REKAM AKSI
+        self.merekam = False
+        self._rekam_kejadian = []
+        self._rekam_listener_mouse = None
+        self._rekam_listener_kb = None
+        self._rekam_banner = None
+        self._rekam_mod = set()
 
         self.vars = {"mundur": tk.StringVar(value="5")}
 
@@ -3636,6 +3870,12 @@ class StudioMakroTab:
                                      aktif=C_RED_D)
         self.btn_stop.config(state="disabled",
                              disabledforeground="#F2C4BE")
+        # v5.4: tombol REKAM AKSI (rekam klik/ketik/scroll jadi langkah)
+        self._tb_pemisah(tb1)
+        self.btn_rekam = self._tb_btn(tb1, "● REKAM AKSI",
+                                      self._rekam_mulai,
+                                      bg="#8E1616", fg="white",
+                                      aktif="#C0392B")
         self._tb_pemisah(tb1)
         for jenis in ("KLIK", "JEDA", "GAMBAR", "KETIK", "TANGGAL_JAM",
                       "VIDEO_CAPTION", "TOMBOL", "SCROLL", "CATATAN"):
@@ -3678,7 +3918,9 @@ class StudioMakroTab:
                                             ipady=2)
         tk.Label(strip, text="Jeda setiap langkah diatur lewat kolom JEDA "
                              "/ panel PROPERTI.  Klik kanan baris = "
-                             "salin/tempel/hapus/urutkan.",
+                             "salin/tempel/hapus/urutkan.  "
+                             "● REKAM AKSI = klik/ketikan/scrollmu "
+                             "direkam otomatis jadi langkah (F8 = berhenti).",
                  bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
 
         # ----- Area tengah: tabel alur kerja + panel properti -----
@@ -4123,6 +4365,11 @@ class StudioMakroTab:
                      "jeda, jumlah klik, gambar referensi, dll).\n"
                      "4. Ulangi sampai alur selesai, lalu JALANKAN "
                      "(F6).\n\n"
+                     "CARA LEBIH CEPAT: klik tombol ● REKAM AKSI di "
+                     "atas - kerjakan aksimu langsung di layar (klik, "
+                     "ketik, scroll) dan semuanya terekam otomatis "
+                     "menjadi langkah di tabel ini. Tekan F8 untuk "
+                     "berhenti merekam.\n\n"
                      "Contoh alur sederhana:\n"
                      "+ CARI GAMBAR (klik tombol login)  >  + KETIK "
                      "TEKS (email)  >  + TEKAN TOMBOL (Tab)  >  "
@@ -4896,6 +5143,294 @@ class StudioMakroTab:
             self.root.after(0, lapor)
 
         threading.Thread(target=kerja, daemon=True).start()
+
+    # ================== v5.4: REKAM AKSI ==================
+    def _rekam_mulai(self):
+        """Klik tombol ● REKAM AKSI (atau menu Studio > Rekam Aksi)."""
+        if self.merekam:
+            self._rekam_berhenti()
+            return
+        if self.running:
+            messagebox.showwarning(
+                APP_NAME,
+                "Makro sedang BERJALAN.\n\nTunggu sampai selesai atau "
+                "tekan F7 dulu, baru merekam.")
+            return
+        if not PYNPUT_OK:
+            messagebox.showerror(
+                APP_NAME,
+                "Library pynput belum terpasang.\n\n"
+                "Buka CMD lalu jalankan:\n  pip install pynput")
+            return
+        lain = self.shell.tab_lain(self) if self.shell is not self \
+            else None
+        if lain is not None and lain.running:
+            messagebox.showwarning(
+                APP_NAME,
+                "ALUR CUTMOTIONS sedang berjalan.\n\nTunggu sampai "
+                "selesai atau tekan F7 dulu.")
+            return
+        if not messagebox.askyesno(
+                APP_NAME,
+                "MULAI MEREKAM AKSI?\n\n"
+                "Setelah jendela ini tersembunyi, SEMUA klik, ketikan, "
+                "dan gulungan mouse kamu terekam otomatis menjadi "
+                "langkah:\n"
+                "  - Klik  -> langkah KLIK TITIK (klik dobel dikenali)\n"
+                "  - Huruf / angka  -> langkah KETIK TEKS\n"
+                "  - Enter / Tab / panah / Ctrl+A dll  -> langkah "
+                "TEKAN TOMBOL\n"
+                "  - Gulungan mouse  -> langkah SCROLL\n\n"
+                "Tekan F8 (atau ESC) untuk BERHENTI merekam. Hasilnya "
+                "DITAMBAH di akhir alur kerja - tidak menimpa yang "
+                "lama.\n\n"
+                "Catatan: selagi merekam, jangan menekan F8/ESC di "
+                "aplikasi lain kecuali memang mau berhenti merekam.\n\n"
+                "Lanjutkan?"):
+            return
+        self._set_status("Rekam mulai dalam 3 detik - siapkan aplikasi "
+                         "yang aksinya mau direkam...", C_ORANGE)
+        threading.Thread(target=self._rekam_hitung_mundur,
+                         daemon=True).start()
+
+    def _rekam_hitung_mundur(self):
+        try:
+            for s in range(3, 0, -1):
+                self.root.after(0, lambda s=s: self._set_status(
+                    "Rekam mulai dalam {} detik...".format(s), C_ORANGE))
+                time.sleep(1)
+            self.root.after(0, self._rekam_mulai_sekarang)
+        except Exception:
+            pass
+
+    def _rekam_mulai_sekarang(self):
+        if self.merekam or self.running or not PYNPUT_OK:
+            return
+        self._rekam_kejadian = []
+        self._rekam_mod = set()
+        try:
+            self.root.winfo_toplevel().withdraw()
+        except Exception:
+            pass
+        self.root.after(250, self._rekam_mulai_lanjut)
+
+    def _rekam_mulai_lanjut(self):
+        if self.merekam or self.running or not PYNPUT_OK:
+            return
+        try:
+            self._rekam_banner = BannerRekam(self.wadah)
+        except Exception:
+            self._rekam_banner = None
+        try:
+            self.btn_rekam.config(text="■ STOP REKAM (F8)",
+                                  command=self._rekam_berhenti,
+                                  bg="#B32020")
+        except Exception:
+            pass
+        self.merekam = True
+        try:
+            self._rekam_listener_mouse = mouse_mod.Listener(
+                on_click=self._rekam_on_klik,
+                on_scroll=self._rekam_on_scroll)
+            self._rekam_listener_mouse.daemon = True
+            self._rekam_listener_mouse.start()
+            self._rekam_listener_kb = kb_mod.Listener(
+                on_press=self._rekam_on_tekan,
+                on_release=self._rekam_on_lepas)
+            self._rekam_listener_kb.daemon = True
+            self._rekam_listener_kb.start()
+        except Exception as e:
+            self._rekam_bersihkan()
+            messagebox.showerror(APP_NAME,
+                                 "Gagal memulai perekaman:\n{}".format(e))
+            return
+        self._set_status("MEREKAM... semua klik / ketikan / scroll "
+                         "terekam. Tekan F8 untuk berhenti.", C_RED)
+
+    def _rekam_bersihkan(self):
+        """Matikan listener + banner + pulihkan tombol & jendela."""
+        self.merekam = False
+        for ls in (self._rekam_listener_mouse, self._rekam_listener_kb):
+            try:
+                if ls is not None:
+                    ls.stop()
+            except Exception:
+                pass
+        self._rekam_listener_mouse = None
+        self._rekam_listener_kb = None
+        self._rekam_kejadian = []
+        if self._rekam_banner is not None:
+            try:
+                self._rekam_banner.tutup()
+            except Exception:
+                pass
+            self._rekam_banner = None
+        try:
+            self.btn_rekam.config(text="● REKAM AKSI",
+                                  command=self._rekam_mulai,
+                                  bg="#8E1616")
+        except Exception:
+            pass
+        try:
+            self.root.winfo_toplevel().deiconify()
+        except Exception:
+            pass
+
+    def _rekam_catat(self, ev):
+        """Catat satu kejadian (dipanggil dari thread listener).
+
+        pynput di X11 kadang mengirim kejadian DOBEL untuk satu
+        tekanan tombol (jarak < 5 ms, isi sama persis) - buang
+        duplikatnya. Tekanan manusia tercepat >= 50 ms, jadi
+        ambang 20 ms aman untuk huruf kembar (mis. 'll').
+        """
+        if ev.get("tipe") in ("tombol", "char") and self._rekam_kejadian:
+            ahir = self._rekam_kejadian[-1]
+            if (ahir.get("tipe") == ev.get("tipe")
+                    and ahir.get("nama") == ev.get("nama")
+                    and ahir.get("teks") == ev.get("teks")
+                    and abs(ev.get("waktu", 0)
+                            - ahir.get("waktu", 0)) < 0.02):
+                return
+        self._rekam_kejadian.append(ev)
+        self.root.after(0, self._rekam_perbarui_banner)
+
+    def _rekam_perbarui_banner(self):
+        b = self._rekam_banner
+        if b is None:
+            return
+        n_klik = sum(1 for e in self._rekam_kejadian
+                     if e.get("tipe") == "klik")
+        n_teks = sum(1 for e in self._rekam_kejadian
+                     if e.get("tipe") in ("char", "tombol"))
+        n_scroll = sum(1 for e in self._rekam_kejadian
+                       if e.get("tipe") == "scroll")
+        try:
+            b.perbarui(n_klik, n_teks, n_scroll)
+        except Exception:
+            pass
+
+    def _rekam_di_banner(self, x, y):
+        """True bila klik/scroll terjadi di atas banner (abaikan)."""
+        b = self._rekam_banner
+        if b is None:
+            return False
+        try:
+            bx, by = b.winfo_rootx(), b.winfo_rooty()
+            bw = max(1, b.winfo_width())
+            bh = max(1, b.winfo_height())
+            return bx <= x <= bx + bw and by <= y <= by + bh
+        except Exception:
+            return False
+
+    def _rekam_on_klik(self, x, y, tombol, pressed):
+        if not pressed or self._rekam_di_banner(x, y):
+            return
+        if tombol == Button.left:
+            nama = "kiri"
+        elif tombol == Button.right:
+            nama = "kanan"
+        else:
+            return          # klik tengah diabaikan
+        self._rekam_catat({"tipe": "klik", "x": int(x), "y": int(y),
+                           "tombol": nama, "waktu": time.time()})
+
+    def _rekam_on_scroll(self, x, y, dx, dy):
+        if not dy or self._rekam_di_banner(x, y):
+            return
+        self._rekam_catat({"tipe": "scroll",
+                           "arah": "Naik" if dy > 0 else "Turun",
+                           "waktu": time.time()})
+
+    def _rekam_on_tekan(self, key):
+        try:
+            if key in (Key.f8, Key.esc):
+                self.root.after(0, self._rekam_berhenti)
+                return
+        except Exception:
+            pass
+        if key in (Key.ctrl, Key.ctrl_l, Key.ctrl_r):
+            self._rekam_mod.add("ctrl")
+            return
+        if key in (Key.shift, Key.shift_l, Key.shift_r):
+            self._rekam_mod.add("shift")
+            return
+        if key in (Key.alt, Key.alt_l, Key.alt_r, Key.alt_gr):
+            self._rekam_mod.add("alt")
+            return
+        ch = getattr(key, "char", None)
+        if "ctrl" in self._rekam_mod:
+            # kombinasi Ctrl+huruf yang dikenal aplikasi -> TOMBOL
+            huruf = None
+            if ch and len(ch) == 1:
+                o = ord(ch.lower())
+                if 97 <= o <= 122:
+                    huruf = chr(o - 32)
+                elif 1 <= o <= 26:
+                    huruf = chr(o + 64)
+            if huruf and ("Ctrl+" + huruf) in TOMBOL_KB_OPSI:
+                self._rekam_catat({"tipe": "tombol",
+                                   "nama": "Ctrl+" + huruf,
+                                   "waktu": time.time()})
+            return          # kombinasi Ctrl lain tidak terekam
+        if ch and len(ch) == 1 and ch.isprintable() \
+                and ch not in "\r\n\t\x00\x7f":
+            self._rekam_catat({"tipe": "char", "teks": ch,
+                               "waktu": time.time()})
+            return
+        nama = TOMBOL_REKAM_MAP.get(key)
+        if nama is None:
+            return
+        if "shift" in self._rekam_mod and nama in TOMBOL_REKAM_SHIFT:
+            nama = TOMBOL_REKAM_SHIFT[nama]
+        self._rekam_catat({"tipe": "tombol", "nama": nama,
+                           "waktu": time.time()})
+
+    def _rekam_on_lepas(self, key):
+        for nama_mod, kunci in (
+                ("ctrl", (Key.ctrl, Key.ctrl_l, Key.ctrl_r)),
+                ("shift", (Key.shift, Key.shift_l, Key.shift_r)),
+                ("alt", (Key.alt, Key.alt_l, Key.alt_r, Key.alt_gr))):
+            if key in kunci:
+                self._rekam_mod.discard(nama_mod)
+
+    def _rekam_berhenti(self):
+        """Stop rekaman, ubah kejadian jadi langkah, tampilkan lagi."""
+        if not self.merekam:
+            return
+        kejadian = list(self._rekam_kejadian)
+        self._rekam_bersihkan()
+        if not kejadian:
+            self._set_status("Rekaman dihentikan - tidak ada aksi yang "
+                             "terekam.", C_MUTED)
+            return
+        mulai_i = len(self.langkah)
+        i_sel = self._idx_of(self.sel)
+        if i_sel is not None:
+            mulai_i = i_sel + 1
+        baru, uid_akhir = perekam_bangun_langkah(kejadian, self._uid)
+        if not baru:
+            self._set_status("Rekaman dihentikan - kejadian tidak bisa "
+                             "dijadikan langkah.", C_MUTED)
+            return
+        self._uid = max(self._uid, uid_akhir)
+        self.langkah[mulai_i:mulai_i] = baru
+        self.sel = baru[0]["uid"]
+        self._refresh_tabel()
+        try:
+            self.tree.selection_set(self.sel)
+            self.tree.see(self.sel)
+        except Exception:
+            pass
+        self._render_properti()
+        n_klik = sum(1 for l in baru if l["jenis"] == "KLIK")
+        n_ketik = sum(1 for l in baru if l["jenis"] in
+                      ("KETIK", "TOMBOL"))
+        n_scroll = sum(1 for l in baru if l["jenis"] == "SCROLL")
+        self._set_status(
+            "REKAMAN SELESAI: {} langkah ditambahkan ({} klik, {} "
+            "ketikan/tombol, {} scroll) - cek & sunting lalu JALANKAN "
+            "(F6).".format(len(baru), n_klik, n_ketik, n_scroll), C_GREEN)
 
     # ================== SIMPAN / BUKA MAKRO ==================
     def _simpan_auto(self):
@@ -5849,6 +6384,11 @@ class ShellApp:
         menubar.add_cascade(label="Berkas", menu=m_berkas)
 
         m_lang = tk.Menu(menubar, tearoff=0)
+        m_lang.add_command(
+            label="● Rekam Aksi - klik/ketik/scroll direkam jadi langkah "
+                  "(F8 = berhenti)",
+            command=self.tab_studio._rekam_mulai)
+        m_lang.add_separator()
         for jenis, label in [
             ("KLIK", "Tambah KLIK TITIK"),
             ("JEDA", "Tambah JEDA / TUNGGU"),
@@ -5927,6 +6467,10 @@ class ShellApp:
             # abaikan hotkey F6/F7 supaya alur tidak mulai tiba-tiba
             if OVERLAY_POTONG_AKTIF:
                 return
+            # v5.4: selagi REKAM AKSI berlangsung, F6/F7/ESC diabaikan
+            # (F8/ESC ditangani listener perekam sendiri)
+            if getattr(self.tab_studio, "merekam", False):
+                return
             if key == kb_mod.Key.f6:
                 self.root.after(0, lambda: self.tab_aktif()._start())
             elif key in (kb_mod.Key.f7, kb_mod.Key.esc):
@@ -5957,12 +6501,20 @@ class ShellApp:
             "v5.3: CARI GAMBAR TANPA X,Y - gambar referensi langsung\n"
             "diklik begitu ketemu; daerah pencarian dibatasi AREA\n"
             "FOKUS yang dipilih dengan menyeret kotak di layar.\n\n"
+            "v5.4: REKAM AKSI - rekam klik/ketikan/scrollmu LANGSUNG\n"
+            "jadi langkah makro: klik ● REKAM AKSI, jendela sembunyi,\n"
+            "kerjakan aksimu di aplikasi lain, lalu tekan F8 untuk\n"
+            "berhenti - semuanya sudah jadi langkah di tabel Studio.\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
             .format(APP_NAME, APP_VERSION, MAX_BATCH))
 
     def _on_close(self):
+        try:
+            self.tab_studio._rekam_berhenti()
+        except Exception:
+            pass
         try:
             self.tab_studio._simpan_auto()
             self.tab_cut._save_settings()
@@ -6012,9 +6564,41 @@ def main():
             print("SELFTEST_STUDIO_OK")
             root.destroy()
         root.after(2800, _ok3)
+    if "--selftest-rekam" in sys.argv:
+        def _rekam_uji():
+            st = app.tab_studio
+            ev = [
+                {"tipe": "klik", "x": 100, "y": 200, "tombol": "kiri",
+                 "waktu": 1000.0},
+                {"tipe": "char", "teks": "h", "waktu": 1000.6},
+                {"tipe": "char", "teks": "a", "waktu": 1000.7},
+                {"tipe": "char", "teks": "l", "waktu": 1000.8},
+                {"tipe": "tombol", "nama": "Enter", "waktu": 1001.2},
+                {"tipe": "scroll", "arah": "Turun", "waktu": 1001.6},
+                {"tipe": "scroll", "arah": "Turun", "waktu": 1001.8},
+                {"tipe": "klik", "x": 300, "y": 400, "tombol": "kiri",
+                 "waktu": 1002.5},
+                {"tipe": "klik", "x": 301, "y": 401, "tombol": "kiri",
+                 "waktu": 1002.7},
+                {"tipe": "klik", "x": 500, "y": 500, "tombol": "kanan",
+                 "waktu": 1003.4},
+            ]
+            baru, uid_akhir = perekam_bangun_langkah(ev, st._uid)
+            st._uid = max(st._uid, uid_akhir)
+            st.langkah.extend(baru)
+            st.sel = baru[0]["uid"] if baru else None
+            st._refresh_tabel()
+            print("REKAM_LANGKAH_OK", len(baru))
+        root.after(700, _rekam_uji)
+
+        def _ok4():
+            print("SELFTEST_REKAM_OK")
+            root.destroy()
+        root.after(2500, _ok4)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
-            or ("--selftest-studio" in sys.argv):
+            or ("--selftest-studio" in sys.argv) \
+            or ("--selftest-rekam" in sys.argv):
         print("SELFTEST_DONE")
 
 

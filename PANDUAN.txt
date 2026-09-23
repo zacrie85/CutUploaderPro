@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.3 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.4 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -51,6 +51,7 @@ Saat dibuka, di bagian atas ada DUA TAB:
 
 Hotkey berlaku untuk tab yang SEDANG AKTIF:
   F6 = Mulai      F7 / ESC = Berhenti
+  F8 / ESC = Berhenti MEREKAM (saat mode REKAM AKSI)
 
 ------------------------------------------------------------
 3. STUDIO MAKRO - SUSUN ALUR SENDIRI (BARU DI V5.0)
@@ -74,6 +75,9 @@ CARA PAKAI (contoh):
      atas ke bawah.
 
 MENUIS LANGKAH DI TOOLBAR ATAS (baris pertama):
+  ● REKAM AKSI    (v5.4) MEREKAM langsung: klik/ketikan/
+                  scroll Anda direkam OTOMATIS jadi langkah
+                  (lihat blok BARU DI V5.4 di bawah)
   + KLIK          klik kiri/kanan/dobel di satu titik
                   (bisa diulang, ada jeda antar klik)
   + JEDA          tunggu beberapa detik
@@ -340,6 +344,40 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V5.4 - REKAM AKSI (REKAMAN MAKRO OTOMATIS):
+  Sekarang Anda tidak perlu menyusun langkah satu per satu:
+  1. Klik tombol ● REKAM AKSI (merah, di sebelah BERHENTI)
+     atau menu Studio > Rekam Aksi -> konfirmasi -> hitung
+     mundur 3 detik -> jendela aplikasi tersembunyi dan
+     muncul BANNER KECIL "● MEREKAM AKSI" di pojok kanan
+     bawah (berisi hitungan aksi; bisa digeser).
+  2. Kerjakan aksimu di aplikasi mana pun (browser, form,
+     aplikasi Windows). Semua terekam OTOMATIS:
+     - Klik kiri      -> langkah KLIK TITIK (posisi + waktu)
+       (klik dobel dikenali otomatis jadi "Klik dobel")
+     - Klik kanan     -> langkah KLIK TITIK (Klik kanan)
+     - Huruf/angka    -> digabung jadi SATU langkah KETIK
+       TEKS (mis. "#dangdut - melati")
+     - Enter/Tab/Backspace/panah/Home/dll -> langkah TEKAN
+       TOMBOL; Ctrl+A/C/V/S/Z juga terekam
+     - Gulungan mouse -> digabung jadi SATU langkah SCROLL
+       (arah + jumlah gulungan)
+     - Jarak waktu antar aksi terekam jadi JEDA antar
+       langkah (dibatasi maks 10 detik; Anda bisa ubah).
+  3. Tekan F8 (atau ESC) untuk BERHENTI -> jendela tampil
+     lagi dan semua hasil rekaman DITAMBAH di akhir alur
+     kerja (tidak menimpa langkah lama). Sunting bila perlu,
+     lalu JALANKAN (F6) seperti makro biasa.
+  Tips:
+  - Selagi merekam, JANGAN menekan F8/ESC di aplikasi lain
+    kecuali memang mau berhenti merekam.
+  - Klik pada banner kecil TIDAK dihitung sebagai aksi;
+    banner bisa diseret ke tempat yang tidak menghalangi.
+  - Kombinasi Ctrl di luar A/C/V/S/Z tidak terekam (mis.
+    Alt+F4); tambahkan manual lewat + TOMBOL bila perlu.
+  - Hasil rekaman tersimpan ikut file makro (SIMPAN MAKRO)
+    dan bisa disalin/tempel/diurutkan seperti langkah biasa.
 
 BARU DI V5.3 - CARI GAMBAR TANPA X,Y + AREA FOKUS:
   Keluhan lama: "sudah memilih gambar referensi masih tetap
