@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.1)
+# CutUploader Pro — Macro Studio Edition (v5.2)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **klik di gambar / pindah saja**, salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, dan kini **potong gambar referensi langsung di layar** (seret kotak fullscreen, tanpa screenshot manual).
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **klik di gambar / pindah saja**, salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar** (seret kotak fullscreen), dan 2 menu pintar baru: **ISI TANGGAL-JAM** dan **ISI VIDEO & CAPTION**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.1**:
+Dari halaman [Releases](../../releases) rilis **v5.2**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.1.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.2.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -30,6 +30,8 @@ Persis konsep Jitbit Macro Recorder: **semua jenis aksi jadi menu tersendiri di 
 | `+ JEDA` | Tunggu N detik |
 | `+ CARI GAMBAR` | Cari potongan gambar di layar → **langsung diklik** atau **hanya dipindah tanpa klik**; tak ketemu → klik titik acuan / lewati / stop |
 | `+ KETIK` | Ketik teks (opsional Ctrl+A dulu, Enter setelahnya) |
+| `+ TANGGAL-JAM` | **Baru v5.2** — isi kolom tanggal-jam rilis otomatis (dari setelan tab CutMotions atau nilai tetap) |
+| `+ VIDEO+CAPTION` | **Baru v5.2** — isi jumlah video, atau caption dasar + nama video ke-i (`#dangdut - melati`), atau nama video saja |
 | `+ TOMBOL` | Enter, Tab, panah, Shift+Panah Bawah, Ctrl+A/C/V, F2/F4/F5, atau huruf apa saja × jumlah tekan |
 | `+ SCROLL` | Gulung Naik/Turun sejumlah gulungan |
 | `+ CATATAN` | Komentar/penanda (tidak dieksekusi) |
@@ -37,7 +39,7 @@ Persis konsep Jitbit Macro Recorder: **semua jenis aksi jadi menu tersendiri di 
 
 - Panel **PROPERTI LANGKAH** menyesuaikan jenis langkah terpilih (posisi + AMBIL 5 dtk, teks, jeda, gambar referensi, dll).
 - **SALIN / TEMPEL / HAPUS / NAIK / TURUN / AKTIF-MATI** — klik kanan baris atau Ctrl+C/V/Del; tempel menyisipkan salinan lengkap setelah baris terpilih (cara gampang bikin titik klik berikutnya).
-- **Placeholder teks**: `{caption}` = caption dasar + nama video ke-i, `{video}` = nama video ke-i, `{no}` = nomor putaran — mengikuti folder/jumlah/riwayat di tab CutMotions.
+- **Placeholder teks**: `{caption}` = caption dasar + nama video ke-i, `{video}` = nama video ke-i, `{no}` = nomor putaran, `{jumlah}` = jumlah video — mengikuti folder/jumlah/riwayat di tab CutMotions (atau pakai menu `+ VIDEO+CAPTION` yang lebih praktis).
 - **GESER PER PUTARAN ULANGI** — klik di dalam blok ULANGI otomatis turun N px per putaran (untuk caption per baris video).
 - **SIMPAN/BUKA MAKRO** (.json) + **auto-save** makro aktif; **TEMPLATE CUTMOTIONS** mengisi alur A-J versi bebas sekali klik, lalu bebas disunting.
 
@@ -68,6 +70,15 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.2
+
+- **2 MENU BARU di Studio Makro** yang menutup celah "alur bebas tidak punya langkah pengisi kolom tanggal-jam & jumlah video / caption":
+  - **`+ TANGGAL-JAM` (ISI TANGGAL-JAM)** — satu langkah untuk mengisi kolom tanggal-jam rilis. Sumber nilai: **Tab CutMotions** (mengikuti kolom TANGGAL & JAM RILIS di tab Alur CutMotions — ubah sekali, semua makro ikut) atau **Tetap (isi sendiri)** (format `2026-09-10 02:05:01`). Bisa klik kolomnya sendiri lewat *POSISI KLIK DULU*; Ctrl+A dulu otomatis menimpa isi lama; format divalidasi (`parse_tanggal`) dan dirapikan sebelum diketik.
+  - **`+ VIDEO+CAPTION` (ISI VIDEO & CAPTION)** — satu langkah pengisi data video, pilihannya: **Jumlah video** (angka di kolom JUMLAH VIDEO tab CutMotions), **Caption dasar + nama video** (mis. `#dangdut - melati`; di dalam blok ULANGI nama video berganti otomatis tiap putaran), **Nama video saja**, atau **Teks sendiri + placeholder** (`{caption} {video} {no} {jumlah}`).
+- **Placeholder baru `{jumlah}`** di langkah KETIK — jumlah video total.
+- **TEMPLATE CUTMOTIONS kini memakai keduanya**: langkah D menjadi ISI TANGGAL-JAM dan langkah I2 menjadi ISI VIDEO & CAPTION (dulu KETIK TEKS biasa) — makro hasil template langsung ikut nilai terbaru dari tab CutMotions.
+- Perbaikan kecil: kalau folder video kosong, `{caption}` kini menghasilkan caption dasar saja (bukan `#dangdut - video`); jendela diperlebar ke 1280px agar semua tombol menu muat.
 
 ## Perubahan v5.1
 

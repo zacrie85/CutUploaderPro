@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.1  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v5.2  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -21,13 +21,17 @@
        hanya DIPINDAH kursor tanpa klik
      - Blok ULANGI-MULAI ... ULANGI-AKHIR untuk mengulang
        sepotong alur (mis. caption per baris video)
-     - Placeholder teks: {caption} {video} {no}
+     - Placeholder teks: {caption} {video} {no} {jumlah}
      - Makro disimpan/muat ke file JSON + auto-save
      - v5.1: POTONG GAMBAR kini LANGSUNG DI LAYAR - layar
        dibekukan fullscreen, tinggal SERET kotak di area yang
        diinginkan (hanya area itu yang disimpan). Setiap
        potongan jadi file BARU, jadi CARI GAMBAR bisa dipakai
        berkali-kali dengan referensi berbeda-beda
+     - v5.2: 2 MENU BARU - ISI TANGGAL-JAM (mengisi kolom
+       tanggal-jam rilis, nilainya dari tab CutMotions atau
+       ketik sendiri) dan ISI VIDEO & CAPTION (mengisi jumlah
+       video, atau caption dasar + nama video yang diambil)
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -155,7 +159,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.1"
+APP_VERSION = "5.2"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -377,20 +381,32 @@ PARAM_BAWAAN = {"teks": "", "klik": "1", "scroll": "0"}
 # Semua jenis aksi jadi "menu" tersendiri; alur kerja disusun
 # sendiri satu per satu pada tabel kosong di tab STUDIO MAKRO.
 # ============================================================
-JENIS_STUDIO = ("KLIK", "JEDA", "GAMBAR", "KETIK", "TOMBOL",
-                "SCROLL", "CATATAN", "LOOP_MULAI", "LOOP_AKHIR")
+JENIS_STUDIO = ("KLIK", "JEDA", "GAMBAR", "KETIK", "TANGGAL_JAM",
+                "VIDEO_CAPTION", "TOMBOL", "SCROLL", "CATATAN",
+                "LOOP_MULAI", "LOOP_AKHIR")
 
 LABEL_JENIS = {
     "KLIK": "KLIK TITIK",
     "JEDA": "JEDA / TUNGGU",
     "GAMBAR": "CARI GAMBAR",
     "KETIK": "KETIK TEKS",
+    "TANGGAL_JAM": "ISI TANGGAL-JAM",
+    "VIDEO_CAPTION": "ISI VIDEO & CAPTION",
     "TOMBOL": "TEKAN TOMBOL",
     "SCROLL": "SCROLL",
     "CATATAN": "CATATAN",
     "LOOP_MULAI": "ULANGI - MULAI",
     "LOOP_AKHIR": "ULANGI - AKHIR",
 }
+
+# v5.2: sumber nilai langkah ISI TANGGAL-JAM
+SUMBER_TANGGAL_OPSI = ("Tab CutMotions", "Tetap (isi sendiri)")
+
+# v5.2: pilihan isi langkah ISI VIDEO & CAPTION
+ISI_VIDEO_OPSI = ("Jumlah video",
+                  "Caption dasar + nama video",
+                  "Nama video saja",
+                  "Teks sendiri + placeholder")
 
 MOUSE_OPSI = ("Klik kiri", "Klik kanan", "Klik dobel")
 
@@ -400,6 +416,8 @@ LABEL_TB = {
     "JEDA": "+ JEDA",
     "GAMBAR": "+ CARI GAMBAR",
     "KETIK": "+ KETIK",
+    "TANGGAL_JAM": "+ TANGGAL-JAM",
+    "VIDEO_CAPTION": "+ VIDEO+CAPTION",
     "TOMBOL": "+ TOMBOL",
     "SCROLL": "+ SCROLL",
     "CATATAN": "+ CATATAN",
@@ -461,6 +479,10 @@ def studio_langkah_baru(jenis, uid, **isi):
         "jumlah_scroll": 3,
         # CATATAN
         "catatan": "",
+        # TANGGAL_JAM (v5.2)
+        "sumber": "Tab CutMotions",
+        # VIDEO_CAPTION (v5.2)
+        "isi": "Caption dasar + nama video",
         # LOOP_MULAI
         "jumlah_loop": 2,
         "ikut_video": False,   # ikut jumlah video tab CutMotions
@@ -469,6 +491,12 @@ def studio_langkah_baru(jenis, uid, **isi):
                    "gagal": "Klik titik X,Y", "radius": "300",
                    "mirip": "0.80"},
     }
+    # nilai bawaan khusus per jenis (sebelum isi menimpa)
+    if jenis == "TANGGAL_JAM":
+        l["ctrl_a"] = True
+        l["teks"] = "2026-09-10 02:05:01"
+    elif jenis == "VIDEO_CAPTION":
+        l["ctrl_a"] = True
     for k, v in isi.items():
         if k in l and v is not None:
             l[k] = v
@@ -527,28 +555,44 @@ def studio_bersihkan(daftar):
             elif k == "arah":
                 v = str(e.get(k) or "")
                 l[k] = v if v in ("Turun", "Naik") else "Turun"
+            elif k == "sumber":
+                v = str(e.get(k) or "")
+                l[k] = (v if v in SUMBER_TANGGAL_OPSI
+                        else "Tab CutMotions")
+            elif k == "isi":
+                v = str(e.get(k) or "")
+                l[k] = (v if v in ISI_VIDEO_OPSI
+                        else "Caption dasar + nama video")
             elif k in ("teks", "catatan", "tombol_kb", "nama"):
                 l[k] = str(e.get(k) if e.get(k) is not None else l[k])
         hasil.append(l)
     return hasil
 
 
-def isi_placeholder(teks, idx, caption, videos):
-    """Ganti {caption} {video} {no} pada teks langkah KETIK.
+def isi_placeholder(teks, idx, caption, videos, jumlah=None):
+    """Ganti {caption} {video} {no} {jumlah} pada teks langkah.
 
     idx    = nomor putaran loop dalam (0-based);
-    videos = daftar nama file video (baris ke-idx dipakai).
+    videos = daftar nama file video (baris ke-idx dipakai);
+    jumlah = jumlah video total (bawaan: sepanjang daftar videos).
     """
     teks = str(teks or "")
     if "{" not in teks:
         return teks
-    nama = "video"
     if videos:
         nama = videos[idx] if 0 <= idx < len(videos) else videos[0]
         nama = os.path.splitext(os.path.basename(nama))[0]
-    teks = teks.replace("{caption}", compose_caption(caption, nama))
+        caption_val = compose_caption(caption, nama)
+    else:
+        # tidak ada video: caption dasar saja, {video} kosong
+        nama = ""
+        caption_val = (caption or "").strip()
+    if jumlah is None:
+        jumlah = len(videos) if videos else 0
+    teks = teks.replace("{caption}", caption_val)
     teks = teks.replace("{video}", nama)
     teks = teks.replace("{no}", str(idx + 1))
+    teks = teks.replace("{jumlah}", str(jumlah))
     return teks
 
 
@@ -606,8 +650,8 @@ def template_cutmotions_steps(cfg, mulai_uid=0):
         else:
             add("KLIK", nama="C - Pilih negara", posisi=P("pos_pilih_neg"))
         add("KLIK", nama="D - Klik kolom tanggal", posisi=P("pos_tanggal"))
-        add("KETIK", nama="D - Ketik tanggal-jam rilis",
-            teks=cfg.get("tanggal", ""), ctrl_a=True)
+        add("TANGGAL_JAM", nama="D - Isi tanggal-jam rilis",
+            teks=cfg.get("tanggal", ""), sumber="Tetap (isi sendiri)")
         add("KLIK", nama="E - Klik 'OKE'", posisi=P("pos_oke"))
     add("KLIK", nama="F - Klik '+ Tambah video'", posisi=P("pos_tambah"))
     nk = int(_angka(cfg.get("klik_bebas1"), 2, 0, 500))
@@ -639,8 +683,8 @@ def template_cutmotions_steps(cfg, mulai_uid=0):
         geser=jarak)
     add("KLIK", nama="I2 - Klik kotak caption", posisi=P("pos_judul"),
         geser=jarak)
-    add("KETIK", nama="I2 - Ketik caption video ini", teks="{caption}",
-        ctrl_a=True)
+    add("VIDEO_CAPTION", nama="I2 - Isi caption video ini",
+        isi="Caption dasar + nama video", ctrl_a=True)
     add("KLIK", nama="I3 - Klik 'Konfirmasi'",
         posisi=P("pos_konfirmasi") or P("pos_edit"), geser=jarak)
     add("LOOP_AKHIR", nama="Selesai ulangi caption")
@@ -3454,8 +3498,8 @@ class StudioMakroTab:
         self.btn_stop.config(state="disabled",
                              disabledforeground="#F2C4BE")
         self._tb_pemisah(tb1)
-        for jenis in ("KLIK", "JEDA", "GAMBAR", "KETIK", "TOMBOL",
-                      "SCROLL", "CATATAN"):
+        for jenis in ("KLIK", "JEDA", "GAMBAR", "KETIK", "TANGGAL_JAM",
+                      "VIDEO_CAPTION", "TOMBOL", "SCROLL", "CATATAN"):
             self._tb_btn(tb1, LABEL_TB[jenis],
                          lambda j=jenis: self._tambah(j))
         self._tb_pemisah(tb1)
@@ -3670,6 +3714,22 @@ class StudioMakroTab:
             if l.get("enter"):
                 extra += " | Enter"
             return '"{}"{}'.format(t, extra)
+        if jenis == "TANGGAL_JAM":
+            sumber = str(l.get("sumber") or "Tab CutMotions")
+            if sumber == "Tetap (isi sendiri)":
+                val = str(l.get("teks") or "(kosong)")
+                if len(val) > 22:
+                    val = val[:22] + "..."
+                return "{} | tetap: {}".format(pos_t, val)
+            return "{} | dari setelan tab CutMotions".format(pos_t)
+        if jenis == "VIDEO_CAPTION":
+            isi = str(l.get("isi") or "Caption dasar + nama video")
+            if isi == "Teks sendiri + placeholder":
+                t = str(l.get("teks") or "")
+                if len(t) > 26:
+                    t = t[:26] + "..."
+                return "{} | teks: {}".format(pos_t, t or "(kosong)")
+            return "{} | {}".format(pos_t, isi.lower())
         if jenis == "TOMBOL":
             return "tekan {} x{}".format(
                 l.get("tombol_kb"),
@@ -3701,6 +3761,8 @@ class StudioMakroTab:
             return "cari gambar"
         if jenis == "KETIK":
             return "1 ketikan"
+        if jenis in ("TANGGAL_JAM", "VIDEO_CAPTION"):
+            return "1 ketikan (isi otomatis)"
         if jenis == "TOMBOL":
             return "{} tekanan".format(int(_angka(l.get("jumlah_kb"), 1,
                                                   1, 500)))
@@ -3734,6 +3796,7 @@ class StudioMakroTab:
             jeda_t = "{:.1f}s".format(_angka(l.get("jeda"), 0.5, 0,
                                              86400))
             tag = {"KLIK": "tklik", "GAMBAR": "tgambar", "KETIK": "tketik",
+                   "TANGGAL_JAM": "tketik", "VIDEO_CAPTION": "tketik",
                    "TOMBOL": "ttombol", "SCROLL": "tscroll",
                    "CATATAN": "tcatatan", "JEDA": "tjeda",
                    "LOOP_MULAI": "tloop", "LOOP_AKHIR": "tloop"}.get(
@@ -3909,7 +3972,7 @@ class StudioMakroTab:
                      "Cara pakai:\n"
                      "1. Klik salah satu tombol + di toolbar atas "
                      "(mis. + KLIK TITIK, + JEDA, + CARI GAMBAR, "
-                     "+ KETIK TEKS).\n"
+                     "+ KETIK TEKS, + TANGGAL-JAM, + VIDEO+CAPTION).\n"
                      "2. Klik barisnya di tabel ALUR KERJA.\n"
                      "3. Atur propertinya di panel ini (posisi, teks, "
                      "jeda, jumlah klik, gambar referensi, dll).\n"
@@ -3946,10 +4009,10 @@ class StudioMakroTab:
         self._ent_prop(r, self.pv["jeda"], 6)
 
         pos = l.get("posisi")
-        if jenis in ("KLIK", "GAMBAR"):
+        if jenis in ("KLIK", "GAMBAR", "TANGGAL_JAM", "VIDEO_CAPTION"):
             self.pv["x"] = tk.StringVar(value=str(pos[0]) if pos else "")
             self.pv["y"] = tk.StringVar(value=str(pos[1]) if pos else "")
-            r = self._baris_prop("POSISI X , Y")
+            r = self._baris_prop("POSISI KLIK DULU (opsional) X , Y")
             self._ent_prop(r, self.pv["x"], 6)
             tk.Label(r, text=",", bg=C_BG, fg=C_MUTED,
                      font=F_N).pack(side="left", padx=2)
@@ -3958,8 +4021,9 @@ class StudioMakroTab:
                            lambda: self._ambil_posisi(l["uid"]))
             self._btn_prop(r, "LIHAT",
                            lambda: self._lihat_posisi(l["uid"]), bg=C_BG)
-            tk.Label(r, text="bisa juga diketik manual", bg=C_BG,
-                     fg=C_MUTED, font=F_XS).pack(side="left", padx=6)
+            tk.Label(r, text="dikosongkan = ketik di posisi kursor "
+                             "sekarang", bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=6)
 
         if jenis == "KLIK":
             self.pv["tombol_mouse"] = tk.StringVar(
@@ -4070,11 +4134,88 @@ class StudioMakroTab:
             tk.Label(self.prop_body,
                      text="Placeholder: {caption} = caption dasar + nama "
                           "video ke-i  |  {video} = nama video ke-i  |  "
-                          "{no} = nomor putaran ULANGI (1, 2, 3, ...)",
+                          "{no} = nomor putaran ULANGI (1, 2, 3, ...)  |  "
+                          "{jumlah} = jumlah video. Menu ISI VIDEO & "
+                          "CAPTION di atas lebih praktis untuk hal ini.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             tk.Checkbutton(self.prop_body,
                            text="Ctrl+A dulu (timpa isi kotak yang lama)",
+                           variable=self.pv["ctrl_a"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Tekan Enter setelah selesai mengetik",
+                           variable=self.pv["enter"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+        elif jenis == "TANGGAL_JAM":
+            self.pv["sumber"] = tk.StringVar(
+                value=l.get("sumber")
+                if l.get("sumber") in SUMBER_TANGGAL_OPSI
+                else "Tab CutMotions")
+            self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
+            self.pv["ctrl_a"] = tk.BooleanVar(
+                value=bool(l.get("ctrl_a", True)))
+            self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            r = self._baris_prop("AMBIL NILAI TANGGAL-JAM DARI:")
+            tk.OptionMenu(r, self.pv["sumber"],
+                          *SUMBER_TANGGAL_OPSI).pack(side="left")
+            tk.Label(self.prop_body,
+                     text="'Tab CutMotions' = pakai isi kolom TANGGAL & JAM "
+                          "RILIS di tab Alur CutMotions (ubah sekali, semua "
+                          "makro ikut).  'Tetap' = pakai nilai di bawah ini.",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            r = self._baris_prop("TANGGAL & JAM RILIS")
+            self._ent_prop(r, self.pv["teks"], 22, tengah=False)
+            tk.Label(r, text="format 2026-09-10 02:05:01",
+                     bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left",
+                                                          padx=6)
+            tk.Checkbutton(self.prop_body,
+                           text="Ctrl+A dulu (timpa isi kolom yang lama)",
+                           variable=self.pv["ctrl_a"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Tekan Enter setelah selesai mengetik",
+                           variable=self.pv["enter"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+            tk.Label(self.prop_body,
+                     text="Alur tipikal: + KLIK (kolom tanggal) lalu + "
+                          "TANGGAL-JAM - ATAU isi POSISI KLIK DULU di atas "
+                          "agar langkah ini klik sendiri kolomnya.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x",
+                                                          pady=(2, 0))
+        elif jenis == "VIDEO_CAPTION":
+            self.pv["isi"] = tk.StringVar(
+                value=l.get("isi") if l.get("isi") in ISI_VIDEO_OPSI
+                else "Caption dasar + nama video")
+            self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
+            self.pv["ctrl_a"] = tk.BooleanVar(
+                value=bool(l.get("ctrl_a", True)))
+            self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            r = self._baris_prop("YANG DIKETIK OTOMATIS:")
+            tk.OptionMenu(r, self.pv["isi"],
+                          *ISI_VIDEO_OPSI).pack(side="left")
+            tk.Label(self.prop_body,
+                     text="Jumlah video = angka di kolom JUMLAH VIDEO tab "
+                          "CutMotions.  Caption dasar + nama video = mis. "
+                          "'#dangdut - melati' (nama video ke-i kalau di "
+                          "dalam blok ULANGI).  Nama video saja = mis. "
+                          "'melati'.",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            r = self._baris_prop("TEKS SENDIRI + PLACEHOLDER")
+            self._ent_prop(r, self.pv["teks"], 46, tengah=False)
+            tk.Label(self.prop_body,
+                     text="Dipakai kalau pilihan di atas = 'Teks sendiri'. "
+                          "Placeholder: {caption} = caption dasar + nama "
+                          "video ke-i  |  {video} = nama video ke-i  |  "
+                          "{no} = nomor putaran ULANGI  |  {jumlah} = "
+                          "jumlah video total.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Ctrl+A dulu (timpa isi kolom yang lama)",
                            variable=self.pv["ctrl_a"], bg=C_BG, fg=C_TEXT,
                            font=F_XS, anchor="w").pack(fill="x")
             tk.Checkbutton(self.prop_body,
@@ -4211,6 +4352,20 @@ class StudioMakroTab:
             g["radius"] = self.pv["g_radius"].get().strip()
             g["mirip"] = self.pv["g_mirip"].get().strip()
         elif jenis == "KETIK":
+            l["teks"] = self.pv["teks"].get()
+            l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
+            l["enter"] = bool(self.pv["enter"].get())
+        elif jenis == "TANGGAL_JAM":
+            sumber = self.pv["sumber"].get()
+            l["sumber"] = (sumber if sumber in SUMBER_TANGGAL_OPSI
+                           else "Tab CutMotions")
+            l["teks"] = self.pv["teks"].get()
+            l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
+            l["enter"] = bool(self.pv["enter"].get())
+        elif jenis == "VIDEO_CAPTION":
+            isi = self.pv["isi"].get()
+            l["isi"] = (isi if isi in ISI_VIDEO_OPSI
+                        else "Caption dasar + nama video")
             l["teks"] = self.pv["teks"].get()
             l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
             l["enter"] = bool(self.pv["enter"].get())
@@ -4715,6 +4870,12 @@ class StudioMakroTab:
         cut = self.shell.tab_cut if self.shell is not self else None
         videos = cut.antrian_video_studio() if cut is not None else []
         caption = cut.vars["caption"].get() if cut is not None else ""
+        # v5.2: nilai utk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION
+        tanggal = cut.vars["tanggal"].get().strip() \
+            if cut is not None else ""
+        jumlah_set = int(_angka(cut.vars["jumlah"].get(), 0, 0,
+                                MAX_BATCH)) if cut is not None else 0
+        jumlah_total = len(videos) or jumlah_set
         try:
             mundur = int(_angka(self.vars["mundur"].get(), 5, 0, 60))
         except Exception:
@@ -4724,6 +4885,8 @@ class StudioMakroTab:
             "langkah": json.loads(json.dumps(self.langkah)),
             "videos": list(videos),
             "caption": caption,
+            "tanggal": tanggal,
+            "jumlah": jumlah_total,
         }
         self._simpan_auto()
         self.stop_event.clear()
@@ -4853,13 +5016,12 @@ class StudioMakroTab:
         self._klik_titik(titik)
         return None
 
-    def _studio_ketik(self, l, loop_stack, caption, videos):
-        idx = loop_stack[-1]["idx"] if loop_stack else 0
-        teks = isi_placeholder(l.get("teks", ""), idx, caption, videos)
-        if not teks and not l.get("enter"):
+    def _ketik(self, teks, ctrl_a=False, enter=False):
+        """Ketik teks di posisi kursor (pilihan Ctrl+A / Enter)."""
+        if not teks and not enter:
             return
         try:
-            if l.get("ctrl_a"):
+            if ctrl_a:
                 time.sleep(0.2)
                 with self.kb.pressed(Key.ctrl):
                     self.kb.press("a")
@@ -4867,12 +5029,74 @@ class StudioMakroTab:
                 time.sleep(0.15)
             if teks:
                 self.kb.type(teks)
-            if l.get("enter"):
+            if enter:
                 time.sleep(0.1)
                 self.kb.press(Key.enter)
                 self.kb.release(Key.enter)
         except Exception as e:
             self._set_status("Gagal mengetik: {}".format(e), C_ORANGE)
+
+    def _studio_ketik(self, l, loop_stack, caption, videos):
+        idx = loop_stack[-1]["idx"] if loop_stack else 0
+        teks = isi_placeholder(l.get("teks", ""), idx, caption, videos)
+        self._ketik(teks, bool(l.get("ctrl_a")), bool(l.get("enter")))
+
+    def _studio_tanggal(self, l, snap):
+        """v5.2: isi kolom tanggal-jam rilis (klik dulu bila ada posisi)."""
+        sumber = str(l.get("sumber") or "Tab CutMotions")
+        if sumber == "Tetap (isi sendiri)":
+            teks = str(l.get("teks") or "").strip()
+        else:
+            teks = str(snap.get("tanggal") or "").strip()
+        if not teks:
+            self._set_status(
+                "Tanggal-jam masih KOSONG - langkah dilewati. Isi kolom "
+                "TANGGAL & JAM RILIS di tab Alur CutMotions, atau ganti "
+                "sumber nilai di properti langkah.", C_ORANGE)
+            return
+        rapikan = parse_tanggal(teks)
+        if rapikan:
+            teks = rapikan
+        else:
+            self._set_status(
+                "Format tanggal '{}' tidak dikenal - diketik apa adanya "
+                "(format benar: 2026-09-10 02:05:01).".format(teks),
+                C_ORANGE)
+        if l.get("posisi"):
+            self._klik_titik(l["posisi"])
+            self._sleep(0.4)
+        self._set_status("Isi tanggal-jam rilis: {}".format(teks), C_GREEN)
+        self._ketik(teks, bool(l.get("ctrl_a", True)),
+                    bool(l.get("enter")))
+
+    def _studio_video(self, l, loop_stack, snap):
+        """v5.2: isi jumlah video / caption dasar + nama video ke-i."""
+        videos = snap.get("videos") or []
+        caption = snap.get("caption") or ""
+        jumlah = int(_angka(snap.get("jumlah"), len(videos), 0, 100000))
+        idx = loop_stack[-1]["idx"] if loop_stack else 0
+        isi = str(l.get("isi") or "Caption dasar + nama video")
+        if isi == "Jumlah video":
+            teks = str(jumlah)
+        elif isi == "Nama video saja":
+            teks = isi_placeholder("{video}", idx, caption, videos, jumlah)
+        elif isi == "Teks sendiri + placeholder":
+            teks = isi_placeholder(str(l.get("teks") or ""), idx, caption,
+                                   videos, jumlah)
+        else:
+            teks = isi_placeholder("{caption}", idx, caption, videos,
+                                   jumlah)
+        if not teks:
+            self._set_status(
+                "Tidak ada teks untuk diketik (folder video / jumlah "
+                "kosong) - langkah dilewati.", C_ORANGE)
+            return
+        if l.get("posisi"):
+            self._klik_titik(l["posisi"])
+            self._sleep(0.4)
+        self._set_status("Isi {}: {}".format(isi.lower(), teks), C_GREEN)
+        self._ketik(teks, bool(l.get("ctrl_a", True)),
+                    bool(l.get("enter")))
 
     def _studio_tombol(self, l):
         nama = str(l.get("tombol_kb") or "Enter").strip() or "Enter"
@@ -5026,6 +5250,10 @@ class StudioMakroTab:
                     self._studio_tombol(l)
                 elif jenis == "SCROLL":
                     self._studio_scroll(l)
+                elif jenis == "TANGGAL_JAM":
+                    self._studio_tanggal(l, snap)
+                elif jenis == "VIDEO_CAPTION":
+                    self._studio_video(l, loop_stack, snap)
                 i += 1
             self._finish("Makro selesai! {} langkah sudah dijalankan."
                          .format(n))
@@ -5272,7 +5500,7 @@ class ShellApp:
         self.root = root
         root.title("{} v{} - Macro Studio".format(APP_NAME, APP_VERSION))
         root.configure(bg=C_BG)
-        root.geometry("1080x880")
+        root.geometry("1280x880")
         root.minsize(1000, 760)
         if sys.platform == "win32":
             try:
@@ -5355,6 +5583,9 @@ class ShellApp:
             ("JEDA", "Tambah JEDA / TUNGGU"),
             ("GAMBAR", "Tambah CARI GAMBAR (klik / pindah kursor)"),
             ("KETIK", "Tambah KETIK TEKS"),
+            ("TANGGAL_JAM", "Tambah ISI TANGGAL-JAM (kolom tanggal rilis)"),
+            ("VIDEO_CAPTION",
+             "Tambah ISI VIDEO & CAPTION (jumlah + caption + nama video)"),
             ("TOMBOL", "Tambah TEKAN TOMBOL"),
             ("SCROLL", "Tambah SCROLL"),
             ("CATATAN", "Tambah CATATAN"),
@@ -5449,6 +5680,9 @@ class ShellApp:
             "v5.1: POTONG GAMBAR seret langsung di layar (fullscreen)\n"
             "dan setiap potongan jadi file baru - referensi CARI\n"
             "GAMBAR bisa dipakai berkali-kali, beda-beda gambarnya.\n\n"
+            "v5.2: 2 MENU BARU di Studio - ISI TANGGAL-JAM (mengisi\n"
+            "kolom tanggal-jam rilis otomatis) dan ISI VIDEO & CAPTION\n"
+            "(mengisi jumlah video, atau caption dasar + nama video).\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
@@ -5490,6 +5724,8 @@ def main():
             st._tambah("KLIK")
             st._tambah("JEDA")
             st._tambah("KETIK")
+            st._tambah("TANGGAL_JAM")
+            st._tambah("VIDEO_CAPTION")
             st._tambah("LOOP_MULAI")
             st._tambah("KLIK")
             st._tambah("LOOP_AKHIR")

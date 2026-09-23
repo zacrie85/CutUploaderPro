@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.1 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.2 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -83,6 +83,14 @@ MENUIS LANGKAH DI TOOLBAR ATAS (baris pertama):
                   acuan / lewati / stop
   + KETIK         mengetik teks (opsional Ctrl+A dulu dan
                   Enter setelahnya)
+  + TANGGAL-JAM   (v5.2) mengisi kolom TANGGAL & JAM RILIS
+                  secara otomatis: nilainya diambil dari
+                  kolom tanggal di tab Alur CutMotions,
+                  atau diketik tetap di langkah ini
+  + VIDEO+CAPTION (v5.2) mengisi dengan data video secara
+                  otomatis: JUMLAH VIDEO, atau CAPTION DASAR
+                  + NAMA VIDEO ke-i (mis. "#dangdut -
+                  melati"), atau nama video saja
   + TOMBOL        menekan tombol keyboard: Enter, Tab, Esc,
                   Spasi, panah, Shift+Panah Bawah, Ctrl+A,
                   Ctrl+C/V, F2/F4/F5, atau 1 huruf apa saja
@@ -118,6 +126,14 @@ PANEL PROPERTI LANGKAH (menyesuaikan jenis langkah):
                KEMIRIPAN, TES CARI LANGKAH INI.
   - KETIK    : TEKS YANG DIKETIK + placeholder (lihat di
                bawah), Ctrl+A dulu, Enter setelahnya.
+  - ISI TANGGAL-JAM: POSISI KLIK DULU (opsional - kosongkan
+               bila cursor sudah di kolomnya), AMBIL NILAI
+               DARI (Tab CutMotions / Tetap), TANGGAL & JAM
+               RILIS, Ctrl+A dulu, Enter setelahnya.
+  - ISI VIDEO & CAPTION: POSISI KLIK DULU (opsional), YANG
+               DIKETIK OTOMATIS (Jumlah video / Caption dasar
+               + nama video / Nama video saja / Teks sendiri
+               + placeholder), Ctrl+A dulu, Enter setelahnya.
   - TOMBOL   : pilih tombol dari daftar atau ketik 1 huruf,
                JUMLAH TEKAN, JEDA ANTAR TEKAN.
   - SCROLL   : ARAH (Turun/Naik), JUMLAH GULUNGAN.
@@ -141,9 +157,12 @@ PLACEHOLDER UNTUK KETIK (otomatis mengikuti video):
               CutMotions (folder, caption, jumlah, riwayat)
   {video}   = nama video ke-i tanpa ekstensi
   {no}      = nomor putaran ULANGI (1, 2, 3, ...)
+  {jumlah}  = jumlah video total (v5.2)
   Video ke-i diambil urut nama A-Z, hormati centang "lewati
   yang sudah terupload" - sama persis dengan urutan baris
   video di situs.
+  TIPS v5.2: untuk caption dan jumlah video lebih gampang
+  pakai menu "+ VIDEO+CAPTION" daripada placeholder manual.
 
 SIMPAN / BUKA MAKRO:
   - SIMPAN MAKRO  : simpan alur ke file .json (mis.
@@ -317,6 +336,38 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V5.2 - ISI TANGGAL-JAM & ISI VIDEO & CAPTION:
+  Dua menu baru di toolbar Studio Makro yang menyelesaikan
+  keluhan "alur bebas tidak ada yang mengisi kolom tanggal-jam
+  dan jumlah video / caption":
+  - + TANGGAL-JAM  : satu langkah untuk mengisi kolom
+    tanggal-jam rilis di situs. AMBIL NILAI DARI:
+    * "Tab CutMotions" - mengikuti kolom TANGGAL & JAM RILIS
+      di tab Alur CutMotions (ubah sekali, semua makro ikut).
+    * "Tetap (isi sendiri)" - nilai tetap yang Anda ketik di
+      properti langkah (format 2026-09-10 02:05:01).
+    Bisa KLIK DULU kolomnya sendiri (isi POSISI KLIK DULU)
+    atau diletakkan setelah langkah + KLIK kolom tanggal.
+    Ctrl+A otomatis ditekan dulu supaya isi lama tertimpa.
+  - + VIDEO+CAPTION: satu langkah untuk mengisi data video.
+    YANG DIKETIK OTOMATIS:
+    * "Jumlah video" - angka JUMLAH VIDEO di tab Alur
+      CutMotions (mis. 5).
+    * "Caption dasar + nama video" - mis. "#dangdut -
+      melati"; kalau ada di dalam blok ULANGI, nama video
+      berganti otomatis tiap putaran (melati, rikma, dst).
+    * "Nama video saja" - mis. "melati".
+    * "Teks sendiri + placeholder" - bebas pakai {caption}
+      {video} {no} {jumlah}.
+  Contoh alur CutMotions versi bebas yang kini lebih pendek:
+    ... -> + KLIK (kolom tanggal) -> + TANGGAL-JAM ->
+    + KLIK (OKE) -> ... -> ULANGI MULAI -> + KLIK (Edit) ->
+    + KLIK (kotak caption) -> + VIDEO+CAPTION ->
+    + KLIK (Konfirmasi) -> ULANGI AKHIR -> ...
+  TEMPLATE CUTMOTIONS sekarang memakai keduanya: langkah D
+  jadi ISI TANGGAL-JAM dan langkah I2 jadi ISI VIDEO &
+  CAPTION (dulu KETIK TEKS biasa).
 
 BARU DI V5.1 - POTONG LANGSUNG DI LAYAR + REFERENSI BANYAK:
   - POTONG GAMBAR kini fullscreen: aplikasi disembunyikan
