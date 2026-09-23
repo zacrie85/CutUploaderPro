@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.4 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.5 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -216,15 +216,18 @@ pernah diminta atau disimpan). Lakukan sendiri di browser:
   - TOOLBAR paling atas : JALANKAN (F6), BERHENTI (F7),
     TES CARI GAMBAR, POTONG GAMBAR REFERENSI,
     SALIN LANGKAH, TEMPEL LANGKAH, HAPUS SALINAN,
-    SIMPAN PROFIL, BUKA PROFIL.
+    SIMPAN PROFIL, BUKA PROFIL, dan (v5.5) tombol hijau
+    "+ TAMBAH LANGKAH" - semua menu STUDIO MAKRO bisa
+    disisipkan ke alur ini (lihat blok BARU DI V5.5).
   - VIDEO & CAPTION     : pilih folder video, jumlah video
     (maks 20), caption dasar, pratinjau caption.
   - LANGKAH MAKRO       : tabel berisi langkah A-J + salinan
-    (baris biru bertanda "+"). KLIK SATU BARIS lalu sunting
+    (baris biru bertanda "+") + langkah STUDIO (baris ungu
+    bertanda "S", v5.5). KLIK SATU BARIS lalu sunting
     di panel PROPERTI LANGKAH di bawahnya (posisi, jeda,
     opsi khusus, pencarian gambar). Klik kanan tabel =
-    Salin / Tempel / Hapus. Ctrl+C = salin, Ctrl+V = tempel,
-    Del = hapus salinan.
+    Tambah langkah STUDIO / Salin / Tempel / Hapus.
+    Ctrl+C = salin, Ctrl+V = tempel, Del = hapus salinan.
   - WAKTU & UNGGAH      : mundur, jeda dialog, jeda antar
     langkah, tunggu upload, tombol terapkan jeda ke semua.
   - STATUSBAR bawah     : kabar jalannya makro (bersama
@@ -344,6 +347,60 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V5.5 - SEMUA MENU STUDIO MAKRO MASUK ALUR CUTMOTIONS (A-J):
+  Kini Anda tidak perlu pindah tab untuk memakai kekuatan
+  Studio Makro. Di tab ALUR CUTMOTIONS:
+  1. Klik satu baris langkah (mis. E - Tombol OKE) sebagai
+     posisi acuan.
+  2. Klik tombol hijau "+ TAMBAH LANGKAH" di toolbar (atau
+     klik kanan tabel > "Tambah langkah STUDIO di sini").
+  3. Pilih jenisnya (semua menu Studio tersedia):
+      + KLIK TITIK          klik kiri/kanan/dobel, jumlah
+                            klik, geser per putaran ULANGI
+      + JEDA / TUNGGU       tunggu N detik di tengah alur
+      + CARI GAMBAR         gambar referensi dicari (AREA
+                            FOKUS opsional) lalu diklik /
+                            dipindah tanpa klik
+      + KETIK TEKS          ketik teks + placeholder
+                            {caption} {video} {no} {jumlah}
+      + ISI TANGGAL-JAM     isi kolom tanggal rilis (dari
+                            kolom tab ini / nilai tetap)
+      + ISI VIDEO & CAPTION isi jumlah video / caption dasar
+                            + nama video baris ini
+      + TEKAN TOMBOL        Enter/Tab/panah/Ctrl+A/dll x N
+      + SCROLL              gulung Naik/Turun sejumlah N
+      + CATATAN             penanda saja
+      + ULANGI - MULAI/AKHIR blok pengulangan (bisa
+                            bersarang, ada anti loop
+                            tak berujung)
+  4. Langkah baru berkode "S" (ungu) muncul SETELAH baris
+     acuan. Sunting di panel PROPERTI LANGKAH - panelnya
+     sama persis dengan Studio: POSISI KLIK DULU (opsional),
+     teks, GAMBAR REFERENSI + POTONG GAMBAR + AREA FOKUS
+     (seret kotak di layar) + TES CARI, jumlah klik/tombol/
+     scroll, jeda, aktif-mati.
+  5. SALIN/TEMPEL (Ctrl+C/Ctrl+V) juga berlaku untuk langkah
+     S; SIMPAN/BUKA PROFIL menyimpannya juga.
+
+  CARA KERJA SAAT JALANKAN (F6):
+  - Langkah S dijalankan TEPAT di posisinya dalam alur:
+    sisip setelah E = jalan tepat setelah OKE diklik;
+    sisip setelah I1/I2/I3 = jalan setiap baris video di
+    fase caption, dengan geser turun otomatis mengikuti
+    JARAK ANTAR BARIS dan placeholder mengikuti baris yang
+    sedang diproses.
+  - Blok ULANGI-MULAI...ULANGI-AKHIR yang disisipkan di
+    antara langkah A-J mengulang sepotong langkah di
+    antaranya (jumlah ulangan bebas atau ikut jumlah
+    video).
+  - Langkah CARI GAMBAR versi Studio ikut tervalidasi saat
+    F6 (file gambar harus ada); kalau tidak ketemu,
+    pilihannya: lewati / klik tengah area / stop alur.
+
+  CONTOH: sisipkan "+ KETIK TEKS" setelah langkah I2 dengan
+  teks "part {no}" - setiap baris video otomatis dapat
+  tambahan "part 1", "part 2", dst setelah caption.
 
 BARU DI V5.4 - REKAM AKSI (REKAMAN MAKRO OTOMATIS):
   Sekarang Anda tidak perlu menyusun langkah satu per satu:

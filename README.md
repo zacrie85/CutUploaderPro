@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.4)
+# CutUploader Pro — Macro Studio Edition (v5.5)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, dan menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, dan **baru v5.5: semua menu Studio Makro bisa disisipkan ke dalam alur CutMotions (A-J)**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.4**:
+Dari halaman [Releases](../../releases) rilis **v5.5**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.4.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.5.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -62,6 +62,25 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
 
+### Baru v5.5: semua menu Studio Makro masuk ke alur CutMotions (A-J)
+
+Di toolbar tab **ALUR CUTMOTIONS** ada tombol hijau **`+ TAMBAH LANGKAH ▾`** (dan klik kanan tabel → *Tambah langkah STUDIO di sini*) untuk menyisipkan **semua jenis langkah Studio** di posisi mana pun di antara langkah A–J:
+
+| Menu | Aksi di dalam alur A-J |
+|---|---|
+| `+ KLIK TITIK` | Klik kiri/kanan/dobel + jumlah klik + geser per putaran |
+| `+ JEDA / TUNGGU` | Tunggu N detik di tengah alur |
+| `+ CARI GAMBAR` | Gambar referensi dicari (AREA FOKUS opsional) lalu diklik/dipindah |
+| `+ KETIK TEKS` | Ketik teks + placeholder `{caption} {video} {no} {jumlah}` |
+| `+ ISI TANGGAL-JAM` | Isi kolom tanggal rilis (dari kolom tab ini atau nilai tetap) |
+| `+ ISI VIDEO & CAPTION` | Isi jumlah video / caption dasar + nama video baris ini |
+| `+ TEKAN TOMBOL` | Enter/Tab/panah/Ctrl+A/… × jumlah tekan |
+| `+ SCROLL` | Gulung Naik/Turun sejumlah gulungan |
+| `+ CATATAN` | Penanda saja |
+| `+ ULANGI MULAI/AKHIR` | Blok pengulangan sepotong alur (bisa bersarang) |
+
+Langkah sisipan berkode **"S"** (ungu) di tabel, disunting di panel **PROPERTI LANGKAH** yang sama persis dengan Studio (termasuk POTONG GAMBAR & PILIH AREA FOKUS), **ikut tersimpan di profil**, SALIN/TEMPEL/HAPUS seperti biasa, dan **dijalankan tepat di posisinya** — termasuk di dalam fase caption per baris video: geser turun otomatis mengikuti JARAK ANTAR BARIS dan teks placeholder mengikuti baris yang sedang diproses.
+
 ## Menjalankan dari source (opsional)
 
 ```bat
@@ -71,6 +90,16 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.5
+
+- **SEMUA MENU STUDIO MAKRO kini bisa dimasukkan ke alur CUTMOTIONS (A-J)** — tombol hijau **`+ TAMBAH LANGKAH ▾`** baru di toolbar tab Alur CutMotions (plus submenu *klik kanan tabel → Tambah langkah STUDIO di sini*, dan menu *Alat*). Pilih salah satu: KLIK TITIK, JEDA/TUNGGU, CARI GAMBAR, KETIK TEKS, ISI TANGGAL-JAM, ISI VIDEO & CAPTION, TEKAN TOMBOL, SCROLL, CATATAN, ULANGI-MULAI, ULANGI-AKHIR — langkahnya disisipkan **SETELAH baris terpilih** dan dijalankan **tepat di posisinya** dalam alur.
+- **Langkah berkode "S" (ungu) di tabel** dengan panel PROPERTI lengkap ala Studio: posisi klik-dulu + AMBIL/LIHAT, teks + placeholder, GAMBAR REFERENSI + thumbnail + **POTONG GAMBAR** + **PILIH AREA FOKUS** (seret kotak di layar) + KOSONGKAN + **TES CARI**, jumlah klik/tombol/scroll, jeda, aktif-mati.
+- **Blok ULANGI di dalam alur A-J** — ULANGI-MULAI/AKHIR bisa membungkus sepotong langkah sisipan (mis. klik + ketik + scroll) dan diulang N kali atau mengikuti jumlah video; ada penjaga anti loop-tak-berujung.
+- **Fase caption per baris ikut pintar**: langkah Studio yang disisipkan setelah I1/I2/I3 otomatis **bergeser mengikuti JARAK ANTAR BARIS** dan placeholder `{caption}/{video}/{no}/{jumlah}` mengikuti baris video yang sedang diproses — sama seperti salinan langkah lama.
+- **SALIN/TEMPEL untuk langkah Studio** di tab CutMotions (Ctrl+C/Ctrl+V) — semua parameter ikut tersalin; profil makro (SIMPAN/BUKA PROFIL) menyertakan langkah-langkah ini dan dimuat ulang dengan sanitasi penuh (macro lama tetap kompatibel).
+- CARI GAMBAR versi Studio di alur A-J ikut tervalidasi saat JALANKAN (file gambar harus ada; opencv tidak terpasang → langkah dilewati dengan pesan), dan pilihan *Stop alur* kini benar-benar menghentikan seluruh alur A-J (sebelumnya sisa salinan berhenti tapi fase berikutnya masih jalan).
+- Mesin eksekusi langkah Studio kini **satu fungsi bersama** untuk kedua tab (perilaku Studio tidak berubah; diuji ulang 53 unit test + 28/39/45 regresi + selftest).
 
 ## Perubahan v5.4
 

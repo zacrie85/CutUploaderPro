@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.3  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v5.5  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -62,6 +62,18 @@
        J  Klik "SUBMIT"
      Klik kanan langkah A-J = SALIN/TEMPEL jadi titik klik
      tambahan; cari gambar bisa diaktifkan di semua langkah.
+     - v5.5: SEMUA MENU STUDIO MAKRO kini bisa dimasukkan ke
+       alur CUTMOTIONS (A-J)! Tombol "+ TAMBAH LANGKAH" di
+       toolbar tab ini (atau klik kanan tabel > Tambah langkah
+       STUDIO) menyisipkan KLIK TITIK, JEDA, CARI GAMBAR, KETIK
+       TEKS, ISI TANGGAL-JAM, ISI VIDEO & CAPTION, TEKAN TOMBOL,
+       SCROLL, CATATAN, dan blok ULANGI-MULAI/AKHIR di posisi
+       mana pun di antara langkah A-J. Langkah baru berkode "S"
+       di tabel, disunting di panel PROPERTI (posisi, teks,
+       gambar referensi, AREA FOKUS, dll), ikut tersimpan di
+       profil, dan dijalankan TEPAT di posisinya dalam alur -
+       termasuk di dalam fase caption per baris video (geser
+       otomatis + placeholder {caption}/{video}/{no}/{jumlah}).
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -176,7 +188,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.4"
+APP_VERSION = "5.5"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -831,6 +843,424 @@ def cari_akhir_loop(langkah, i):
     return -1
 
 
+# ------------------------------------------------------------
+# v5.5: Tampilan & mesin eksekusi langkah Studio Makro sebagai
+# FUNGSI MODUL - dipakai BERSAMA oleh tab STUDIO MAKRO dan
+# tab ALUR CUTMOTIONS (A-J). Dengan begini SEMUA menu Studio
+# (klik, jeda, cari gambar, ketik, tanggal-jam, video+caption,
+# tombol, scroll, catatan, blok ULANGI) bisa dimasukkan ke
+# dalam alur CutMotions dan dijalankan tepat di posisinya.
+# ------------------------------------------------------------
+
+
+def studio_detail_teks(l):
+    """Teks kolom DETAIL untuk satu langkah Studio (semua jenis)."""
+    jenis = l["jenis"]
+    pos = l.get("posisi")
+    pos_t = "({},{})".format(pos[0], pos[1]) if pos else "belum diatur"
+    if jenis == "KLIK":
+        mode = str(l.get("tombol_mouse") or "Klik kiri").lower()
+        n = int(_angka(l.get("klik"), 1, 0, 500))
+        geser = int(_angka(l.get("geser"), 0, 0, 100000))
+        teks = "{} | {}x".format(pos_t, mode)
+        if n != 1:
+            teks += " x{}".format(n)
+        if geser:
+            teks += " | geser +{} px/putaran".format(geser)
+        return teks
+    if jenis == "JEDA":
+        return "tunggu {:.1f} detik".format(
+            _angka(l.get("detik"), 1.0, 0, 86400))
+    if jenis == "GAMBAR":
+        g = l.get("gambar") or {}
+        gm = os.path.basename(str(g.get("path") or "")) \
+            if g.get("path") else "(gambar belum dipilih)"
+        aksi_t = ("pindah saja"
+                  if g.get("aksi") == "Pindah saja" else "klik gambar")
+        f = g.get("fokus")
+        if isinstance(f, (list, tuple)) and len(f) == 4:
+            fokus_t = "fokus ({},{})-({},{})".format(
+                f[0], f[1], f[2], f[3])
+        else:
+            fokus_t = "cari di seluruh layar"
+        return "{} | {} | {}".format(fokus_t, gm, aksi_t)
+    if jenis == "KETIK":
+        t = str(l.get("teks") or "")
+        if len(t) > 42:
+            t = t[:42] + "..."
+        extra = " | Ctrl+A dulu" if l.get("ctrl_a") else ""
+        if l.get("enter"):
+            extra += " | Enter"
+        return '"{}"{}'.format(t, extra)
+    if jenis == "TANGGAL_JAM":
+        sumber = str(l.get("sumber") or "Tab CutMotions")
+        if sumber == "Tetap (isi sendiri)":
+            val = str(l.get("teks") or "(kosong)")
+            if len(val) > 22:
+                val = val[:22] + "..."
+            return "{} | tetap: {}".format(pos_t, val)
+        return "{} | dari setelan tab CutMotions".format(pos_t)
+    if jenis == "VIDEO_CAPTION":
+        isi = str(l.get("isi") or "Caption dasar + nama video")
+        if isi == "Teks sendiri + placeholder":
+            t = str(l.get("teks") or "")
+            if len(t) > 26:
+                t = t[:26] + "..."
+            return "{} | teks: {}".format(pos_t, t or "(kosong)")
+        return "{} | {}".format(pos_t, isi.lower())
+    if jenis == "TOMBOL":
+        return "tekan {} x{}".format(
+            l.get("tombol_kb"),
+            int(_angka(l.get("jumlah_kb"), 1, 1, 500)))
+    if jenis == "SCROLL":
+        return "{} x{}".format(
+            l.get("arah"),
+            int(_angka(l.get("jumlah_scroll"), 3, 0, 1000)))
+    if jenis == "CATATAN":
+        t = str(l.get("catatan") or l.get("nama") or l.get("label") or "")
+        if len(t) > 60:
+            t = t[:60] + "..."
+        return t
+    if jenis == "LOOP_MULAI":
+        if l.get("ikut_video"):
+            return "ulangi sebanyak jumlah video (tab CutMotions)"
+        return "ulangi {}x".format(int(_angka(l.get("jumlah_loop"),
+                                              2, 0, 100000)))
+    return "kembali ke ULANGI-MULAI di atas"
+
+
+def studio_ulang_teks(l):
+    """Teks kolom ULANGI untuk satu langkah Studio (semua jenis)."""
+    jenis = l["jenis"]
+    if jenis == "KLIK":
+        n = int(_angka(l.get("klik"), 1, 0, 500))
+        return "pindah saja" if n == 0 else "{} klik".format(n)
+    if jenis == "JEDA":
+        return "-"
+    if jenis == "GAMBAR":
+        return "cari gambar"
+    if jenis == "KETIK":
+        return "1 ketikan"
+    if jenis in ("TANGGAL_JAM", "VIDEO_CAPTION"):
+        return "1 ketikan (isi otomatis)"
+    if jenis == "TOMBOL":
+        return "{} tekanan".format(int(_angka(l.get("jumlah_kb"), 1,
+                                              1, 500)))
+    if jenis == "SCROLL":
+        return "{}x gulungan".format(int(_angka(
+            l.get("jumlah_scroll"), 3, 0, 1000)))
+    if jenis == "LOOP_MULAI":
+        if l.get("ikut_video"):
+            return "x jumlah video"
+        return "{}x".format(int(_angka(l.get("jumlah_loop"), 2, 0,
+                                       100000)))
+    if jenis == "LOOP_AKHIR":
+        return "akhir blok"
+    return "-"
+
+
+def studio_klik_titik(mesin, titik):
+    """Pindahkan mouse lalu klik kiri satu titik."""
+    try:
+        mesin.mouse.position = (int(titik[0]), int(titik[1]))
+        time.sleep(0.15)
+        mesin.mouse.click(Button.left, 1)
+    except Exception:
+        pass
+
+
+def studio_ketik(mesin, teks, ctrl_a=False, enter=False):
+    """Ketik teks di posisi kursor (pilihan Ctrl+A / Enter)."""
+    if not teks and not enter:
+        return
+    try:
+        if ctrl_a:
+            time.sleep(0.2)
+            with mesin.kb.pressed(Key.ctrl):
+                mesin.kb.press("a")
+                mesin.kb.release("a")
+            time.sleep(0.15)
+        if teks:
+            mesin.kb.type(teks)
+        if enter:
+            time.sleep(0.1)
+            mesin.kb.press(Key.enter)
+            mesin.kb.release(Key.enter)
+    except Exception as e:
+        mesin._set_status("Gagal mengetik: {}".format(e), C_ORANGE)
+
+
+def studio_gambar_cari(mesin, l):
+    """v5.3: cari gambar referensi lalu LANGSUNG DIKLIK / dipindah.
+
+    v5.5: kini fungsi modul bersama - bisa dipakai langkah CARI
+    GAMBAR di Studio MaKRO maupun di dalam alur CutMotions.
+    TANPA titik acuan X,Y - gambar dicari di AREA FOKUS (atau
+    seluruh layar). Kembalikan "stop" bila alur harus berhenti.
+    """
+    g = l.get("gambar") or {}
+    path = str(g.get("path") or "").strip()
+    nama = str(l.get("nama") or l.get("label") or "") \
+        or LABEL_JENIS["GAMBAR"]
+    if not path or not os.path.isfile(path):
+        mesin._set_status(
+            "Gambar referensi '{}' belum ada - langkah dilewati "
+            "(klik POTONG GAMBAR di panel properti).".format(nama),
+            C_ORANGE)
+        return None
+    if not CV_OK:
+        mesin._set_status(
+            "opencv-python belum terpasang - langkah CARI GAMBAR "
+            "'{}' dilewati.".format(nama), C_ORANGE)
+        return None
+    mirip = _angka(g.get("mirip"), 0.8, 0.5, 0.99)
+    area = area_dari_langkah(l)
+    if area:
+        desk = "area fokus ({},{})-({},{})".format(area[0], area[1],
+                                                   area[2], area[3])
+    else:
+        desk = "seluruh layar"
+    hasil = None
+    pesan = ""
+    for percobaan in range(1, 4):
+        mesin._set_status(
+            "Cari gambar '{}' di {} (percobaan {}/3, "
+            "multi-skala)...".format(os.path.basename(path), desk,
+                                     percobaan), C_GREEN)
+        hasil, pesan = cari_di_layar_area(path, area, mirip)
+        if hasil:
+            break
+        mesin._sleep(1.0)
+    if hasil:
+        x, y, skor = hasil
+        if str(g.get("aksi")) == "Pindah saja":
+            try:
+                mesin.mouse.position = (x, y)
+            except Exception:
+                pass
+            mesin._set_status(
+                "Gambar '{}' KETEMU di ({}, {}) - kemiripan {:.0%} - "
+                "mouse DIPINDAH tanpa klik.".format(nama, x, y, skor),
+                C_GREEN)
+            return None
+        mesin._set_status(
+            "Gambar '{}' KETEMU di ({}, {}) - kemiripan {:.0%} - "
+            "diklik.".format(nama, x, y, skor), C_GREEN)
+        studio_klik_titik(mesin, (x, y))
+        return None
+    pilihan = str(g.get("gagal") or "Lewati langkah")
+    if pilihan == "Stop alur":
+        mesin._finish("Dihentikan: gambar '{}' tidak ketemu 3x. {}"
+                      .format(os.path.basename(path), pesan), warn=True)
+        return "stop"
+    if pilihan == "Klik tengah area" and area:
+        tengah = ((area[0] + area[2]) // 2, (area[1] + area[3]) // 2)
+        mesin._set_status(
+            "Gambar '{}' tidak ketemu - klik tengah area fokus {}. "
+            "{}".format(nama, tengah, pesan), C_ORANGE)
+        studio_klik_titik(mesin, tengah)
+        return None
+    mesin._set_status("Gambar '{}' tidak ketemu - langkah dilewati. "
+                      "{}".format(nama, pesan), C_ORANGE)
+    return None
+
+
+def studio_jalankan_langkah(mesin, l, idx=0, videos=None, caption="",
+                            jumlah=None, tanggal="", geser_baris=0):
+    """Jalankan SATU langkah Studio (semua jenis kecuali blok ULANGI).
+
+    mesin       : objek dengan mouse, kb, stop_event, _sleep,
+                  _set_status, _finish (kedua tab memenuhinya).
+    idx         : nomor putaran ULANGI (0-based) / baris caption.
+    videos      : daftar nama file video (untuk placeholder).
+    caption     : caption dasar.
+    jumlah      : jumlah video total (bila None: panjang videos).
+    tanggal     : tanggal-jam rilis dari tab CutMotions.
+    geser_baris : geser Y tambahan (px) - posisi baris video pada
+                  fase caption alur CutMotions (i x JARAK ANTAR BARIS).
+
+    Kembalikan "stop" bila alur harus dihentikan, selain itu None.
+    """
+    jenis = str(l.get("jenis") or "")
+    if jenis == "CATATAN":
+        teks = str(l.get("catatan") or l.get("nama") or l.get("label")
+                   or "")
+        if teks:
+            mesin._set_status("CATATAN: {}".format(teks), C_BLUE)
+        return None
+    if jenis == "JEDA":
+        d = _angka(l.get("detik"), 1.0, 0, 86400)
+        mesin._set_status("Tunggu {:.1f} detik...".format(d), C_GREEN)
+        mesin._sleep(d)
+        return None
+    if jenis == "KLIK":
+        titik = l.get("posisi")
+        if not titik:
+            mesin._set_status("Posisi klik belum diatur - langkah "
+                              "dilewati.", C_ORANGE)
+            return None
+        geser = int(_angka(l.get("geser"), 0, 0, 100000)) * idx \
+            + int(geser_baris or 0)
+        tujuan = (int(titik[0]), int(titik[1]) + geser)
+        n = int(_angka(l.get("klik"), 1, 0, 500))
+        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
+        mode = l.get("tombol_mouse") if l.get("tombol_mouse") \
+            in MOUSE_OPSI else "Klik kiri"
+        try:
+            mesin.mouse.position = tujuan
+            time.sleep(0.12)
+        except Exception:
+            pass
+        for k in range(n):
+            if mesin.stop_event.is_set():
+                break
+            try:
+                if mode == "Klik kanan":
+                    mesin.mouse.click(Button.right, 1)
+                elif mode == "Klik dobel":
+                    mesin.mouse.click(Button.left, 2)
+                else:
+                    mesin.mouse.click(Button.left, 1)
+            except Exception:
+                pass
+            if k < n - 1:
+                time.sleep(jk)
+        return None
+    if jenis == "GAMBAR":
+        return studio_gambar_cari(mesin, l)
+    videos = list(videos or [])
+    jumlah_total = int(jumlah) if jumlah else len(videos)
+    if jenis == "KETIK":
+        teks = isi_placeholder(l.get("teks", ""), idx, caption, videos,
+                               jumlah_total)
+        studio_ketik(mesin, teks, bool(l.get("ctrl_a")),
+                     bool(l.get("enter")))
+        return None
+    if jenis == "TANGGAL_JAM":
+        sumber = str(l.get("sumber") or "Tab CutMotions")
+        if sumber == "Tetap (isi sendiri)":
+            teks = str(l.get("teks") or "").strip()
+        else:
+            teks = str(tanggal or "").strip()
+        if not teks:
+            mesin._set_status(
+                "Tanggal-jam masih KOSONG - langkah dilewati. Isi kolom "
+                "TANGGAL & JAM RILIS, atau ganti sumber nilai di "
+                "properti langkah.", C_ORANGE)
+            return None
+        rapikan = parse_tanggal(teks)
+        if rapikan:
+            teks = rapikan
+        else:
+            mesin._set_status(
+                "Format tanggal '{}' tidak dikenal - diketik apa adanya "
+                "(format benar: 2026-09-10 02:05:01).".format(teks),
+                C_ORANGE)
+        if l.get("posisi"):
+            studio_klik_titik(mesin, l["posisi"])
+            mesin._sleep(0.4)
+        mesin._set_status("Isi tanggal-jam rilis: {}".format(teks),
+                          C_GREEN)
+        studio_ketik(mesin, teks, bool(l.get("ctrl_a", True)),
+                     bool(l.get("enter")))
+        return None
+    if jenis == "VIDEO_CAPTION":
+        isi = str(l.get("isi") or "Caption dasar + nama video")
+        if isi == "Jumlah video":
+            teks = str(jumlah_total)
+        elif isi == "Nama video saja":
+            teks = isi_placeholder("{video}", idx, caption, videos,
+                                   jumlah_total)
+        elif isi == "Teks sendiri + placeholder":
+            teks = isi_placeholder(str(l.get("teks") or ""), idx, caption,
+                                   videos, jumlah_total)
+        else:
+            teks = isi_placeholder("{caption}", idx, caption, videos,
+                                   jumlah_total)
+        if not teks:
+            mesin._set_status(
+                "Tidak ada teks untuk diketik (folder video / jumlah "
+                "kosong) - langkah dilewati.", C_ORANGE)
+            return None
+        if l.get("posisi"):
+            studio_klik_titik(mesin, l["posisi"])
+            mesin._sleep(0.4)
+        mesin._set_status("Isi {}: {}".format(isi.lower(), teks), C_GREEN)
+        studio_ketik(mesin, teks, bool(l.get("ctrl_a", True)),
+                     bool(l.get("enter")))
+        return None
+    if jenis == "TOMBOL":
+        nama = str(l.get("tombol_kb") or "Enter").strip() or "Enter"
+        n = int(_angka(l.get("jumlah_kb"), 1, 1, 500))
+        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
+        mod, kunci = TOMBOL_MAP.get(nama, ("", None))
+        try:
+            if kunci is None:
+                if len(nama) == 1:
+                    for k in range(n):
+                        if mesin.stop_event.is_set():
+                            break
+                        mesin.kb.type(nama)
+                        if k < n - 1:
+                            time.sleep(jk)
+                else:
+                    mesin._set_status("Tombol '{}' tidak dikenal - "
+                                      "dilewati.".format(nama), C_ORANGE)
+                return None
+            obj = getattr(Key, kunci, None)
+            if obj is None:
+                mesin._set_status("Tombol '{}' tidak dikenal - dilewati."
+                                  .format(nama), C_ORANGE)
+                return None
+
+            def tekan():
+                mesin.kb.press(obj)
+                mesin.kb.release(obj)
+
+            if mod == "shift":
+                with mesin.kb.pressed(Key.shift):
+                    for k in range(n):
+                        if mesin.stop_event.is_set():
+                            break
+                        tekan()
+                        if k < n - 1:
+                            time.sleep(jk)
+            elif mod == "ctrl":
+                with mesin.kb.pressed(Key.ctrl):
+                    for k in range(n):
+                        if mesin.stop_event.is_set():
+                            break
+                        tekan()
+                        if k < n - 1:
+                            time.sleep(jk)
+            else:
+                for k in range(n):
+                    if mesin.stop_event.is_set():
+                        break
+                    tekan()
+                    if k < n - 1:
+                        time.sleep(jk)
+        except Exception as e:
+            mesin._set_status("Gagal menekan tombol: {}".format(e),
+                              C_ORANGE)
+        return None
+    if jenis == "SCROLL":
+        n = int(_angka(l.get("jumlah_scroll"), 3, 0, 1000))
+        arah = -3 if l.get("arah") == "Turun" else 3
+        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
+        for k in range(n):
+            if mesin.stop_event.is_set():
+                break
+            try:
+                mesin.mouse.scroll(0, arah)
+            except Exception:
+                pass
+            if k < n - 1:
+                time.sleep(jk)
+        return None
+    return None
+
+
 def template_cutmotions_steps(cfg, mulai_uid=0):
     """Bangun langkah Studio versi bebas dari setelan tab CutMotions.
 
@@ -1357,6 +1787,23 @@ class CutMotionsTab:
         self._tb_pemisah(tb)
         self._tb_btn(tb, "SIMPAN PROFIL", self._simpan_profil)
         self._tb_btn(tb, "BUKA PROFIL", self._buka_profil)
+        self._tb_pemisah(tb)
+        # v5.5: SEMUA menu STUDIO MAKRO bisa dimasukkan ke alur A-J
+        self.mb_tambah = tk.Menubutton(
+            tb, text="+ TAMBAH LANGKAH \u25be", bg=C_GREEN, fg="white",
+            font=("Segoe UI", 9, "bold"), relief="flat", bd=1,
+            padx=12, pady=5, cursor="hand2", direction="below",
+            activebackground=C_GREEN,
+            activeforeground="white")
+        m_tambah = tk.Menu(self.mb_tambah, tearoff=0)
+        self._isi_menu_tambah(m_tambah)
+        self.mb_tambah.config(menu=m_tambah)
+        self.mb_tambah.pack(side="left", padx=(2, 2), pady=2)
+        self.mb_tambah.bind("<Enter>",
+                            lambda e: self.mb_tambah.config(
+                                relief="raised"))
+        self.mb_tambah.bind("<Leave>",
+                            lambda e: self.mb_tambah.config(relief="flat"))
 
         # ----- Strip VIDEO & CAPTION -----
         v = tk.LabelFrame(self.root, text=" VIDEO & CAPTION ",
@@ -1443,6 +1890,7 @@ class CutMotionsTab:
         self.tree.tag_configure("genap", background=C_STRIPE)
         self.tree.tag_configure("ganjil", background=C_PANEL)
         self.tree.tag_configure("salinan", foreground=C_BLUE)
+        self.tree.tag_configure("studio", foreground="#6A1B9A")
         self.tree.bind("<<TreeviewSelect>>", self._on_pilih_baris)
         self.tree.bind("<Control-c>", lambda _e: self._salin_langkah())
         self.tree.bind("<Control-v>", lambda _e: self._tempel_langkah())
@@ -1601,6 +2049,9 @@ class CutMotionsTab:
         return hasil
 
     def _detail_ekstra(self, e):
+        # v5.5: langkah gaya Studio tampil dengan format Studio
+        if str(e.get("jenis") or "") in JENIS_STUDIO:
+            return "S | " + studio_detail_teks(e)
         pos = e.get("posisi")
         pos_t = "({},{})".format(pos[0], pos[1]) if pos else "belum diatur"
         teks = "SALINAN | " + pos_t
@@ -1626,6 +2077,8 @@ class CutMotionsTab:
         return teks
 
     def _ulang_ekstra(self, e):
+        if str(e.get("jenis") or "") in JENIS_STUDIO:
+            return studio_ulang_teks(e)
         g = e.get("gambar") or {}
         sumber = e.get("sumber")
         if sumber == "pos_tanggal":
@@ -1659,12 +2112,16 @@ class CutMotionsTab:
                 e = self._iid_ekstra(iid)
                 if not e:
                     continue
-                kode = "+"
-                label = e.get("label") or iid
+                if str(e.get("jenis") or "") in JENIS_STUDIO:
+                    kode = "S"      # v5.5: langkah gaya Studio
+                    tag = "studio"
+                else:
+                    kode = "+"
+                    tag = "salinan"
+                label = str(e.get("label") or iid)
                 detail = self._detail_ekstra(e)
                 ulang = self._ulang_ekstra(e)
                 jeda_t = "{:.1f}s".format(float(e.get("jeda", 1.0)))
-                tag = "salinan"
             self.tree.insert("", "end", iid=iid, tags=(tag,), values=(
                 kode, label, detail, jeda_t, ulang))
         if self.sel and self.tree.exists(self.sel):
@@ -1697,6 +2154,9 @@ class CutMotionsTab:
                 self._loading_prop = False
                 return
         V = self.vars
+        if ek and str(ek.get("jenis") or "") in JENIS_STUDIO:
+            self._render_prop_studio(ek, iid)
+            return
         if ek:
             kunci = ek.get("sumber")
             label = ek.get("label") or iid
@@ -1919,6 +2379,398 @@ class CutMotionsTab:
                 var.trace_add("write", self._terapkan_prop)
         self._loading_prop = False
 
+    def _render_prop_studio(self, ek, iid):
+        """v5.5: panel PROPERTI untuk langkah gaya Studio di alur A-J."""
+        l = ek
+        jenis = l["jenis"]
+        judul = str(l.get("label") or "") or LABEL_JENIS[jenis]
+        self.pv = {
+            "label": tk.StringVar(value=judul),
+            "jeda": tk.StringVar(value="{:.1f}".format(
+                _angka(l.get("jeda"), 0.5, 0, 86400))),
+        }
+        kepala = tk.Frame(self.prop_body, bg=C_BG)
+        kepala.pack(fill="x", pady=(0, 4))
+        tk.Label(kepala, text="{}   -   LANGKAH STUDIO: {}".format(
+                     judul, LABEL_JENIS[jenis]),
+                 bg=C_BG, fg=C_TEXT, font=F_H, anchor="w",
+                 wraplength=860, justify="left").pack(fill="x")
+
+        r = self._baris_prop("NAMA LANGKAH")
+        self._ent_prop(r, self.pv["label"], 30, tengah=False)
+        r = self._baris_prop("JEDA SEBELUM LANGKAH (detik)")
+        self._ent_prop(r, self.pv["jeda"], 6)
+
+        pos = l.get("posisi")
+        if jenis in ("KLIK", "TANGGAL_JAM", "VIDEO_CAPTION"):
+            self.pv["x"] = tk.StringVar(value=str(pos[0]) if pos else "")
+            self.pv["y"] = tk.StringVar(value=str(pos[1]) if pos else "")
+            r = self._baris_prop("POSISI KLIK DULU (opsional) X , Y")
+            self._ent_prop(r, self.pv["x"], 6)
+            tk.Label(r, text=",", bg=C_BG, fg=C_MUTED,
+                     font=F_N).pack(side="left", padx=2)
+            self._ent_prop(r, self.pv["y"], 6)
+            self._btn_prop(r, "AMBIL (5 dtk)",
+                           lambda k=iid: self._ambil_posisi(k))
+            self._btn_prop(r, "LIHAT",
+                           lambda k=iid: self._lihat_posisi(k), bg=C_BG)
+            tk.Label(r, text="dikosongkan = langsung aksi tanpa klik",
+                     bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=6)
+
+        if jenis == "KLIK":
+            self.pv["tombol_mouse"] = tk.StringVar(
+                value=l.get("tombol_mouse")
+                if l.get("tombol_mouse") in MOUSE_OPSI else "Klik kiri")
+            self.pv["klik"] = tk.StringVar(value=str(
+                int(_angka(l.get("klik"), 1, 0, 500))))
+            self.pv["jeda_klik"] = tk.StringVar(value="{:.2f}".format(
+                _angka(l.get("jeda_klik"), 0.3, 0.05, 60)))
+            self.pv["geser"] = tk.StringVar(value=str(
+                int(_angka(l.get("geser"), 0, 0, 100000))))
+            r = self._baris_prop("JENIS KLIK")
+            tk.OptionMenu(r, self.pv["tombol_mouse"],
+                          *MOUSE_OPSI).pack(side="left")
+            tk.Label(r, text="JUMLAH KLIK:", bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=(12, 4))
+            self._ent_prop(r, self.pv["klik"], 6)
+            tk.Label(r, text="JEDA ANTAR KLIK (detik):", bg=C_BG,
+                     fg=C_MUTED, font=F_XS).pack(side="left",
+                                                 padx=(12, 4))
+            self._ent_prop(r, self.pv["jeda_klik"], 6)
+            r = self._baris_prop("GESER PER PUTARAN ULANGI (px)")
+            self._ent_prop(r, self.pv["geser"], 7)
+            tk.Label(r, text="Untuk klik per baris video dalam blok "
+                             "ULANGI / fase caption: klik turun sejauh "
+                             "nilai ini x nomor putaran.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, wraplength=520,
+                     justify="left").pack(side="left", padx=6)
+        elif jenis == "JEDA":
+            self.pv["detik"] = tk.StringVar(value="{:.1f}".format(
+                _angka(l.get("detik"), 1.0, 0, 86400)))
+            r = self._baris_prop("TUNGGU BERAPA DETIK")
+            self._ent_prop(r, self.pv["detik"], 8)
+            tk.Label(r, text="mis. 2.5 (boleh koma atau titik)",
+                     bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=6)
+        elif jenis == "GAMBAR":
+            g = l.get("gambar") or \
+                studio_langkah_baru("GAMBAR", 0)["gambar"]
+            self.pv["g_path"] = tk.StringVar(
+                value=str(g.get("path") or ""))
+            self.pv["g_aksi"] = tk.StringVar(
+                value=g.get("aksi") if g.get("aksi") in GAMBAR_AKSI_OPSI
+                else "Klik di gambar")
+            self.pv["g_gagal"] = tk.StringVar(
+                value=g.get("gagal") if g.get("gagal")
+                in GAMBAR_GAGAL_OPSI_STUDIO else "Lewati langkah")
+            self.pv["g_mirip"] = tk.StringVar(
+                value=str(g.get("mirip") or "0.80"))
+            f = g.get("fokus")
+            if isinstance(f, (list, tuple)) and len(f) == 4:
+                fokus_teks = "({},{}) - ({},{})".format(
+                    f[0], f[1], f[2], f[3])
+            else:
+                fokus_teks = "Seluruh layar (tidak dibatasi)"
+            self.pv["g_fokus"] = tk.StringVar(value=fokus_teks)
+            tk.Label(self.prop_body,
+                     text="TANPA perlu mengisi X,Y: gambar referensi "
+                          "dicari lalu LANGSUNG DIKLIK (atau hanya "
+                          "dipindah). AREA FOKUS opsional membatasi "
+                          "daerah pencarian.",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            r = self._baris_prop("GAMBAR REFERENSI")
+            self._ent_prop(r, self.pv["g_path"], 42, tengah=False)
+            self._btn_prop(r, "PILIH GAMBAR...",
+                           lambda k=iid: self._pilih_gambar_ref(k))
+            self._btn_prop(r, "POTONG GAMBAR...",
+                           lambda k=iid: self._potong_gambar(
+                               ("langkah", k)))
+            self.pv["g_thumb"] = tk.Label(self.prop_body, bg=C_PANEL,
+                                          relief="solid", bd=1, anchor="w")
+            self.pv["g_thumb"].pack(anchor="w", padx=18, pady=(3, 2))
+            _thumb = muat_thumbnail(str(g.get("path") or ""))
+            if _thumb is not None:
+                self.pv["g_thumb"].configure(image=_thumb)
+                self.pv["g_thumb"].image = _thumb
+            else:
+                self.pv["g_thumb"].configure(
+                    text="  Belum ada gambar - klik POTONG GAMBAR, lalu "
+                         "SERET kotak langsung di layar  ",
+                    fg=C_MUTED, font=F_XS)
+            r = self._baris_prop("AREA FOKUS (opsional)")
+            self._ent_prop(r, self.pv["g_fokus"], 26, tengah=False)
+            self._btn_prop(r, "PILIH AREA FOKUS...",
+                           lambda k=iid: self._pilih_area_fokus(k))
+            self._btn_prop(r, "KOSONGKAN",
+                           lambda k=iid: self._fokus_kosongkan(k),
+                           bg=C_BG)
+            tk.Label(r, text="diisi dengan MENYERET kotak di layar",
+                     bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=6)
+            r = self._baris_prop("SAAT KETEMU:")
+            tk.OptionMenu(r, self.pv["g_aksi"],
+                          *GAMBAR_AKSI_OPSI).pack(side="left")
+            tk.Label(r, text="SAAT TIDAK KETEMU:", bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=(12, 4))
+            tk.OptionMenu(r, self.pv["g_gagal"],
+                          *GAMBAR_GAGAL_OPSI_STUDIO).pack(side="left")
+            r = self._baris_prop("KEMIRIPAN:")
+            self._ent_prop(r, self.pv["g_mirip"], 6)
+            self._btn_prop(r, "TES CARI LANGKAH INI", self._tes_cari)
+        elif jenis == "KETIK":
+            self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
+            self.pv["ctrl_a"] = tk.BooleanVar(
+                value=bool(l.get("ctrl_a")))
+            self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            r = self._baris_prop("TEKS YANG DIKETIK")
+            self._ent_prop(r, self.pv["teks"], 46, tengah=False)
+            tk.Label(self.prop_body,
+                     text="Placeholder: {caption} = caption dasar + nama "
+                          "video baris ini  |  {video} = nama video  |  "
+                          "{no} = nomor putaran ULANGI / baris  |  "
+                          "{jumlah} = jumlah video. Di fase caption alur "
+                          "A-J, teks otomatis mengikuti baris video yang "
+                          "sedang diproses.",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Ctrl+A dulu (timpa isi kotak yang lama)",
+                           variable=self.pv["ctrl_a"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Tekan Enter setelah selesai mengetik",
+                           variable=self.pv["enter"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+        elif jenis == "TANGGAL_JAM":
+            self.pv["sumber"] = tk.StringVar(
+                value=l.get("sumber")
+                if l.get("sumber") in SUMBER_TANGGAL_OPSI
+                else "Tab CutMotions")
+            self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
+            self.pv["ctrl_a"] = tk.BooleanVar(
+                value=bool(l.get("ctrl_a", True)))
+            self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            r = self._baris_prop("AMBIL NILAI TANGGAL-JAM DARI:")
+            tk.OptionMenu(r, self.pv["sumber"],
+                          *SUMBER_TANGGAL_OPSI).pack(side="left")
+            tk.Label(self.prop_body,
+                     text="'Tab CutMotions' = pakai kolom TANGGAL & JAM "
+                          "RILIS di atas (ubah sekali, semua ikut).  "
+                          "'Tetap' = pakai nilai di bawah ini.",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            r = self._baris_prop("TANGGAL & JAM RILIS")
+            self._ent_prop(r, self.pv["teks"], 22, tengah=False)
+            tk.Label(r, text="format 2026-09-10 02:05:01",
+                     bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=6)
+            tk.Checkbutton(self.prop_body,
+                           text="Ctrl+A dulu (timpa isi kolom yang lama)",
+                           variable=self.pv["ctrl_a"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Tekan Enter setelah selesai mengetik",
+                           variable=self.pv["enter"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+        elif jenis == "VIDEO_CAPTION":
+            self.pv["isi"] = tk.StringVar(
+                value=l.get("isi") if l.get("isi") in ISI_VIDEO_OPSI
+                else "Caption dasar + nama video")
+            self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
+            self.pv["ctrl_a"] = tk.BooleanVar(
+                value=bool(l.get("ctrl_a", True)))
+            self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            r = self._baris_prop("YANG DIKETIK OTOMATIS:")
+            tk.OptionMenu(r, self.pv["isi"],
+                          *ISI_VIDEO_OPSI).pack(side="left")
+            tk.Label(self.prop_body,
+                     text="Jumlah video = angka di kolom JUMLAH VIDEO.  "
+                          "Caption dasar + nama video = mis. '#dangdut - "
+                          "melati' (nama video baris yang sedang "
+                          "diproses di fase caption).  Nama video saja = "
+                          "mis. 'melati'.",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            r = self._baris_prop("TEKS SENDIRI + PLACEHOLDER")
+            self._ent_prop(r, self.pv["teks"], 46, tengah=False)
+            tk.Label(self.prop_body,
+                     text="Dipakai kalau pilihan di atas = 'Teks "
+                          "sendiri'. Placeholder: {caption} | {video} | "
+                          "{no} | {jumlah}.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Ctrl+A dulu (timpa isi kolom yang lama)",
+                           variable=self.pv["ctrl_a"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Tekan Enter setelah selesai mengetik",
+                           variable=self.pv["enter"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+        elif jenis == "TOMBOL":
+            self.pv["tombol_kb"] = tk.StringVar(
+                value=str(l.get("tombol_kb") or "Enter"))
+            self.pv["jumlah_kb"] = tk.StringVar(value=str(
+                int(_angka(l.get("jumlah_kb"), 1, 1, 500))))
+            self.pv["jeda_klik"] = tk.StringVar(value="{:.2f}".format(
+                _angka(l.get("jeda_klik"), 0.3, 0.05, 60)))
+            r = self._baris_prop("TOMBOL YANG DITEKAN")
+            ttk.Combobox(r, textvariable=self.pv["tombol_kb"],
+                         values=list(TOMBOL_KB_OPSI), width=20,
+                         font=F_N).pack(side="left", ipady=2)
+            tk.Label(r, text="  (bisa ketik 1 huruf sendiri, mis. a)",
+                     bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=4)
+            r = self._baris_prop("JUMLAH TEKAN")
+            self._ent_prop(r, self.pv["jumlah_kb"], 6)
+            tk.Label(r, text="JEDA ANTAR TEKAN (detik):", bg=C_BG,
+                     fg=C_MUTED, font=F_XS).pack(side="left",
+                                                 padx=(12, 4))
+            self._ent_prop(r, self.pv["jeda_klik"], 6)
+        elif jenis == "SCROLL":
+            self.pv["arah"] = tk.StringVar(
+                value=l.get("arah")
+                if l.get("arah") in ("Turun", "Naik") else "Turun")
+            self.pv["jumlah_scroll"] = tk.StringVar(value=str(
+                int(_angka(l.get("jumlah_scroll"), 3, 0, 1000))))
+            r = self._baris_prop("ARAH SCROLL")
+            tk.OptionMenu(r, self.pv["arah"], "Turun",
+                          "Naik").pack(side="left")
+            tk.Label(r, text="JUMLAH GULUNGAN:", bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=(12, 4))
+            self._ent_prop(r, self.pv["jumlah_scroll"], 6)
+        elif jenis == "CATATAN":
+            self.pv["catatan"] = tk.StringVar(
+                value=str(l.get("catatan") or ""))
+            r = self._baris_prop("ISI CATATAN")
+            self._ent_prop(r, self.pv["catatan"], 46, tengah=False)
+            tk.Label(self.prop_body,
+                     text="Catatan hanya penanda di tabel - tidak ada "
+                          "aksi yang dijalankan.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS,
+                     anchor="w").pack(fill="x")
+        elif jenis == "LOOP_MULAI":
+            self.pv["jumlah_loop"] = tk.StringVar(value=str(
+                int(_angka(l.get("jumlah_loop"), 2, 0, 100000))))
+            self.pv["ikut_video"] = tk.BooleanVar(
+                value=bool(l.get("ikut_video")))
+            r = self._baris_prop("JUMLAH ULANGAN")
+            self._ent_prop(r, self.pv["jumlah_loop"], 7)
+            tk.Checkbutton(self.prop_body,
+                           text="Ikut JUMLAH VIDEO di kolom isian atas "
+                                "(angka di sini diabaikan)",
+                           variable=self.pv["ikut_video"], bg=C_BG,
+                           fg=C_TEXT, font=F_XS,
+                           anchor="w").pack(fill="x")
+            tk.Label(self.prop_body,
+                     text="Semua langkah di ANTARA 'ULANGI-MULAI' dan "
+                          "'ULANGI-AKHIR' diulang sesuai jumlah di atas. "
+                          "Gunakan GESER PER PUTARAN pada langkah KLIK "
+                          "di dalamnya agar klik turun ke baris "
+                          "berikutnya.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(
+                         fill="x", pady=(4, 0))
+        else:  # LOOP_AKHIR
+            tk.Label(self.prop_body,
+                     text="Akhir blok ULANGI - langkah di antara "
+                          "ULANGI-MULAI dan sini diulang sesuai jumlah "
+                          "ulangan.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(
+                         fill="x", pady=(4, 0))
+
+        # ---- aktif + info ----
+        self.pv["aktif"] = tk.BooleanVar(value=bool(l.get("aktif", True)))
+        tk.Checkbutton(self.prop_body,
+                       text="LANGKAH AKTIF (lepas centang = dilewati "
+                            "saat jalan)",
+                       variable=self.pv["aktif"], bg=C_BG, fg=C_TEXT,
+                       font=F_XS, anchor="w").pack(fill="x", pady=(4, 0))
+        self.lbl_ambil = tk.Label(self.prop_body, text="", bg=C_BG,
+                                  fg=C_ORANGE, font=F_XS, anchor="w",
+                                  wraplength=860, justify="left")
+        self.lbl_ambil.pack(fill="x", pady=(4, 0))
+        for var in self.pv.values():
+            if isinstance(var, tk.Variable):
+                var.trace_add("write", self._terapkan_prop)
+        self._loading_prop = False
+
+    def _terapkan_prop_studio(self, l):
+        """v5.5: simpan panel PROPERTI langkah gaya Studio."""
+        try:
+            x = int(float(str(self.pv["x"].get()).strip() or "nan"))
+            y = int(float(str(self.pv["y"].get()).strip() or "nan"))
+            l["posisi"] = [x, y]
+        except (KeyError, ValueError, TypeError):
+            pass
+        try:
+            l["jeda"] = max(0.0, float(
+                str(self.pv["jeda"].get()).replace(",", ".")))
+        except (KeyError, ValueError, TypeError):
+            pass
+        l["label"] = self.pv["label"].get()
+        jenis = l["jenis"]
+        if jenis == "KLIK":
+            l["tombol_mouse"] = self.pv["tombol_mouse"].get()
+            l["klik"] = int(_angka(self.pv["klik"].get(), 1, 0, 500))
+            l["jeda_klik"] = _angka(self.pv["jeda_klik"].get(), 0.3,
+                                    0.05, 60)
+            l["geser"] = int(_angka(self.pv["geser"].get(), 0, 0,
+                                    100000))
+        elif jenis == "JEDA":
+            l["detik"] = _angka(self.pv["detik"].get(), 1.0, 0, 86400)
+        elif jenis == "GAMBAR":
+            g = l.setdefault("gambar", {})
+            g["path"] = self.pv["g_path"].get().strip()
+            aksi = self.pv["g_aksi"].get()
+            g["aksi"] = (aksi if aksi in GAMBAR_AKSI_OPSI
+                         else "Klik di gambar")
+            gagal = self.pv["g_gagal"].get()
+            g["gagal"] = (gagal if gagal in GAMBAR_GAGAL_OPSI_STUDIO
+                          else "Lewati langkah")
+            g["mirip"] = self.pv["g_mirip"].get().strip()
+            # fokus diatur lewat tombol PILIH AREA FOKUS / KOSONGKAN
+        elif jenis == "KETIK":
+            l["teks"] = self.pv["teks"].get()
+            l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
+            l["enter"] = bool(self.pv["enter"].get())
+        elif jenis == "TANGGAL_JAM":
+            sumber = self.pv["sumber"].get()
+            l["sumber"] = (sumber if sumber in SUMBER_TANGGAL_OPSI
+                           else "Tab CutMotions")
+            l["teks"] = self.pv["teks"].get()
+            l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
+            l["enter"] = bool(self.pv["enter"].get())
+        elif jenis == "VIDEO_CAPTION":
+            isi = self.pv["isi"].get()
+            l["isi"] = (isi if isi in ISI_VIDEO_OPSI
+                        else "Caption dasar + nama video")
+            l["teks"] = self.pv["teks"].get()
+            l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
+            l["enter"] = bool(self.pv["enter"].get())
+        elif jenis == "TOMBOL":
+            l["tombol_kb"] = (self.pv["tombol_kb"].get().strip()
+                              or "Enter")
+            l["jumlah_kb"] = int(_angka(self.pv["jumlah_kb"].get(), 1,
+                                        1, 500))
+            l["jeda_klik"] = _angka(self.pv["jeda_klik"].get(), 0.3,
+                                    0.05, 60)
+        elif jenis == "SCROLL":
+            l["arah"] = self.pv["arah"].get()
+            l["jumlah_scroll"] = int(_angka(
+                self.pv["jumlah_scroll"].get(), 3, 0, 1000))
+        elif jenis == "CATATAN":
+            l["catatan"] = self.pv["catatan"].get()
+        elif jenis == "LOOP_MULAI":
+            l["jumlah_loop"] = int(_angka(
+                self.pv["jumlah_loop"].get(), 2, 0, 100000))
+            l["ikut_video"] = bool(self.pv["ikut_video"].get())
+        l["aktif"] = bool(self.pv["aktif"].get())
+        self._refresh_tabel()
+
     def _terapkan_prop(self, *_):
         if self._loading_prop:
             return
@@ -1928,6 +2780,9 @@ class CutMotionsTab:
             ek = self._iid_ekstra(iid) if iid else None
             if not ek:
                 return
+        if ek and str(ek.get("jenis") or "") in JENIS_STUDIO:
+            self._terapkan_prop_studio(ek)
+            return
         try:
             x = int(float(str(self.pv["x"].get()).strip() or "nan"))
             y = int(float(str(self.pv["y"].get()).strip() or "nan"))
@@ -2200,6 +3055,10 @@ class CutMotionsTab:
                     "Klik dulu satu baris langkah di tabel yang mau "
                     "dites cari gambarnya.")
                 return
+            if ek.get("jenis") == "GAMBAR":
+                # v5.5: langkah CARI GAMBAR gaya Studio -> uji pakai AREA
+                self._tes_cari_studio(ek)
+                return
             cfg = ek.get("gambar") or {}
             pos = ek.get("posisi")
             nama = ek.get("label") or iid
@@ -2274,6 +3133,11 @@ class CutMotionsTab:
         if iid:
             self.tree.selection_set(iid)
         m = tk.Menu(self.root, tearoff=0)
+        sub_st = tk.Menu(m, tearoff=0)
+        self._isi_menu_tambah(sub_st)
+        m.add_cascade(label="Tambah langkah STUDIO di sini",
+                      menu=sub_st)
+        m.add_separator()
         m.add_command(label="Salin langkah ini  (Ctrl+C)",
                       command=self._salin_langkah)
         m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
@@ -2288,6 +3152,17 @@ class CutMotionsTab:
     def _salin_langkah(self):
         """Simpan salinan langkah terpilih ke papan klip internal."""
         iid = self.sel
+        ek_now = self._iid_ekstra(iid) if (iid and iid not in POS_KUNCI) \
+            else None
+        if ek_now and ek_now.get("jenis") in JENIS_STUDIO:
+            # v5.5: langkah gaya Studio disalin utuh (semua parameternya)
+            self.papan_klip = {"jenis_step": json.loads(
+                json.dumps(ek_now))}
+            self._set_status(
+                "Langkah '{}' disalin. Klik baris acuan lalu TEMPEL "
+                "LANGKAH (Ctrl+V).".format(ek_now.get("label") or iid),
+                C_GREEN)
+            return
         if iid in POS_KUNCI:
             sumber = iid
             params = self._params_dari_global(iid)
@@ -2320,6 +3195,38 @@ class CutMotionsTab:
 
     def _tempel_langkah(self):
         """Tambahkan salinan langkah sebagai titik klik tambahan."""
+        if self.papan_klip and self.papan_klip.get("jenis_step"):
+            # v5.5: menempel langkah gaya Studio (utuh, parameter ikut)
+            anchor = self.sel if (
+                self.sel and (self.sel in POS_KUNCI
+                              or self._iid_ekstra(self.sel))) \
+                else POS_KUNCI[-1]
+            self._extra_counter += 1
+            self._studio_counter = getattr(self, "_studio_counter", 0) + 1
+            baru = json.loads(
+                json.dumps(self.papan_klip["jenis_step"]))
+            baru["uid"] = "x{}".format(self._extra_counter)
+            baru["setelah"] = anchor
+            baru["label"] = "{} #{}".format(
+                LABEL_JENIS.get(baru.get("jenis"), "LANGKAH STUDIO"),
+                self._studio_counter)
+            self.langkah_extra.append(baru)
+            self._refresh_tabel()
+            self.sel = baru["uid"]
+            try:
+                self.tree.selection_set(baru["uid"])
+                self.tree.see(baru["uid"])
+            except Exception:
+                pass
+            self._render_properti()
+            self._save_settings()
+            self._set_status(
+                "Langkah Studio ditempel setelah {} - semua parameternya "
+                "ikut tersalin, silakan disunting.".format(
+                    LABEL_POSISI.get(anchor, anchor)
+                    if anchor in POS_KUNCI else "langkah terpilih"),
+                C_GREEN)
+            return
         if not self.papan_klip:
             messagebox.showinfo(
                 APP_NAME,
@@ -2384,6 +3291,225 @@ class CutMotionsTab:
         self._render_properti()
         self._save_settings()
         self._set_status("Salinan dihapus.", C_ORANGE)
+
+    # ================== v5.5: LANGKAH STUDIO DI ALUR A-J ==================
+    def _isi_menu_tambah(self, m):
+        """Isi menu '+ TAMBAH LANGKAH' - semua menu STUDIO MAKRO."""
+        for jenis, label in [
+            ("KLIK", "+ KLIK TITIK"),
+            ("JEDA", "+ JEDA / TUNGGU"),
+            ("GAMBAR", "+ CARI GAMBAR (klik / pindah kursor)"),
+            ("KETIK", "+ KETIK TEKS"),
+            ("TANGGAL_JAM", "+ ISI TANGGAL-JAM (kolom tanggal rilis)"),
+            ("VIDEO_CAPTION",
+             "+ ISI VIDEO & CAPTION (jumlah / caption + nama video)"),
+            ("TOMBOL", "+ TEKAN TOMBOL"),
+            ("SCROLL", "+ SCROLL"),
+            ("CATATAN", "+ CATATAN"),
+        ]:
+            m.add_command(label=label,
+                          command=lambda j=jenis: self._tambah_studio(j))
+        m.add_separator()
+        m.add_command(label="+ ULANGI - MULAI (blok pengulangan)",
+                      command=lambda: self._tambah_studio("LOOP_MULAI"))
+        m.add_command(label="+ ULANGI - AKHIR",
+                      command=lambda: self._tambah_studio("LOOP_AKHIR"))
+
+    def _tambah_studio(self, jenis):
+        """v5.5: sisipkan langkah gaya Studio Makro ke alur A-J.
+
+        Langkah disisipkan SETELAH baris terpilih (atau di akhir
+        alur bila tidak ada) dan dijalankan TEPAT di posisinya.
+        """
+        if jenis not in JENIS_STUDIO:
+            return
+        anchor = self.sel if (
+            self.sel and (self.sel in POS_KUNCI
+                          or self._iid_ekstra(self.sel))) else POS_KUNCI[-1]
+        self._extra_counter += 1
+        self._studio_counter = getattr(self, "_studio_counter", 0) + 1
+        l = studio_langkah_baru(jenis, 0)
+        l["uid"] = "x{}".format(self._extra_counter)
+        l["setelah"] = anchor
+        l["label"] = "{} #{}".format(LABEL_JENIS[jenis],
+                                     self._studio_counter)
+        self.langkah_extra.append(l)
+        self._refresh_tabel()
+        self.sel = l["uid"]
+        try:
+            self.tree.selection_set(l["uid"])
+            self.tree.see(l["uid"])
+        except Exception:
+            pass
+        self._render_properti()
+        self._save_settings()
+        nama_acuan = (LABEL_POSISI.get(anchor, anchor)
+                      if anchor in POS_KUNCI
+                      else ((self._iid_ekstra(anchor) or {}).get("label")
+                            or "langkah terpilih"))
+        self._set_status(
+            "{} ditambahkan setelah {} - atur di panel PROPERTI. "
+            "Langkah dijalankan tepat di posisinya dalam alur "
+            "A-J.".format(LABEL_JENIS[jenis], nama_acuan), C_GREEN)
+
+    def _pilih_area_fokus(self, uid=None):
+        """v5.5: pilih AREA FOKUS langkah CARI GAMBAR di alur A-J.
+
+        Teknik sama dengan tab Studio: layar dibekukan fullscreen,
+        lalu user MENYERET kotak - hasilnya koordinat area, bukan
+        file gambar.
+        """
+        if not PIL_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "Fitur area fokus butuh Pillow.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install pillow")
+            return
+        uid = uid or self.sel
+        ek = self._iid_ekstra(uid) if (uid and uid not in POS_KUNCI) \
+            else None
+        if not ek or ek.get("jenis") != "GAMBAR":
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu baris CARI GAMBAR (langkah STUDIO berkode S) "
+                "yang mau diberi AREA FOKUS.")
+            return
+        self._fokus_uid = uid
+
+        def kerja():
+            try:
+                for s in range(3, 0, -1):
+                    self.root.after(0, lambda s=s: self._set_status(
+                        "Layar akan DIBEKUKAN dalam {} detik - siapkan "
+                        "halaman tempat gambar biasanya muncul...".format(
+                            s), C_ORANGE))
+                    time.sleep(1)
+                induk = self.root.winfo_toplevel()
+                self.root.after(0, induk.withdraw)
+                time.sleep(0.4)
+                img = ImageGrab.grab()
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror(
+                    APP_NAME,
+                    "Gagal mengambil screenshot:\n{}".format(e)))
+                self.root.after(0, self._tampil_lagi)
+                return
+
+            def tampil():
+                try:
+                    OverlayPotong(self.wadah, img, None,
+                                  on_batal=self._potong_batal,
+                                  mode="area",
+                                  on_area=self._area_terpilih)
+                except Exception as e:
+                    messagebox.showerror(
+                        APP_NAME,
+                        "Gagal membuka layar pilih area:\n{}".format(e))
+                finally:
+                    self._tampil_lagi()
+
+            self.root.after(0, tampil)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    def _area_terpilih(self, koord):
+        ek = self._iid_ekstra(getattr(self, "_fokus_uid", None))
+        if not ek:
+            return
+        ek.setdefault("gambar", {})["fokus"] = list(koord)
+        self._save_settings()
+        self._refresh_tabel()
+        if self.sel == ek["uid"]:
+            self._render_properti()
+        self._set_status(
+            "AREA FOKUS tersimpan: ({},{}) - ({},{})  - gambar dicari "
+            "hanya di dalam kotak itu.".format(koord[0], koord[1],
+                                               koord[2], koord[3]),
+            C_GREEN)
+
+    def _potong_batal(self):
+        self._set_status("Potong gambar / area fokus dibatalkan (ESC).",
+                         C_MUTED)
+
+    def _fokus_kosongkan(self, uid):
+        ek = self._iid_ekstra(uid) if (uid and uid not in POS_KUNCI) \
+            else None
+        if not ek:
+            return
+        ek.setdefault("gambar", {})["fokus"] = None
+        self._save_settings()
+        self._refresh_tabel()
+        if self.sel == uid:
+            self._render_properti()
+        self._set_status("Area fokus dikosongkan - gambar dicari di "
+                         "seluruh layar.", C_GREEN)
+
+    def _tes_cari_studio(self, ek):
+        """Tes pencarian gambar langkah CARI GAMBAR gaya Studio."""
+        if not PYNPUT_OK:
+            messagebox.showerror(APP_NAME, "Library pynput belum "
+                                           "terpasang.")
+            return
+        if not CV_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "opencv-python belum terpasang - pencarian gambar tidak "
+                "bisa dipakai.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install opencv-python\n\n"
+                "Atau pakai CutUploaderPro.exe (OpenCV sudah menyatu).")
+            return
+        g = ek.get("gambar") or {}
+        path = str(g.get("path") or "").strip()
+        nama = str(ek.get("label") or "") or LABEL_JENIS["GAMBAR"]
+        if not path or not os.path.isfile(path):
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu gambar referensi langkah {}.\n\nCara "
+                "termudah: klik 'POTONG GAMBAR...', lalu seret kotak "
+                "di atas tulisan/tombolnya.".format(nama))
+            return
+        mirip = _angka(g.get("mirip"), 0.8, 0.5, 0.99)
+        area = area_dari_langkah(ek)
+        if area:
+            desk = "area fokus ({},{})-({},{})".format(area[0], area[1],
+                                                       area[2], area[3])
+        else:
+            desk = "seluruh layar"
+
+        def kerja():
+            self.root.after(0, lambda: self._set_status(
+                "Mencari '{}' di {} (multi-skala)...".format(
+                    os.path.basename(path), desk), C_ORANGE))
+            hasil, pesan = cari_di_layar_area(path, area, mirip)
+
+            def lapor():
+                if hasil:
+                    x, y, skor = hasil
+                    try:
+                        self.mouse.position = (x, y)
+                    except Exception:
+                        pass
+                    mode_t = ("pindah saja"
+                              if g.get("aksi") == "Pindah saja"
+                              else "akan diklik")
+                    self._set_status(
+                        "TES OK: gambar KETEMU di ({}, {}) - kemiripan "
+                        "{:.0%}. Mouse dipindah ke sana (tidak diklik; "
+                        "mode langkah ini: {}).".format(x, y, skor,
+                                                        mode_t), C_GREEN)
+                    self._tampilkan_info(
+                        "TES OK: ketemu di ({}, {}), kemiripan {:.0%}."
+                        .format(x, y, skor), C_GREEN)
+                else:
+                    self._set_status("TES GAGAL: " + pesan, C_RED)
+                    self._tampilkan_info("TES GAGAL: " + pesan, C_RED)
+                    messagebox.showwarning(APP_NAME,
+                                           "Gambar tidak ketemu.\n\n"
+                                           + pesan)
+
+            self.root.after(0, lapor)
+
+        threading.Thread(target=kerja, daemon=True).start()
 
     # ================== FOLDER, JUMLAH, CAPTION ==================
     def _pilih_folder(self):
@@ -2635,15 +3761,7 @@ class CutMotionsTab:
             "gambar_langkah": {k: dict(v)
                                for k, v in self.gambar_langkah.items()},
             "langkah_extra": [
-                {"uid": e.get("uid"), "sumber": e.get("sumber"),
-                 "setelah": e.get("setelah"), "label": e.get("label"),
-                 "posisi": (list(e["posisi"]) if e.get("posisi")
-                            else None),
-                 "jeda": float(e.get("jeda", 1.0)),
-                 "jeda_klik": float(e.get("jeda_klik", 0.3)),
-                 "params": dict(e.get("params") or {}),
-                 "gambar": dict(e.get("gambar")
-                                or gambar_langkah_default())}
+                json.loads(json.dumps(e)) if isinstance(e, dict) else e
                 for e in self.langkah_extra],
             "caption_only": False,
         }
@@ -2711,8 +3829,10 @@ class CutMotionsTab:
                     "AMBIL (atau isi X,Y manual).".format(label))
                 return
         # ---- v4.2: validasi salinan langkah (posisi boleh kosong) ----
+        # v5.5: langkah gaya Studio dilewati dengan pesan bila tak lengkap
         kosong = [str(e.get("label") or e.get("uid"))
-                  for e in snap["langkah_extra"] if not e.get("posisi")]
+                  for e in snap["langkah_extra"]
+                  if not e.get("jenis") and not e.get("posisi")]
         if kosong:
             if not messagebox.askyesno(
                     APP_NAME,
@@ -2727,6 +3847,10 @@ class CutMotionsTab:
                          for c in snap["gambar_langkah"].values())
         ada_gambar = ada_gambar or any(
             _aktif_gambar(e.get("gambar"))
+            for e in snap["langkah_extra"] if not e.get("jenis"))
+        # v5.5: langkah CARI GAMBAR gaya Studio juga butuh opencv
+        ada_gambar = ada_gambar or any(
+            e.get("jenis") == "GAMBAR"
             for e in snap["langkah_extra"])
         if ada_gambar:
             if not CV_OK:
@@ -2749,7 +3873,12 @@ class CutMotionsTab:
                         if not p or not os.path.isfile(p):
                             rusak.append(LABEL_POSISI.get(k, k))
                 for e in snap["langkah_extra"]:
-                    if _aktif_gambar(e.get("gambar")):
+                    if e.get("jenis") == "GAMBAR":
+                        p = str((e.get("gambar") or {}).get("path") or "")
+                        if not p or not os.path.isfile(p):
+                            rusak.append(str(e.get("label")
+                                             or e.get("uid")))
+                    elif _aktif_gambar(e.get("gambar")):
                         p = str((e.get("gambar") or {}).get("path") or "")
                         if not p or not os.path.isfile(p):
                             rusak.append(str(e.get("label")
@@ -2982,17 +4111,78 @@ class CutMotionsTab:
         return hasil
 
     def _jalankan_ekstra(self, snap, daftar, jumlah, jeda_dialog,
-                         jeda_langkah, geser=0, caption_final=None):
-        """Jalankan salinan langkah (hasil SALIN/TEMPEL) sesuai jenis."""
-        for ek in daftar:
+                         jeda_langkah, geser=0, caption_final=None,
+                         idx_caption=0, daftar_caption=None):
+        """Jalankan salinan langkah + LANGKAH STUDIO (v5.5) sesuai jenis.
+
+        v5.5: rantai bisa berisi langkah gaya Studio Makro (KLIK,
+        JEDA, CARI GAMBAR, KETIK, TANGGAL-JAM, VIDEO+CAPTION, TOMBOL,
+        SCROLL, CATATAN) dan blok ULANGI-MULAI ... ULANGI-AKHIR yang
+        mengulang sepotong rantai di antaranya.
+        """
+        if not daftar:
+            return
+        ctx = {
+            "caption": snap.get("caption", ""),
+            "videos": list(daftar_caption or []),
+            "jumlah": int(jumlah),
+            "tanggal": str(snap.get("tanggal") or ""),
+            "caption_final": caption_final,
+            "geser": int(geser or 0),
+            "idx_caption": int(idx_caption or 0),
+        }
+        loop_stack = []
+        i = 0
+        aman = 0
+        n = len(daftar)
+        while i < n:
             if self.stop_event.is_set():
                 return
+            aman += 1
+            if aman > 200000:
+                self.stop_event.set()
+                self._finish("Dihentikan: rantai langkah tambahan terlalu "
+                             "panjang (kemungkinan ULANGI tanpa akhir).",
+                             warn=True)
+                return
+            ek = daftar[i]
+            jenis = str(ek.get("jenis") or "")
+            if jenis == "LOOP_MULAI":
+                if ek.get("ikut_video"):
+                    n_loop = len(ctx["videos"]) or int(ctx["jumlah"])
+                else:
+                    n_loop = int(_angka(ek.get("jumlah_loop"), 2, 0,
+                                        100000))
+                if n_loop <= 0:
+                    j = cari_akhir_loop(daftar, i)
+                    i = (j + 1) if j >= 0 else i + 1
+                    continue
+                loop_stack.append({"mulai": i, "sisa": n_loop, "idx": 0})
+                i += 1
+                continue
+            if jenis == "LOOP_AKHIR":
+                if loop_stack:
+                    top = loop_stack[-1]
+                    top["sisa"] -= 1
+                    top["idx"] += 1
+                    if top["sisa"] > 0:
+                        i = top["mulai"] + 1
+                        continue
+                    loop_stack.pop()
+                i += 1
+                continue
+            if jenis in JENIS_STUDIO:
+                self._eksekusi_studio(ek, ctx, loop_stack)
+                i += 1
+                continue
+            # ---- salinan lama (posisi + aksi per jenis slot) ----
             nama = str(ek.get("label") or ek.get("uid"))
             kind = str(ek.get("sumber") or "")
             titik = ek.get("posisi")
             if not titik:
                 self._set_status("{} dilewati (posisi belum diatur)."
                                  .format(nama), C_ORANGE)
+                i += 1
                 continue
             self._sleep(max(0.0, float(ek.get("jeda", 1.0))))
             params = ek.get("params") or {}
@@ -3000,8 +4190,10 @@ class CutMotionsTab:
                 snap, None, titik, jeda_dialog, geser=geser,
                 cfg=ek.get("gambar") or {}, nama=nama)
             if aksi == "stop":
+                self.stop_event.set()
                 return
             if aksi in ("pindah", "skip"):
+                i += 1
                 continue
             jk_e = max(0.05, float(ek.get("jeda_klik", 0.3)))
             # klik pertama sudah dilakukan -> aksi tambahan per jenis:
@@ -3060,6 +4252,22 @@ class CutMotionsTab:
                 time.sleep(0.15)
                 self.kb.type(caption_final)
             self._sleep(jeda_langkah)
+            i += 1
+
+    def _eksekusi_studio(self, l, ctx, loop_stack):
+        """v5.5: jalankan satu langkah gaya Studio dalam alur A-J."""
+        if not l.get("aktif", True):
+            return
+        idx = loop_stack[-1]["idx"] if loop_stack \
+            else int(ctx.get("idx_caption") or 0)
+        hasil = studio_jalankan_langkah(
+            self, l, idx, ctx.get("videos") or [],
+            ctx.get("caption") or "", ctx.get("jumlah") or 0,
+            ctx.get("tanggal") or "",
+            geser_baris=int(ctx.get("geser") or 0))
+        if hasil == "stop":
+            # pastikan alur utama ikut berhenti (CARI GAMBAR gagal)
+            self.stop_event.set()
 
     def _worker(self, snap, jumlah, mundur, jeda_dialog, jeda_langkah,
                 tunggu):
@@ -3241,11 +4449,13 @@ class CutMotionsTab:
                         except Exception:
                             pass
                         time.sleep(max(0.05, jk.get("pos_bebas1", 0.3)))
-                    self._jalankan_ekstra(
-                        snap, ekstra_setelah("pos_bebas1"), jumlah,
-                        jeda_dialog, jeda_langkah)
-                    self._sleep(max(0.0, jp.get("pos_bebas1",
-                                                jeda_langkah)))
+                # v5.5: langkah tambahan setelah G tetap jalan walau
+                # jumlah klik/scroll G = 0
+                self._jalankan_ekstra(
+                    snap, ekstra_setelah("pos_bebas1"), jumlah,
+                    jeda_dialog, jeda_langkah)
+                self._sleep(max(0.0, jp.get("pos_bebas1",
+                                            jeda_langkah)))
 
                 # ---- H: klik video pertama + Shift + panah bawah ----
                 if self.stop_event.is_set():
@@ -3365,7 +4575,9 @@ class CutMotionsTab:
                     return
                 self._jalankan_ekstra(snap, ekstra_setelah("pos_edit"),
                                       jumlah, jeda_dialog, jeda_langkah,
-                                      geser=geser)
+                                      geser=geser,
+                                      idx_caption=i,
+                                      daftar_caption=daftar_caption)
                 self._sleep(jeda_dialog)
 
                 # klik kotak caption baris ke-i + ketik caption
@@ -3389,7 +4601,9 @@ class CutMotionsTab:
                 self._jalankan_ekstra(snap, ekstra_setelah("pos_judul"),
                                       jumlah, jeda_dialog, jeda_langkah,
                                       geser=geser,
-                                      caption_final=caption_final)
+                                      caption_final=caption_final,
+                                      idx_caption=i,
+                                      daftar_caption=daftar_caption)
                 self._sleep(max(0.0, jp.get("pos_judul", jeda_langkah)))
 
                 # klik tombol Konfirmasi baris ke-i
@@ -3408,7 +4622,9 @@ class CutMotionsTab:
                     return
                 self._jalankan_ekstra(snap, ekstra_setelah("pos_konfirmasi"),
                                       jumlah, jeda_dialog, jeda_langkah,
-                                      geser=geser)
+                                      geser=geser,
+                                      idx_caption=i,
+                                      daftar_caption=daftar_caption)
                 self._sleep(max(0.0, jp.get("pos_konfirmasi",
                                             jeda_langkah)) + 0.5)
 
@@ -3512,17 +4728,7 @@ class CutMotionsTab:
             "gambar_langkah": {k: dict(v)
                                for k, v in self.gambar_langkah.items()},
             "langkah_extra": [
-                {"uid": str(e.get("uid")),
-                 "sumber": str(e.get("sumber")),
-                 "setelah": str(e.get("setelah") or ""),
-                 "label": str(e.get("label") or ""),
-                 "posisi": (list(e["posisi"]) if e.get("posisi")
-                            else None),
-                 "jeda": float(e.get("jeda", 1.0)),
-                 "jeda_klik": float(e.get("jeda_klik", 0.3)),
-                 "params": dict(e.get("params") or {}),
-                 "gambar": dict(e.get("gambar")
-                                or gambar_langkah_default())}
+                json.loads(json.dumps(e)) if isinstance(e, dict) else e
                 for e in self.langkah_extra],
             "versi": APP_VERSION,
         }
@@ -3597,10 +4803,24 @@ class CutMotionsTab:
                 {"aktif": True,
                  "path": str(data.get("gambar_ref") or "")})
         self.gambar_langkah = gl_baru
-        # ---- v4.2: salinan langkah ----
+        # ---- v4.2: salinan langkah + v5.5: langkah gaya Studio ----
         ekstra_baru = []
         for e in (data.get("langkah_extra") or []):
             if not isinstance(e, dict):
+                continue
+            jenis_e = str(e.get("jenis") or "")
+            if jenis_e in JENIS_STUDIO:
+                # v5.5: langkah gaya Studio - sanitasi via studio_bersihkan
+                bersih = studio_bersihkan([e])
+                if not bersih:
+                    continue
+                st = bersih[0]
+                st["uid"] = str(e.get("uid") or "x{}".format(
+                    len(ekstra_baru) + 1))
+                st["setelah"] = str(e.get("setelah") or "pos_jadwal")
+                st["label"] = str(e.get("label") or st.get("nama")
+                                  or LABEL_JENIS[jenis_e])
+                ekstra_baru.append(st)
                 continue
             sumber = str(e.get("sumber") or "")
             if sumber not in POS_KUNCI:
@@ -3645,6 +4865,8 @@ class CutMotionsTab:
             })
         self.langkah_extra = ekstra_baru
         self._extra_counter = len(ekstra_baru)
+        self._studio_counter = sum(
+            1 for x in ekstra_baru if x.get("jenis") in JENIS_STUDIO)
         self._loading = True
         pasangan = [
             ("folder", V["folder"]), ("jumlah", V["jumlah"]),
@@ -4064,106 +5286,10 @@ class StudioMakroTab:
         return None
 
     def _detail_langkah(self, l):
-        jenis = l["jenis"]
-        pos = l.get("posisi")
-        pos_t = "({},{})".format(pos[0], pos[1]) if pos else "belum diatur"
-        if jenis == "KLIK":
-            mode = str(l.get("tombol_mouse") or "Klik kiri").lower()
-            n = int(_angka(l.get("klik"), 1, 0, 500))
-            geser = int(_angka(l.get("geser"), 0, 0, 100000))
-            teks = "{} | {}x".format(pos_t, mode)
-            if n != 1:
-                teks += " x{}".format(n)
-            if geser:
-                teks += " | geser +{} px/putaran".format(geser)
-            return teks
-        if jenis == "JEDA":
-            return "tunggu {:.1f} detik".format(
-                _angka(l.get("detik"), 1.0, 0, 86400))
-        if jenis == "GAMBAR":
-            g = l.get("gambar") or {}
-            gm = os.path.basename(str(g.get("path") or "")) \
-                if g.get("path") else "(gambar belum dipilih)"
-            aksi_t = ("pindah saja"
-                      if g.get("aksi") == "Pindah saja" else "klik gambar")
-            f = g.get("fokus")
-            if isinstance(f, (list, tuple)) and len(f) == 4:
-                fokus_t = "fokus ({},{})-({},{})".format(
-                    f[0], f[1], f[2], f[3])
-            else:
-                fokus_t = "cari di seluruh layar"
-            return "{} | {} | {}".format(fokus_t, gm, aksi_t)
-        if jenis == "KETIK":
-            t = str(l.get("teks") or "")
-            if len(t) > 42:
-                t = t[:42] + "..."
-            extra = " | Ctrl+A dulu" if l.get("ctrl_a") else ""
-            if l.get("enter"):
-                extra += " | Enter"
-            return '"{}"{}'.format(t, extra)
-        if jenis == "TANGGAL_JAM":
-            sumber = str(l.get("sumber") or "Tab CutMotions")
-            if sumber == "Tetap (isi sendiri)":
-                val = str(l.get("teks") or "(kosong)")
-                if len(val) > 22:
-                    val = val[:22] + "..."
-                return "{} | tetap: {}".format(pos_t, val)
-            return "{} | dari setelan tab CutMotions".format(pos_t)
-        if jenis == "VIDEO_CAPTION":
-            isi = str(l.get("isi") or "Caption dasar + nama video")
-            if isi == "Teks sendiri + placeholder":
-                t = str(l.get("teks") or "")
-                if len(t) > 26:
-                    t = t[:26] + "..."
-                return "{} | teks: {}".format(pos_t, t or "(kosong)")
-            return "{} | {}".format(pos_t, isi.lower())
-        if jenis == "TOMBOL":
-            return "tekan {} x{}".format(
-                l.get("tombol_kb"),
-                int(_angka(l.get("jumlah_kb"), 1, 1, 500)))
-        if jenis == "SCROLL":
-            return "{} x{}".format(
-                l.get("arah"),
-                int(_angka(l.get("jumlah_scroll"), 3, 0, 1000)))
-        if jenis == "CATATAN":
-            t = str(l.get("catatan") or l.get("nama") or "")
-            if len(t) > 60:
-                t = t[:60] + "..."
-            return t
-        if jenis == "LOOP_MULAI":
-            if l.get("ikut_video"):
-                return "ulangi sebanyak jumlah video (tab CutMotions)"
-            return "ulangi {}x".format(int(_angka(l.get("jumlah_loop"),
-                                                  2, 0, 100000)))
-        return "kembali ke ULANGI-MULAI di atas"
+        return studio_detail_teks(l)
 
     def _ulang_langkah(self, l):
-        jenis = l["jenis"]
-        if jenis == "KLIK":
-            n = int(_angka(l.get("klik"), 1, 0, 500))
-            return "pindah saja" if n == 0 else "{} klik".format(n)
-        if jenis == "JEDA":
-            return "-"
-        if jenis == "GAMBAR":
-            return "cari gambar"
-        if jenis == "KETIK":
-            return "1 ketikan"
-        if jenis in ("TANGGAL_JAM", "VIDEO_CAPTION"):
-            return "1 ketikan (isi otomatis)"
-        if jenis == "TOMBOL":
-            return "{} tekanan".format(int(_angka(l.get("jumlah_kb"), 1,
-                                                  1, 500)))
-        if jenis == "SCROLL":
-            return "{}x gulungan".format(int(_angka(
-                l.get("jumlah_scroll"), 3, 0, 1000)))
-        if jenis == "LOOP_MULAI":
-            if l.get("ikut_video"):
-                return "x jumlah video"
-            return "{}x".format(int(_angka(l.get("jumlah_loop"), 2, 0,
-                                           100000)))
-        if jenis == "LOOP_AKHIR":
-            return "akhir blok"
-        return "-"
+        return studio_ulang_teks(l)
 
     def _refresh_tabel(self):
         if not hasattr(self, "tree"):
@@ -5691,270 +6817,6 @@ class StudioMakroTab:
                 pass
         self.root.after(0, do)
 
-    # ================== MESIN EKSEKUSI MAKRO ==================
-    def _klik_titik(self, titik):
-        try:
-            self.mouse.position = (int(titik[0]), int(titik[1]))
-            time.sleep(0.15)
-            self.mouse.click(Button.left, 1)
-        except Exception:
-            pass
-
-    def _studio_klik(self, l, loop_stack):
-        titik = l.get("posisi")
-        if not titik:
-            self._set_status("Posisi klik belum diatur - langkah "
-                             "dilewati.", C_ORANGE)
-            return
-        idx = loop_stack[-1]["idx"] if loop_stack else 0
-        geser = int(_angka(l.get("geser"), 0, 0, 100000)) * idx
-        tujuan = (int(titik[0]), int(titik[1]) + geser)
-        n = int(_angka(l.get("klik"), 1, 0, 500))
-        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
-        mode = l.get("tombol_mouse") if l.get("tombol_mouse") \
-            in MOUSE_OPSI else "Klik kiri"
-        try:
-            self.mouse.position = tujuan
-            time.sleep(0.12)
-        except Exception:
-            pass
-        for k in range(n):
-            if self.stop_event.is_set():
-                break
-            try:
-                if mode == "Klik kanan":
-                    self.mouse.click(Button.right, 1)
-                elif mode == "Klik dobel":
-                    self.mouse.click(Button.left, 2)
-                else:
-                    self.mouse.click(Button.left, 1)
-            except Exception:
-                pass
-            if k < n - 1:
-                time.sleep(jk)
-
-    def _studio_gambar(self, l):
-        """Kembalikan "stop" bila alur harus dihentikan.
-
-        v5.3: TANPA titik acuan X,Y - gambar dicari di AREA FOKUS
-        (atau seluruh layar) lalu diklik / dituju tepat di gambarnya.
-        """
-        g = l.get("gambar") or {}
-        path = str(g.get("path") or "").strip()
-        nama = str(l.get("nama") or "") or LABEL_JENIS["GAMBAR"]
-        if not path or not os.path.isfile(path):
-            self._set_status(
-                "Gambar referensi '{}' belum ada - langkah dilewati "
-                "(klik POTONG GAMBAR di panel properti).".format(nama),
-                C_ORANGE)
-            return None
-        if not CV_OK:
-            self._set_status(
-                "opencv-python belum terpasang - langkah CARI GAMBAR "
-                "'{}' dilewati.".format(nama), C_ORANGE)
-            return None
-        mirip = _angka(g.get("mirip"), 0.8, 0.5, 0.99)
-        area = area_dari_langkah(l)
-        if area:
-            desk = "area fokus ({},{})-({},{})".format(area[0], area[1],
-                                                       area[2], area[3])
-        else:
-            desk = "seluruh layar"
-        hasil = None
-        pesan = ""
-        for percobaan in range(1, 4):
-            self._set_status(
-                "Cari gambar '{}' di {} (percobaan {}/3, "
-                "multi-skala)...".format(os.path.basename(path), desk,
-                                         percobaan), C_GREEN)
-            hasil, pesan = cari_di_layar_area(path, area, mirip)
-            if hasil:
-                break
-            self._sleep(1.0)
-        if hasil:
-            x, y, skor = hasil
-            if str(g.get("aksi")) == "Pindah saja":
-                try:
-                    self.mouse.position = (x, y)
-                except Exception:
-                    pass
-                self._set_status(
-                    "Gambar '{}' KETEMU di ({}, {}) - kemiripan {:.0%} - "
-                    "mouse DIPINDAH tanpa klik.".format(nama, x, y, skor),
-                    C_GREEN)
-                return None
-            self._set_status(
-                "Gambar '{}' KETEMU di ({}, {}) - kemiripan {:.0%} - "
-                "diklik.".format(nama, x, y, skor), C_GREEN)
-            self._klik_titik((x, y))
-            return None
-        pilihan = str(g.get("gagal") or "Lewati langkah")
-        if pilihan == "Stop alur":
-            self._finish("Dihentikan: gambar '{}' tidak ketemu 3x. {}"
-                         .format(os.path.basename(path), pesan), warn=True)
-            return "stop"
-        if pilihan == "Klik tengah area" and area:
-            tengah = ((area[0] + area[2]) // 2, (area[1] + area[3]) // 2)
-            self._set_status(
-                "Gambar '{}' tidak ketemu - klik tengah area fokus {}. "
-                "{}".format(nama, tengah, pesan), C_ORANGE)
-            self._klik_titik(tengah)
-            return None
-        self._set_status("Gambar '{}' tidak ketemu - langkah dilewati. "
-                         "{}".format(nama, pesan), C_ORANGE)
-        return None
-
-    def _ketik(self, teks, ctrl_a=False, enter=False):
-        """Ketik teks di posisi kursor (pilihan Ctrl+A / Enter)."""
-        if not teks and not enter:
-            return
-        try:
-            if ctrl_a:
-                time.sleep(0.2)
-                with self.kb.pressed(Key.ctrl):
-                    self.kb.press("a")
-                    self.kb.release("a")
-                time.sleep(0.15)
-            if teks:
-                self.kb.type(teks)
-            if enter:
-                time.sleep(0.1)
-                self.kb.press(Key.enter)
-                self.kb.release(Key.enter)
-        except Exception as e:
-            self._set_status("Gagal mengetik: {}".format(e), C_ORANGE)
-
-    def _studio_ketik(self, l, loop_stack, caption, videos):
-        idx = loop_stack[-1]["idx"] if loop_stack else 0
-        teks = isi_placeholder(l.get("teks", ""), idx, caption, videos)
-        self._ketik(teks, bool(l.get("ctrl_a")), bool(l.get("enter")))
-
-    def _studio_tanggal(self, l, snap):
-        """v5.2: isi kolom tanggal-jam rilis (klik dulu bila ada posisi)."""
-        sumber = str(l.get("sumber") or "Tab CutMotions")
-        if sumber == "Tetap (isi sendiri)":
-            teks = str(l.get("teks") or "").strip()
-        else:
-            teks = str(snap.get("tanggal") or "").strip()
-        if not teks:
-            self._set_status(
-                "Tanggal-jam masih KOSONG - langkah dilewati. Isi kolom "
-                "TANGGAL & JAM RILIS di tab Alur CutMotions, atau ganti "
-                "sumber nilai di properti langkah.", C_ORANGE)
-            return
-        rapikan = parse_tanggal(teks)
-        if rapikan:
-            teks = rapikan
-        else:
-            self._set_status(
-                "Format tanggal '{}' tidak dikenal - diketik apa adanya "
-                "(format benar: 2026-09-10 02:05:01).".format(teks),
-                C_ORANGE)
-        if l.get("posisi"):
-            self._klik_titik(l["posisi"])
-            self._sleep(0.4)
-        self._set_status("Isi tanggal-jam rilis: {}".format(teks), C_GREEN)
-        self._ketik(teks, bool(l.get("ctrl_a", True)),
-                    bool(l.get("enter")))
-
-    def _studio_video(self, l, loop_stack, snap):
-        """v5.2: isi jumlah video / caption dasar + nama video ke-i."""
-        videos = snap.get("videos") or []
-        caption = snap.get("caption") or ""
-        jumlah = int(_angka(snap.get("jumlah"), len(videos), 0, 100000))
-        idx = loop_stack[-1]["idx"] if loop_stack else 0
-        isi = str(l.get("isi") or "Caption dasar + nama video")
-        if isi == "Jumlah video":
-            teks = str(jumlah)
-        elif isi == "Nama video saja":
-            teks = isi_placeholder("{video}", idx, caption, videos, jumlah)
-        elif isi == "Teks sendiri + placeholder":
-            teks = isi_placeholder(str(l.get("teks") or ""), idx, caption,
-                                   videos, jumlah)
-        else:
-            teks = isi_placeholder("{caption}", idx, caption, videos,
-                                   jumlah)
-        if not teks:
-            self._set_status(
-                "Tidak ada teks untuk diketik (folder video / jumlah "
-                "kosong) - langkah dilewati.", C_ORANGE)
-            return
-        if l.get("posisi"):
-            self._klik_titik(l["posisi"])
-            self._sleep(0.4)
-        self._set_status("Isi {}: {}".format(isi.lower(), teks), C_GREEN)
-        self._ketik(teks, bool(l.get("ctrl_a", True)),
-                    bool(l.get("enter")))
-
-    def _studio_tombol(self, l):
-        nama = str(l.get("tombol_kb") or "Enter").strip() or "Enter"
-        n = int(_angka(l.get("jumlah_kb"), 1, 1, 500))
-        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
-        mod, kunci = TOMBOL_MAP.get(nama, ("", None))
-        try:
-            if kunci is None:
-                if len(nama) == 1:
-                    for k in range(n):
-                        if self.stop_event.is_set():
-                            break
-                        self.kb.type(nama)
-                        if k < n - 1:
-                            time.sleep(jk)
-                else:
-                    self._set_status("Tombol '{}' tidak dikenal - "
-                                     "dilewati.".format(nama), C_ORANGE)
-                return
-            obj = getattr(Key, kunci, None)
-            if obj is None:
-                self._set_status("Tombol '{}' tidak dikenal - dilewati."
-                                 .format(nama), C_ORANGE)
-                return
-
-            def tekan():
-                self.kb.press(obj)
-                self.kb.release(obj)
-
-            if mod == "shift":
-                with self.kb.pressed(Key.shift):
-                    for k in range(n):
-                        if self.stop_event.is_set():
-                            break
-                        tekan()
-                        if k < n - 1:
-                            time.sleep(jk)
-            elif mod == "ctrl":
-                with self.kb.pressed(Key.ctrl):
-                    for k in range(n):
-                        if self.stop_event.is_set():
-                            break
-                        tekan()
-                        if k < n - 1:
-                            time.sleep(jk)
-            else:
-                for k in range(n):
-                    if self.stop_event.is_set():
-                        break
-                    tekan()
-                    if k < n - 1:
-                        time.sleep(jk)
-        except Exception as e:
-            self._set_status("Gagal menekan tombol: {}".format(e),
-                             C_ORANGE)
-
-    def _studio_scroll(self, l):
-        n = int(_angka(l.get("jumlah_scroll"), 3, 0, 1000))
-        arah = -3 if l.get("arah") == "Turun" else 3
-        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
-        for k in range(n):
-            if self.stop_event.is_set():
-                break
-            try:
-                self.mouse.scroll(0, arah)
-            except Exception:
-                pass
-            if k < n - 1:
-                time.sleep(jk)
-
     def _worker(self, snap):
         try:
             langkah = snap["langkah"]
@@ -5999,14 +6861,7 @@ class StudioMakroTab:
                 self._sleep(max(0.0, _angka(l.get("jeda"), 0.5, 0,
                                             86400)))
                 jenis = l["jenis"]
-                if jenis == "CATATAN":
-                    pass
-                elif jenis == "JEDA":
-                    d = _angka(l.get("detik"), 1.0, 0, 86400)
-                    self._set_status("Tunggu {:.1f} detik...".format(d),
-                                     C_GREEN)
-                    self._sleep(d)
-                elif jenis == "LOOP_MULAI":
+                if jenis == "LOOP_MULAI":
                     if l.get("ikut_video"):
                         jumlah = len(videos)
                     else:
@@ -6027,21 +6882,16 @@ class StudioMakroTab:
                             i = top["mulai"] + 1
                             continue
                         loop_stack.pop()
-                elif jenis == "KLIK":
-                    self._studio_klik(l, loop_stack)
-                elif jenis == "GAMBAR":
-                    if self._studio_gambar(l) == "stop":
+                elif jenis in JENIS_STUDIO:
+                    # v5.5: mesin langkah Studio kini fungsi modul
+                    # bersama - dipakai juga oleh alur CutMotions
+                    idx = loop_stack[-1]["idx"] if loop_stack else 0
+                    if studio_jalankan_langkah(
+                            self, l, idx, videos, caption,
+                            len(videos) or int(_angka(
+                                snap.get("jumlah"), 0, 0, 100000)),
+                            str(snap.get("tanggal") or "")) == "stop":
                         return
-                elif jenis == "KETIK":
-                    self._studio_ketik(l, loop_stack, caption, videos)
-                elif jenis == "TOMBOL":
-                    self._studio_tombol(l)
-                elif jenis == "SCROLL":
-                    self._studio_scroll(l)
-                elif jenis == "TANGGAL_JAM":
-                    self._studio_tanggal(l, snap)
-                elif jenis == "VIDEO_CAPTION":
-                    self._studio_video(l, loop_stack, snap)
                 i += 1
             self._finish("Makro selesai! {} langkah sudah dijalankan."
                          .format(n))
@@ -6331,7 +7181,8 @@ class ShellApp:
             status, anchor="w", bg=C_BG, fg=C_GREEN, font=F_S,
             text="STUDIO MAKRO: pilih tombol + di atas untuk menambah "
                  "langkah pertama  |  ALUR CUTMOTIONS: login manual dulu "
-                 "di situs, lalu tekan F6")
+                 "di situs, atau pakai '+ TAMBAH LANGKAH' untuk menyisip "
+                 "langkah Studio, lalu tekan F6")
         self.lbl_status.pack(side="left", fill="x", expand=True,
                              padx=6, pady=3)
         tk.Label(status, anchor="e", bg=C_BG, fg=C_MUTED, font=F_XS,
@@ -6428,6 +7279,12 @@ class ShellApp:
                                  "terpilih)",
                            command=self.tab_studio._tes_cari)
         m_alat.add_separator()
+        # v5.5: semua menu Studio Makro juga bisa masuk alur CutMotions
+        m_alat.add_command(
+            label="Tambah Langkah Studio ke Alur CutMotions "
+                  "(pakai tombol '+ TAMBAH LANGKAH' di tab itu)",
+            command=lambda: (self.nb.select(self.tab_cut.wadah),
+                             self.tab_cut._tambah_studio("KLIK")))
         m_alat.add_command(label="Muat Template Alur CutMotions ke Studio",
                            command=self.tab_studio._template_cutmotions)
         m_alat.add_separator()
@@ -6505,6 +7362,11 @@ class ShellApp:
             "jadi langkah makro: klik ● REKAM AKSI, jendela sembunyi,\n"
             "kerjakan aksimu di aplikasi lain, lalu tekan F8 untuk\n"
             "berhenti - semuanya sudah jadi langkah di tabel Studio.\n\n"
+            "v5.5: SEMUA MENU STUDIO MAKRO masuk alur CUTMOTIONS!\n"
+            "Di tab Alur CutMotions ada tombol '+ TAMBAH LANGKAH' untuk\n"
+            "menyisipkan Klik, Jeda, Cari Gambar, Ketik, Tanggal-Jam,\n"
+            "Video+Caption, Tombol, Scroll, Catatan, dan blok ULANGI\n"
+            "di posisi mana pun di antara langkah A-J.\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
@@ -6595,10 +7457,47 @@ def main():
             print("SELFTEST_REKAM_OK")
             root.destroy()
         root.after(2500, _ok4)
+    if "--selftest-cutstudio" in sys.argv:
+        def _isi_cut():
+            # v5.5: semua menu Studio dimasukkan ke alur CutMotions
+            cut = app.tab_cut
+            cut.tree.selection_set("pos_oke")
+            cut.tree.event_generate("<<TreeviewSelect>>")
+
+            def isi():
+                cut._tambah_studio("CATATAN")
+                cut._tambah_studio("KETIK")
+                cut._tambah_studio("JEDA")
+                cut._tambah_studio("LOOP_MULAI")
+                cut._tambah_studio("KLIK")
+                cut._tambah_studio("TOMBOL")
+                cut._tambah_studio("SCROLL")
+                cut._tambah_studio("LOOP_AKHIR")
+                cut._tambah_studio("GAMBAR")
+                cut._tambah_studio("TANGGAL_JAM")
+                cut._tambah_studio("VIDEO_CAPTION")
+                n_studio = sum(1 for e in cut.langkah_extra
+                               if e.get("jenis") in JENIS_STUDIO)
+                print("CUT_STUDIO_LANGKAH_OK", n_studio)
+                # salin-tempel langkah Studio di alur CutMotions
+                cut._salin_langkah()
+                cut._tempel_langkah()
+                n2 = sum(1 for e in cut.langkah_extra
+                         if e.get("jenis") in JENIS_STUDIO)
+                print("CUT_STUDIO_TEMPEL_OK", n2 == n_studio + 1)
+
+            root.after(300, isi)
+        root.after(700, _isi_cut)
+
+        def _ok5():
+            print("SELFTEST_CUTSTUDIO_OK")
+            root.destroy()
+        root.after(2500, _ok5)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
-            or ("--selftest-rekam" in sys.argv):
+            or ("--selftest-rekam" in sys.argv) \
+            or ("--selftest-cutstudio" in sys.argv):
         print("SELFTEST_DONE")
 
 
