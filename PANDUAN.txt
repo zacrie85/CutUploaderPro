@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.5 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.6 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -213,12 +213,14 @@ pernah diminta atau disimpan). Lakukan sendiri di browser:
 ------------------------------------------------------------
 5. TAMPILAN TAB ALUR CUTMOTIONS (ALA JITBIT)
 ------------------------------------------------------------
-  - TOOLBAR paling atas : JALANKAN (F6), BERHENTI (F7),
-    TES CARI GAMBAR, POTONG GAMBAR REFERENSI,
-    SALIN LANGKAH, TEMPEL LANGKAH, HAPUS SALINAN,
-    SIMPAN PROFIL, BUKA PROFIL, dan (v5.5) tombol hijau
-    "+ TAMBAH LANGKAH" - semua menu STUDIO MAKRO bisa
-    disisipkan ke alur ini (lihat blok BARU DI V5.5).
+  - TOOLBAR paling atas (v5.6: rapi, MAKS 7 TOMBOL per
+    baris, sisanya berurutan di baris di bawahnya):
+    JALANKAN (F6), BERHENTI (F7), (v5.6) merah '● REKAM
+    AKSI', hijau "+ TAMBAH LANGKAH" (v5.5 - semua menu
+    STUDIO MAKRO bisa disisipkan ke alur ini, lihat blok
+    BARU DI V5.5), TES CARI GAMBAR, POTONG GAMBAR
+    REFERENSI, SALIN LANGKAH - lalu di baris kedua: TEMPEL
+    LANGKAH, HAPUS SALINAN, SIMPAN PROFIL, BUKA PROFIL.
   - VIDEO & CAPTION     : pilih folder video, jumlah video
     (maks 20), caption dasar, pratinjau caption.
   - LANGKAH MAKRO       : tabel berisi langkah A-J + salinan
@@ -348,6 +350,32 @@ potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
 
+BARU DI V5.6 - TAMPILAN "DARK GLASS" + REKAM AKSI DI ALUR CUTMOTIONS:
+  1) TAMPILAN BARU LEBIH MODERN & MENGIKAT:
+     - Tema gelap navy dengan aksen neon (biru elektrik,
+       hijau, merah) dan panel bergaya "kaca" (garis
+       bingkai tipis, permukaan sedikit lebih terang).
+     - SEMUA TOMBOL FITUR DIRAPI: MAKSIMAL 7 TOMBOL per
+       baris, sisanya berurutan di baris di bawahnya -
+       berlaku di kedua tab (Studio Makro & CutMotions).
+     - Tabel, heading, scroll bar, kotak isian, dan tab
+       atas semuanya ikut tema gelap; teks lebih kontras.
+  2) REKAM AKSI kini JUGA ADA DI TAB ALUR CUTMOTIONS (A-J):
+     - Klik tombol merah '● REKAM AKSI' di toolbar tab ini
+       (teknik rekamnya sama dengan Studio - lihat blok
+       BARU DI V5.4).
+     - BEDANYA: hasil rekaman langsung masuk ALUR A-J,
+       TEPAT SETELAH langkah yang sedang kamu pilih di
+       tabel (mis. pilih E - Tombol OKE, hasil rekaman
+       jalan tepat setelah OKE diklik). Berantai rapi
+       sesuai urutan aksi aslimu, berkode "S" (ungu),
+       bisa disunting di panel PROPERTI, ikut tersimpan
+       di SIMPAN/BUKA PROFIL.
+     - Kalau tidak ada baris yang dipilih, hasil rekaman
+       ditaruh di AKHIR alur (setelah J - Submit).
+  3) Menu Bantuan > Tentang + menu Studio > '● Rekam Aksi
+     di TAB AKTIF' mengikuti tab yang sedang dibuka.
+
 BARU DI V5.5 - SEMUA MENU STUDIO MAKRO MASUK ALUR CUTMOTIONS (A-J):
   Kini Anda tidak perlu pindah tab untuk memakai kekuatan
   Studio Makro. Di tab ALUR CUTMOTIONS:
@@ -404,11 +432,13 @@ BARU DI V5.5 - SEMUA MENU STUDIO MAKRO MASUK ALUR CUTMOTIONS (A-J):
 
 BARU DI V5.4 - REKAM AKSI (REKAMAN MAKRO OTOMATIS):
   Sekarang Anda tidak perlu menyusun langkah satu per satu:
-  1. Klik tombol ● REKAM AKSI (merah, di sebelah BERHENTI)
-     atau menu Studio > Rekam Aksi -> konfirmasi -> hitung
-     mundur 3 detik -> jendela aplikasi tersembunyi dan
-     muncul BANNER KECIL "● MEREKAM AKSI" di pojok kanan
-     bawah (berisi hitungan aksi; bisa digeser).
+  1. Klik tombol ● REKAM AKSI (merah - ada di TAB STUDIO
+     MAKRO dan, sejak v5.6, juga di TAB ALUR CUTMOTIONS),
+     atau menu Studio > '● Rekam Aksi di TAB AKTIF' ->
+     konfirmasi -> hitung mundur 3 detik -> jendela
+     aplikasi tersembunyi dan muncul BANNER KECIL
+     "● MEREKAM AKSI" di pojok kanan bawah (berisi
+     hitungan aksi; bisa digeser).
   2. Kerjakan aksimu di aplikasi mana pun (browser, form,
      aplikasi Windows). Semua terekam OTOMATIS:
      - Klik kiri      -> langkah KLIK TITIK (posisi + waktu)
@@ -423,9 +453,12 @@ BARU DI V5.4 - REKAM AKSI (REKAMAN MAKRO OTOMATIS):
      - Jarak waktu antar aksi terekam jadi JEDA antar
        langkah (dibatasi maks 10 detik; Anda bisa ubah).
   3. Tekan F8 (atau ESC) untuk BERHENTI -> jendela tampil
-     lagi dan semua hasil rekaman DITAMBAH di akhir alur
-     kerja (tidak menimpa langkah lama). Sunting bila perlu,
-     lalu JALANKAN (F6) seperti makro biasa.
+     lagi dan semua hasil rekaman DITAMBAH ke alur kerja
+     tab tempat merekam: di Studio = di akhir alur (atau
+     setelah baris terpilih), di tab CutMotions (v5.6) =
+     tepat setelah langkah yang dipilih. Tidak menimpa
+     langkah lama. Sunting bila perlu, lalu JALANKAN (F6)
+     seperti makro biasa.
   Tips:
   - Selagi merekam, JANGAN menekan F8/ESC di aplikasi lain
     kecuali memang mau berhenti merekam.

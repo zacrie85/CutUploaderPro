@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.5)
+# CutUploader Pro — Macro Studio Edition (v5.6)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, dan **baru v5.5: semua menu Studio Makro bisa disisipkan ke dalam alur CutMotions (A-J)**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.6: tampilan modern "DARK GLASS" + tombol rapi maksimal 7 per baris**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.5**:
+Dari halaman [Releases](../../releases) rilis **v5.6**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.5.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.6.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -62,6 +62,12 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
 
+### Baru v5.6: tampilan "DARK GLASS" + REKAM AKSI di alur CutMotions
+
+1. **Tampilan modern & mengkilat** — tema gelap navy dengan aksen neon (biru elektrik, hijau, merah) dan panel bergaya kaca (bingkai tipis, permukaan lebih terang). Tabel, heading, scroll bar, kotak isian, kotak centang, dan tab atas semuanya ikut tema gelap dengan teks kontras tinggi.
+2. **Tombol dirapi: MAKSIMAL 7 per baris** — semua tombol fitur di kedua tab disusun ulang: maksimal 7 tombol menyamping, sisanya berurutan di baris di bawahnya. Tidak ada lagi toolbar yang memanjang tak teratur.
+3. **REKAM AKSI kini juga di tab ALUR CUTMOTIONS (A-J)** — tombol merah **`● REKAM AKSI`** ada di toolbar kedua tab. Hasil rekaman di tab CutMotions **langsung masuk alur A-J, tepat setelah langkah yang dipilih** di tabel (tidak ada baris terpilih → di akhir alur). Berantai rapi sesuai urutan asli, berkode "S", bisa disunting di panel PROPERTI, ikut tersimpan di profil. Menu *Studio > ● Rekam Aksi di TAB AKTIF* mengikuti tab yang sedang dibuka.
+
 ### Baru v5.5: semua menu Studio Makro masuk ke alur CutMotions (A-J)
 
 Di toolbar tab **ALUR CUTMOTIONS** ada tombol hijau **`+ TAMBAH LANGKAH ▾`** (dan klik kanan tabel → *Tambah langkah STUDIO di sini*) untuk menyisipkan **semua jenis langkah Studio** di posisi mana pun di antara langkah A–J:
@@ -90,6 +96,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.6
+
+- **Tema baru "DARK GLASS"**: palet navy pekat + neon (`#0B1020` / biru elektrik / hijau / merah), kartu bergaris bingkai tipis, tabel zebra gelap, heading & scroll bar gelap, kursor + seleksi kotak isian putih, tab atas gelap dengan tab aktif biru elektrik.
+- **Tata letak tombol baru**: toolbar Studio (2 baris: 7 + 7 dan 7 + 5) dan toolbar CutMotions (2 baris: 7 + 4) — **maksimal 7 tombol per baris**, sisanya berurutan di bawah, persis seperti permintaan.
+- **REKAM AKSI di ALUR CUTMOTIONS**: mesin rekam v5.4 dijadikan **mixin bersama `PerekamAksiMixin`** — dipakai Studio Makro DAN tab CutMotions. Di tab CutMotions, hasil rekaman disisipkan ke `langkah_extra` berantai `setelah` (urutan tampil + urutan eksekusi konsisten), otomatis tersimpan di profil, dan bisa disunting di panel PROPERTI langkah Studio.
+- Tombol **`● REKAM AKSI`** (merah) di toolbar kedua tab; selagi merekam F6/F7/ESC diabaikan di kedua tab; saat menutup aplikasi perekam kedua tab ikut dihentikan.
+- Diuji: 52 unit test baru (palet, mixin, sisip-rekam CutMotions & Studio, dedup, selftest terdaftar), regresi v5.1–v5.5 tetap hijau (26+39+28+46+53), 6 selftest Xvfb, 2 uji E2E input sungguhan pynput (Studio 16/16 + CutMotions 21/21), uji visual 20/20.
 
 ## Perubahan v5.5
 
