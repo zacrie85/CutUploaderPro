@@ -1,22 +1,49 @@
-# CutUploader Pro — Macro Edition (v4.2)
+# CutUploader Pro — Macro Studio Edition (v5.0)
 
-Uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — tampilan editor makro ala **Jitbit Macro Recorder**, jadi **installer Windows** (tanpa Python), **jeda antar klik bisa diatur per langkah**, **cari gambar di semua langkah (klik di gambar / pindah saja)**, dan **salin-tempel langkah makro**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), pencarian gambar **klik di gambar / pindah saja**, salin-tempel langkah, dan kini **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri.
 
 ## Unduh (tanpa install Python)
 
-Dari [halaman Releases](../../releases) rilis **v4.2**:
+Dari halaman [Releases](../../releases) rilis **v5.0**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v4.2.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.0.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
 Dibangun **otomatis oleh GitHub Actions** (Windows runner: PyInstaller + Inno Setup) setiap kali tag `v*` di-push — lihat `.github/workflows/build-windows.yml`.
 
-## Alur otomatis (urutan posisi A–J)
+## Dua mode dalam satu aplikasi (baru v5.0)
+
+Saat dibuka ada **dua tab** di bagian atas:
+
+### 1. STUDIO MAKRO (alur bebas) — baru!
+
+Persis konsep Jitbit Macro Recorder: **semua jenis aksi jadi menu tersendiri di bagian atas**, dan **di bawahnya tabel kosong** untuk menyusun alur kerja klik-per-klik satu per satu:
+
+| Menu | Aksi |
+|---|---|
+| `+ KLIK` | Klik kiri/kanan/dobel di satu titik (jumlah klik + jeda antar klik) |
+| `+ JEDA` | Tunggu N detik |
+| `+ CARI GAMBAR` | Cari potongan gambar di layar → **langsung diklik** atau **hanya dipindah tanpa klik**; tak ketemu → klik titik acuan / lewati / stop |
+| `+ KETIK` | Ketik teks (opsional Ctrl+A dulu, Enter setelahnya) |
+| `+ TOMBOL` | Enter, Tab, panah, Shift+Panah Bawah, Ctrl+A/C/V, F2/F4/F5, atau huruf apa saja × jumlah tekan |
+| `+ SCROLL` | Gulung Naik/Turun sejumlah gulungan |
+| `+ CATATAN` | Komentar/penanda (tidak dieksekusi) |
+| `+ ULANGI MULAI/AKHIR` | Blok pengulangan (bisa bersarang) |
+
+- Panel **PROPERTI LANGKAH** menyesuaikan jenis langkah terpilih (posisi + AMBIL 5 dtk, teks, jeda, gambar referensi, dll).
+- **SALIN / TEMPEL / HAPUS / NAIK / TURUN / AKTIF-MATI** — klik kanan baris atau Ctrl+C/V/Del; tempel menyisipkan salinan lengkap setelah baris terpilih (cara gampang bikin titik klik berikutnya).
+- **Placeholder teks**: `{caption}` = caption dasar + nama video ke-i, `{video}` = nama video ke-i, `{no}` = nomor putaran — mengikuti folder/jumlah/riwayat di tab CutMotions.
+- **GESER PER PUTARAN ULANGI** — klik di dalam blok ULANGI otomatis turun N px per putaran (untuk caption per baris video).
+- **SIMPAN/BUKA MAKRO** (.json) + **auto-save** makro aktif; **TEMPLATE CUTMOTIONS** mengisi alur A-J versi bebas sekali klik, lalu bebas disunting.
+
+### 2. ALUR CUTMOTIONS (A–J)
+
+Alur otomatis uploader batch CutMotions seperti versi sebelumnya:
 
 ```
 F6 (setelah login manual → Versi lama → Rilis karya)
@@ -30,19 +57,7 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
                                J  Klik "SUBMIT"
 ```
 
-Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya).
-
-## Fitur utama v4.2
-
-- **UI ala Jitbit Macro Recorder** — toolbar Jalankan/Berhenti, tabel langkah A–J (kolom DETAIL, JEDA, ULANGI), panel *Properti Langkah* untuk baris terpilih, tema Windows klasik.
-- **Jeda bisa diatur**: `JEDA SEBELUM LANGKAH` per langkah (kolom JEDA), `JEDA ANTAR KLIK` per langkah (klik berulang G/H2/J, panah Shift di H), tombol *Terapkan ke semua langkah*, plus MUNDUR / JEDA DIALOG / TUNGGU UPLOAD global.
-- **Pencarian gambar diperbaiki**: multi-skala (tahan beda zoom 70–125%), pesan error yang jelas (skor kemiripan terbaik dilaporkan), dan alat **POTONG GAMBAR** (screenshot layar hidup → seret kotak → PNG 1:1) — menghilangkan penyebab error paling umum. OpenCV **ikut terbungkus** di EXE/Setup.
-- **Tanggal & jam otomatis** langkah D, format `2026-09-10 02:05:01` (detik opsional).
-- **Pilih video batch** langkah H: klik video pertama + tahan SHIFT + panah bawah otomatis.
-- **Caption per baris** langkah I: Edit → kotak caption → ketik → Konfirmasi, bergeser `JARAK ANTAR BARIS` px per baris, diulang sebanyak jumlah video.
-- **Profil makro**: simpan/muat posisi+jeda per browser/akun (`.json`).
-- **Riwayat + lewati yang sudah terupload**, lanjut-fase-caption otomatis setelah stop.
-- Hotkey global: **F6 mulai, F7/ESC berhenti**, failsafe pojok kiri-atas.
+Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
 
 ## Menjalankan dari source (opsional)
 
@@ -53,6 +68,15 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.0
+
+- **STUDIO MAKRO** — tab baru: editor alur kerja bebas ala Jitbit Macro Recorder; semua jenis aksi (klik, jeda, cari gambar, ketik, tombol, scroll, catatan, ulangi) jadi menu tersendiri di toolbar atas + menubar "Studio", tabel alur kerja kosong di bawah, panel properti dinamis per jenis langkah.
+- **Dua tab** dalam satu jendela: `STUDIO MAKRO (alur bebas)` dan `ALUR CUTMOTIONS (A-J)`; menubar & statusbar bersama; hotkey F6/F7 mengikuti tab aktif; kedua tab saling menahan (tidak bisa jalan bersamaan).
+- **Blok ULANGI** dengan penjaga anti loop-tak-berujung, pasangan MULAI/AKHIR divalidasi sebelum jalan, dan opsi "ikut jumlah video CutMotions".
+- **Placeholder `{caption} {video} {no}`** untuk langkah ketik di dalam ULANGI — caption per baris video bisa dirangkai di alur bebas.
+- **SIMPAN/BUKA MAKRO .json + auto-save** (`%LOCALAPPDATA%\CutUploaderPro\makro_terakhir.json`) dan tombol **TEMPLATE CUTMOTIONS** (alur A-J → langkah bebas siap edit).
+- Perbaikan bug: panel properti kini tidak lagi ter-render ulang di tengah pengeditan (sebelumnya setiap perubahan memicu event seleksi tabel); langkah tanpa kunci `aktif` pada file makro kini dianggap aktif.
 
 ## Perubahan v4.2
 
@@ -79,4 +103,4 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 
 ## Keamanan
 
-Login dilakukan **manual** oleh pengguna — aplikasi tidak pernah meminta, menampilkan, atau menyimpan email/password/cookie. Data lokal (profil, riwayat, gambar referensi) berupa file di folder data user `%LOCALAPPDATA%\CutUploaderPro` (bukan folder instalasi Program Files).
+Login dilakukan **manual** oleh pengguna — aplikasi tidak pernah meminta, menampilkan, atau menyimpan email/password/cookie. Data lokal (profil, makro, riwayat, gambar referensi) berupa file di folder data user `%LOCALAPPDATA%\CutUploaderPro` (bukan folder instalasi Program Files).

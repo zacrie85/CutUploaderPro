@@ -1,51 +1,51 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v4.2  -  MACRO EDITION
-  Aplikasi desktop uploader video batch otomatis
+  CUTUPLOADER PRO  v5.0  -  MACRO STUDIO EDITION
+  Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
-  Tampilan baru ala Jitbit Macro Recorder:
-    - Toolbar Jalankan / Berhenti / Tes Cari / Potong Gambar
-    - Tabel langkah makro A-J (klik baris -> edit di panel
-      Properti Langkah di bawahnya)
-    - JEDA bisa diatur per langkah (jeda sebelum langkah)
-      dan jeda antar klik di dalam satu langkah
-    - BARU v4.2: CARI GAMBAR bisa diaktifkan pada SEMUA langkah
-      (bukan hanya C) - hasil pencarian bisa DIKLIK langsung
-      atau hanya DIPINDAH tanpa klik
-    - BARU v4.2: SALIN / TEMPEL / HAPUS langkah - langkah A-J
-      bisa digandakan jadi titik klik tambahan yang diatur
-      sendiri (posisi, jeda, jumlah klik, cari gambar)
-    - Tema Windows klasik yang ringan dan familiar
+  DUA MODE DALAM SATU APLIKASI (pilih lewat tab di atas):
 
-  Alur situs yang diikuti aplikasi ini (urutan posisi A-J):
-    1. Login manual (email / kata sandi)
-    2. Pilih "Versi lama"  ->  "Rilis karya"
-    3. Tekan F6, lalu aplikasi mengerjakan:
+  1. STUDIO MAKRO  (BARU v5.0)
+     Editor alur kerja bebas ala Jitbit Macro Recorder:
+     - Bagian ATAS: semua jenis aksi jadi MENU tersendiri
+       (+ Klik Titik, + Jeda, + Cari Gambar, + Ketik Teks,
+        + Tekan Tombol, + Scroll, + Catatan, + Ulangi)
+     - Bagian BAWAH: tabel ALUR KERJA kosong - susun urutan
+       klik-per-klik sendiri satu per satu
+     - Setiap langkah punya panel PROPERTI sendiri (posisi,
+       jumlah klik, teks, jeda, gambar referensi, dll)
+     - Langkah bisa DISALIN / DITEMPEL / DIHAPUS / DIURUTKAN
+     - CARI GAMBAR: hasil pencarian bisa LANGSUNG DIKLIK atau
+       hanya DIPINDAH kursor tanpa klik
+     - Blok ULANGI-MULAI ... ULANGI-AKHIR untuk mengulang
+       sepotong alur (mis. caption per baris video)
+     - Placeholder teks: {caption} {video} {no}
+     - Makro disimpan/muat ke file JSON + auto-save
+
+  2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
+     Alur otomatis uploader batch CutMotions:
        A  Klik tombol "Jadwal rilis / publikasi"
        B  Klik dropdown "NEGARA"
        C  Pilih negara - klik biasa ATAU pencarian gambar
-          referensi dalam radius (mis. tulisan "Indonesia")
        D  Klik kolom tanggal, lalu ketik tanggal-jam otomatis
-          (format: 2026-09-10 02:05:01)
        E  Klik "OKE"
        F  Klik "+ Tambah video" (dialog pilih file terbuka)
        G  Klik bebas berulang (0-500x) dan/atau scroll (0-50x)
        H  Klik video pertama + tahan SHIFT + panah bawah
-          (jumlah video - 1)x  -> 5 sampai 20 video terpilih
        H2 Klik bebas (mis. tombol "Buka" pada dialog file)
-       I  Caption per video: klik "Edit" -> klik kotak
-          caption -> ketik caption -> klik "Konfirmasi";
-          posisi klik otomatis bergeser turun per baris
-          (5 video = diulang 5x, 20 video = 20x)
+       I  Caption per video: klik "Edit" -> ketik caption ->
+          klik "Konfirmasi" (bergeser turun per baris)
        J  Klik "SUBMIT"
+     Klik kanan langkah A-J = SALIN/TEMPEL jadi titik klik
+     tambahan; cari gambar bisa diaktifkan di semua langkah.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
 
   Hotkey:
-    F6         : Mulai
+    F6         : Mulai (tab yang sedang aktif)
     F7 / ESC   : Berhenti
 
   Distribusi:
@@ -54,7 +54,7 @@
     - Skrip Python      : butuh Python 3.9+ (lihat PANDUAN.txt)
 
   Dibuat dengan Python + tkinter + pynput (+ OpenCV/Pillow
-  untuk pencarian gambar negara).
+  untuk pencarian gambar).
   Fokus utama: Windows desktop.
 ============================================================
 """
@@ -92,6 +92,43 @@ try:
 except Exception as _e:
     IMPORT_ERROR = str(_e)
 
+# Stub minimal: supaya kode yang memakai Button/Key tetap aman
+# (dan bisa diuji otomatis) meski pynput tidak terpasang.
+if not PYNPUT_OK:
+    class _NamaPalsu:
+        def __init__(self, nama):
+            self.nama = nama
+
+        def __str__(self):
+            return self.nama
+
+    class Button:  # pengganti pynput.mouse.Button
+        left = _NamaPalsu("Button.left")
+        right = _NamaPalsu("Button.right")
+        middle = _NamaPalsu("Button.middle")
+
+    class Key:  # pengganti pynput.keyboard.Key
+        ctrl = _NamaPalsu("Key.ctrl")
+        shift = _NamaPalsu("Key.shift")
+        alt = _NamaPalsu("Key.alt")
+        enter = _NamaPalsu("Key.enter")
+        esc = _NamaPalsu("Key.esc")
+        space = _NamaPalsu("Key.space")
+        tab = _NamaPalsu("Key.tab")
+        backspace = _NamaPalsu("Key.backspace")
+        delete = _NamaPalsu("Key.delete")
+        home = _NamaPalsu("Key.home")
+        end = _NamaPalsu("Key.end")
+        page_down = _NamaPalsu("Key.page_down")
+        page_up = _NamaPalsu("Key.page_up")
+        down = _NamaPalsu("Key.down")
+        up = _NamaPalsu("Key.up")
+        left = _NamaPalsu("Key.left")
+        right = _NamaPalsu("Key.right")
+        f2 = _NamaPalsu("Key.f2")
+        f4 = _NamaPalsu("Key.f4")
+        f5 = _NamaPalsu("Key.f5")
+
 # ------------------------------------------------------------
 # Pencarian gambar di layar (dipakai untuk memilih NEGARA
 # lewat gambar referensi - template matching OpenCV).
@@ -113,7 +150,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "4.2"
+APP_VERSION = "5.0"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -274,6 +311,287 @@ PARAM_DEF = {
 PARAM_BAWAAN = {"teks": "", "klik": "1", "scroll": "0"}
 
 
+# ============================================================
+# v5.0 STUDIO MAKRO - langkah generik bebas (ala Jitbit)
+# Semua jenis aksi jadi "menu" tersendiri; alur kerja disusun
+# sendiri satu per satu pada tabel kosong di tab STUDIO MAKRO.
+# ============================================================
+JENIS_STUDIO = ("KLIK", "JEDA", "GAMBAR", "KETIK", "TOMBOL",
+                "SCROLL", "CATATAN", "LOOP_MULAI", "LOOP_AKHIR")
+
+LABEL_JENIS = {
+    "KLIK": "KLIK TITIK",
+    "JEDA": "JEDA / TUNGGU",
+    "GAMBAR": "CARI GAMBAR",
+    "KETIK": "KETIK TEKS",
+    "TOMBOL": "TEKAN TOMBOL",
+    "SCROLL": "SCROLL",
+    "CATATAN": "CATATAN",
+    "LOOP_MULAI": "ULANGI - MULAI",
+    "LOOP_AKHIR": "ULANGI - AKHIR",
+}
+
+MOUSE_OPSI = ("Klik kiri", "Klik kanan", "Klik dobel")
+
+# label pendek khusus tombol toolbar (menyesuaikan lebar jendela)
+LABEL_TB = {
+    "KLIK": "+ KLIK",
+    "JEDA": "+ JEDA",
+    "GAMBAR": "+ CARI GAMBAR",
+    "KETIK": "+ KETIK",
+    "TOMBOL": "+ TOMBOL",
+    "SCROLL": "+ SCROLL",
+    "CATATAN": "+ CATATAN",
+}
+
+TOMBOL_KB_OPSI = (
+    "Enter", "Tab", "Esc", "Spasi",
+    "Panah Bawah", "Panah Atas", "Panah Kiri", "Panah Kanan",
+    "Backspace", "Delete", "Home", "End", "Page Down", "Page Up",
+    "Shift+Tab", "Shift+Panah Bawah", "Shift+Panah Atas",
+    "Ctrl+A", "Ctrl+C", "Ctrl+V", "Ctrl+S", "Ctrl+Z",
+    "F2", "F4", "F5",
+)
+
+# nama tombol -> (modifikasi, kunci pynput); kunci tanpa "Key."
+TOMBOL_MAP = {
+    "Enter": ("", "enter"), "Tab": ("", "tab"), "Esc": ("", "esc"),
+    "Spasi": ("", "space"),
+    "Panah Bawah": ("", "down"), "Panah Atas": ("", "up"),
+    "Panah Kiri": ("", "left"), "Panah Kanan": ("", "right"),
+    "Backspace": ("", "backspace"), "Delete": ("", "delete"),
+    "Home": ("", "home"), "End": ("", "end"),
+    "Page Down": ("", "page_down"), "Page Up": ("", "page_up"),
+    "Shift+Tab": ("shift", "tab"),
+    "Shift+Panah Bawah": ("shift", "down"),
+    "Shift+Panah Atas": ("shift", "up"),
+    "Ctrl+A": ("ctrl", "a"), "Ctrl+C": ("ctrl", "c"),
+    "Ctrl+V": ("ctrl", "v"), "Ctrl+S": ("ctrl", "s"),
+    "Ctrl+Z": ("ctrl", "z"),
+    "F2": ("", "f2"), "F4": ("", "f4"), "F5": ("", "f5"),
+}
+
+
+def studio_langkah_baru(jenis, uid, **isi):
+    """Satu langkah generik Studio Makro dengan nilai bawaan aman."""
+    l = {
+        "uid": "s{}".format(uid),
+        "jenis": jenis if jenis in JENIS_STUDIO else "KLIK",
+        "nama": "",
+        "aktif": True,
+        "posisi": None,        # [x, y] - KLIK / titik acuan GAMBAR
+        "jeda": 0.5,           # jeda sebelum langkah (detik)
+        "jeda_klik": 0.30,     # jeda antar klik / tekan (detik)
+        # KLIK
+        "klik": 1,             # jumlah klik
+        "tombol_mouse": "Klik kiri",
+        "geser": 0,            # geser Y per putaran loop (piksel)
+        # JEDA
+        "detik": 1.0,
+        # KETIK
+        "teks": "",
+        "ctrl_a": False,
+        "enter": False,
+        # TOMBOL
+        "tombol_kb": "Enter",
+        "jumlah_kb": 1,
+        # SCROLL
+        "arah": "Turun",
+        "jumlah_scroll": 3,
+        # CATATAN
+        "catatan": "",
+        # LOOP_MULAI
+        "jumlah_loop": 2,
+        "ikut_video": False,   # ikut jumlah video tab CutMotions
+        # GAMBAR
+        "gambar": {"path": "", "aksi": "Klik di gambar",
+                   "gagal": "Klik titik X,Y", "radius": "300",
+                   "mirip": "0.80"},
+    }
+    for k, v in isi.items():
+        if k in l and v is not None:
+            l[k] = v
+    return l
+
+
+def studio_bersihkan(daftar):
+    """Sanitasi daftar langkah Studio dari file JSON (buang rusak)."""
+    hasil = []
+    if not isinstance(daftar, list):
+        return hasil
+    for e in daftar:
+        if not isinstance(e, dict):
+            continue
+        jenis = str(e.get("jenis") or "")
+        if jenis not in JENIS_STUDIO:
+            continue
+        l = studio_langkah_baru(jenis, 0)
+        for k in l:
+            if k == "uid":
+                l["uid"] = str(e.get("uid") or "s0")
+            elif k == "posisi":
+                p = e.get("posisi")
+                try:
+                    l["posisi"] = [int(p[0]), int(p[1])] if p else None
+                except Exception:
+                    l["posisi"] = None
+            elif k == "gambar":
+                g = e.get("gambar")
+                if isinstance(g, dict):
+                    l["gambar"]["path"] = str(g.get("path") or "")
+                    aksi = str(g.get("aksi") or "")
+                    l["gambar"]["aksi"] = (aksi
+                                           if aksi in GAMBAR_AKSI_OPSI
+                                           else "Klik di gambar")
+                    gagal = str(g.get("gagal") or "")
+                    l["gambar"]["gagal"] = (gagal
+                                            if gagal in GAMBAR_GAGAL_OPSI
+                                            else "Klik titik X,Y")
+                    l["gambar"]["radius"] = str(g.get("radius") or "300")
+                    l["gambar"]["mirip"] = str(g.get("mirip") or "0.80")
+            elif k == "aktif":
+                # langkah tanpa kunci "aktif" dianggap AKTIF
+                l[k] = bool(e.get(k, True))
+            elif k in ("ctrl_a", "enter", "ikut_video"):
+                l[k] = bool(e.get(k))
+            elif k in ("jeda", "jeda_klik", "detik"):
+                lo = 0.05 if k == "jeda_klik" else 0.0
+                l[k] = _angka(e.get(k), l[k], lo, 86400)
+            elif k in ("klik", "jumlah_kb", "jumlah_scroll", "geser",
+                       "jumlah_loop"):
+                l[k] = int(_angka(e.get(k), l[k], 0, 100000))
+            elif k == "tombol_mouse":
+                v = str(e.get(k) or "")
+                l[k] = v if v in MOUSE_OPSI else "Klik kiri"
+            elif k == "arah":
+                v = str(e.get(k) or "")
+                l[k] = v if v in ("Turun", "Naik") else "Turun"
+            elif k in ("teks", "catatan", "tombol_kb", "nama"):
+                l[k] = str(e.get(k) if e.get(k) is not None else l[k])
+        hasil.append(l)
+    return hasil
+
+
+def isi_placeholder(teks, idx, caption, videos):
+    """Ganti {caption} {video} {no} pada teks langkah KETIK.
+
+    idx    = nomor putaran loop dalam (0-based);
+    videos = daftar nama file video (baris ke-idx dipakai).
+    """
+    teks = str(teks or "")
+    if "{" not in teks:
+        return teks
+    nama = "video"
+    if videos:
+        nama = videos[idx] if 0 <= idx < len(videos) else videos[0]
+        nama = os.path.splitext(os.path.basename(nama))[0]
+    teks = teks.replace("{caption}", compose_caption(caption, nama))
+    teks = teks.replace("{video}", nama)
+    teks = teks.replace("{no}", str(idx + 1))
+    return teks
+
+
+def cari_akhir_loop(langkah, i):
+    """Dari LOOP_MULAI di indeks i, cari indeks LOOP_AKHIR pasangannya.
+
+    Tahan blok bersarang (loop dalam loop). Bila tidak ada pasangan,
+    kembalikan -1.
+    """
+    dalam = 0
+    for j in range(i + 1, len(langkah)):
+        t = langkah[j].get("jenis")
+        if t == "LOOP_MULAI":
+            dalam += 1
+        elif t == "LOOP_AKHIR":
+            if dalam == 0:
+                return j
+            dalam -= 1
+    return -1
+
+
+def template_cutmotions_steps(cfg, mulai_uid=0):
+    """Bangun langkah Studio versi bebas dari setelan tab CutMotions.
+
+    cfg = dict berisi posisi A-J + nilai vars tab CutMotions
+    (lihat StudioMakroTab._template_cutmotions).
+    Kembalikan list langkah generik siap edit/jalankan.
+    """
+    steps = []
+    ctr = [int(mulai_uid)]
+
+    def add(jenis, **kw):
+        ctr[0] += 1
+        steps.append(studio_langkah_baru(jenis, ctr[0], **kw))
+
+    pos = cfg.get("posisi") or {}
+
+    def P(k):
+        p = pos.get(k)
+        return list(p) if p else None
+
+    if not cfg.get("skip_jadwal"):
+        add("KLIK", nama="A - Klik 'Jadwal rilis'", posisi=P("pos_jadwal"))
+        add("KLIK", nama="B - Klik dropdown 'NEGARA'",
+            posisi=P("pos_negara"))
+        g = cfg.get("gambar_c")
+        if g and g.get("aktif") and g.get("path"):
+            add("GAMBAR", nama="C - Pilih negara (cari gambar)",
+                posisi=P("pos_pilih_neg"),
+                gambar={"path": str(g.get("path") or ""),
+                        "aksi": g.get("aksi") or "Klik di gambar",
+                        "gagal": g.get("gagal") or "Klik titik X,Y",
+                        "radius": str(g.get("radius") or "300"),
+                        "mirip": str(g.get("mirip") or "0.80")})
+        else:
+            add("KLIK", nama="C - Pilih negara", posisi=P("pos_pilih_neg"))
+        add("KLIK", nama="D - Klik kolom tanggal", posisi=P("pos_tanggal"))
+        add("KETIK", nama="D - Ketik tanggal-jam rilis",
+            teks=cfg.get("tanggal", ""), ctrl_a=True)
+        add("KLIK", nama="E - Klik 'OKE'", posisi=P("pos_oke"))
+    add("KLIK", nama="F - Klik '+ Tambah video'", posisi=P("pos_tambah"))
+    nk = int(_angka(cfg.get("klik_bebas1"), 2, 0, 500))
+    ns = int(_angka(cfg.get("scroll_bebas1"), 0, 0, 50))
+    if nk:
+        add("KLIK", nama="G - Klik dialog pilih file",
+            posisi=P("pos_bebas1"), klik=nk)
+    if ns:
+        add("SCROLL", nama="G - Scroll dialog pilih file",
+            arah=cfg.get("arah_scroll") or "Turun", jumlah_scroll=ns)
+    add("KLIK", nama="H - Klik video pertama", posisi=P("pos_video"))
+    jumlah = max(1, int(_angka(cfg.get("jumlah"), 5, 1, MAX_BATCH)))
+    if jumlah > 1:
+        add("TOMBOL", nama="H - Shift+panah bawah (pilih batch)",
+            tombol_kb="Shift+Panah Bawah", jumlah_kb=jumlah - 1,
+            jeda_klik=0.15)
+    nk2 = int(_angka(cfg.get("klik_bebas2"), 1, 0, 20))
+    if nk2:
+        add("KLIK", nama="H2 - Klik tombol 'Buka'", posisi=P("pos_bebas2"),
+            klik=nk2)
+    tunggu = _angka(cfg.get("tunggu"), 60, 0, 86400)
+    add("CATATAN", nama="Menunggu {} video selesai terupload...".format(
+        jumlah))
+    add("JEDA", nama="Tunggu upload selesai", detik=tunggu * jumlah)
+    jarak = int(_angka(cfg.get("jarak_baris"), 85, 1, 2000))
+    add("LOOP_MULAI", nama="Ulangi caption per baris video",
+        jumlah_loop=jumlah, ikut_video=True)
+    add("KLIK", nama="I1 - Klik tombol 'Edit'", posisi=P("pos_edit"),
+        geser=jarak)
+    add("KLIK", nama="I2 - Klik kotak caption", posisi=P("pos_judul"),
+        geser=jarak)
+    add("KETIK", nama="I2 - Ketik caption video ini", teks="{caption}",
+        ctrl_a=True)
+    add("KLIK", nama="I3 - Klik 'Konfirmasi'",
+        posisi=P("pos_konfirmasi") or P("pos_edit"), geser=jarak)
+    add("LOOP_AKHIR", nama="Selesai ulangi caption")
+    add("SCROLL", nama="Scroll ke bawah (menuju tombol Submit)",
+        arah="Turun", jumlah_scroll=10)
+    if cfg.get("auto_kirim", True):
+        nsub = int(_angka(cfg.get("klik_submit"), 1, 1, 10))
+        add("KLIK", nama="J - Klik 'SUBMIT'", posisi=P("pos_submit"),
+            klik=nsub)
+    return steps
+
+
 def jeda_default_per():
     """Jeda sebelum langkah (detik) untuk tiap slot - bisa diubah user."""
     return {k: 1.0 for k in POS_KUNCI}
@@ -409,21 +727,33 @@ def cari_di_layar(gambar_path, cx, cy, radius, kemiripan=0.8):
         return None, "Error pencarian gambar: {}".format(e)
 
 
-class CutUploaderApp:
-    # ================== INISIALISASI ==================
-    def __init__(self, root):
-        self.root = root
-        self.root.title("{} v{} - Macro Edition".format(APP_NAME,
-                                                        APP_VERSION))
-        self.root.configure(bg=C_BG)
-        self.root.geometry("1000x880")
-        self.root.minsize(920, 760)
-        if sys.platform == "win32":
-            try:
-                self.root.iconbitmap(os.path.join(app_dir(), "icon.ico"))
-            except Exception:
-                pass
+class CutMotionsTab:
+    """Tab ALUR CUTMOTIONS (A-J) - otomatis uploader batch CutMotions.
 
+    Bila `shell` diberikan, tab ini ditanam di Notebook aplikasi v5.0
+    (menubar/statusbar/hotkey milik ShellApp). Bila `shell` kosong,
+    tab berjalan sendiri sebagai jendela utama (mode lama).
+    """
+
+    # ================== INISIALISASI ==================
+    def __init__(self, root, shell=None):
+        self.root = root
+        self.wadah = root
+        self.shell = shell if shell is not None else self
+        if shell is None:
+            # mode mandiri (jendela utama langsung)
+            self.root.title("{} v{} - Alur CutMotions (A-J)".format(
+                APP_NAME, APP_VERSION))
+            self.root.geometry("1000x880")
+            self.root.minsize(920, 760)
+            if sys.platform == "win32":
+                try:
+                    self.root.iconbitmap(os.path.join(app_dir(),
+                                                      "icon.ico"))
+                except Exception:
+                    pass
+
+        self.root.configure(bg=C_BG)
         self.stop_event = threading.Event()
         self.running = False
 
@@ -470,11 +800,16 @@ class CutUploaderApp:
         self.pv = {}   # variabel panel properti (dibuat saat render)
 
         if PYNPUT_OK:
-            self.kb = KeyboardController()
-            self.mouse = MouseController()
-            self._listener = kb_mod.Listener(on_press=self._on_key)
-            self._listener.daemon = True
-            self._listener.start()
+            if shell is None:
+                self.kb = KeyboardController()
+                self.mouse = MouseController()
+                self._listener = kb_mod.Listener(on_press=self._on_key)
+                self._listener.daemon = True
+                self._listener.start()
+            else:
+                # satu set controller bersama dari ShellApp
+                self.kb = self.shell.kb
+                self.mouse = self.shell.mouse
         else:
             self.kb = None
             self.mouse = None
@@ -487,57 +822,65 @@ class CutUploaderApp:
         self._render_properti()
         self._update_count()
         self._update_preview()
-        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        if shell is None:
+            self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
     # ================== PEMBANGUNAN TAMPILAN ==================
     def _build_ui(self):
-        # ----- Baris menu (ala aplikasi Windows) -----
-        menubar = tk.Menu(self.root)
-        m_berkas = tk.Menu(menubar, tearoff=0)
-        m_berkas.add_command(label="Simpan Profil Makro...",
-                             command=self._simpan_profil)
-        m_berkas.add_command(label="Buka Profil Makro...",
-                             command=self._buka_profil)
-        m_berkas.add_separator()
-        m_berkas.add_command(label="Keluar", command=self._on_close)
-        menubar.add_cascade(label="Berkas", menu=m_berkas)
+        # ----- Baris menu (hanya saat mode mandiri; v5.0 menubar
+        #      milik ShellApp supaya berlaku untuk kedua tab) -----
+        if self.shell is not self:
+            self.lbl_status = self.shell.lbl_status
+        else:
+            menubar = tk.Menu(self.root)
+            m_berkas = tk.Menu(menubar, tearoff=0)
+            m_berkas.add_command(label="Simpan Profil Makro...",
+                                 command=self._simpan_profil)
+            m_berkas.add_command(label="Buka Profil Makro...",
+                                 command=self._buka_profil)
+            m_berkas.add_separator()
+            m_berkas.add_command(label="Keluar", command=self._on_close)
+            menubar.add_cascade(label="Berkas", menu=m_berkas)
 
-        m_alat = tk.Menu(menubar, tearoff=0)
-        m_alat.add_command(label="Tes Cari Gambar (langkah C)",
-                           command=self._tes_cari)
-        m_alat.add_command(label="Potong Gambar Referensi (screenshot)",
-                           command=self._potong_gambar)
-        m_alat.add_separator()
-        m_alat.add_command(label="Lihat Riwayat Upload...",
-                           command=self._lihat_riwayat)
-        m_alat.add_command(label="Bersihkan Riwayat Folder Ini",
-                           command=self._bersihkan_riwayat)
-        m_alat.add_separator()
-        m_alat.add_command(label="Reset Semua Posisi",
-                           command=self._reset_posisi)
-        m_alat.add_command(label="Cek Kelengkapan Library",
-                           command=self._cek_lengkap)
-        menubar.add_cascade(label="Alat", menu=m_alat)
+            m_alat = tk.Menu(menubar, tearoff=0)
+            m_alat.add_command(label="Tes Cari Gambar (langkah C)",
+                               command=self._tes_cari)
+            m_alat.add_command(label="Potong Gambar Referensi (screenshot)",
+                               command=self._potong_gambar)
+            m_alat.add_separator()
+            m_alat.add_command(label="Lihat Riwayat Upload...",
+                               command=self._lihat_riwayat)
+            m_alat.add_command(label="Bersihkan Riwayat Folder Ini",
+                               command=self._bersihkan_riwayat)
+            m_alat.add_separator()
+            m_alat.add_command(label="Reset Semua Posisi",
+                               command=self._reset_posisi)
+            m_alat.add_command(label="Cek Kelengkapan Library",
+                               command=self._cek_lengkap)
+            menubar.add_cascade(label="Alat", menu=m_alat)
 
-        m_bantu = tk.Menu(menubar, tearoff=0)
-        m_bantu.add_command(label="Buka Panduan",
-                            command=self._buka_panduan)
-        m_bantu.add_command(label="Tentang", command=self._tentang)
-        menubar.add_cascade(label="Bantuan", menu=m_bantu)
-        self.root.config(menu=menubar)
+            m_bantu = tk.Menu(menubar, tearoff=0)
+            m_bantu.add_command(label="Buka Panduan",
+                                command=self._buka_panduan)
+            m_bantu.add_command(label="Tentang", command=self._tentang)
+            menubar.add_cascade(label="Bantuan", menu=m_bantu)
+            self.root.config(menu=menubar)
 
-        # ----- Statusbar paling bawah (dipack dulu supaya selalu tampak)
-        status = tk.Frame(self.root, bg=C_BG, bd=1, relief="sunken")
-        status.pack(side="bottom", fill="x")
-        self.lbl_status = tk.Label(status, anchor="w", bg=C_BG, fg=C_GREEN,
-                                   font=F_S, text="Siap - login manual dulu "
-                                   "di situs (Versi lama > Rilis karya), "
-                                   "lalu tekan F6")
-        self.lbl_status.pack(side="left", fill="x", expand=True,
-                             padx=6, pady=3)
-        tk.Label(status, anchor="e", bg=C_BG, fg=C_MUTED, font=F_XS,
-                 text="v{}  |  F6 = Mulai   F7/ESC = Berhenti".format(
-                     APP_VERSION)).pack(side="right", padx=6)
+            # ----- Statusbar paling bawah (dipack dulu supaya selalu
+            #       tampak) - hanya mode mandiri; v5.0 pakai statusbar
+            #       bersama dari ShellApp -----
+            status = tk.Frame(self.root, bg=C_BG, bd=1, relief="sunken")
+            status.pack(side="bottom", fill="x")
+            self.lbl_status = tk.Label(status, anchor="w", bg=C_BG,
+                                       fg=C_GREEN, font=F_S,
+                                       text="Siap - login manual dulu "
+                                       "di situs (Versi lama > Rilis "
+                                       "karya), lalu tekan F6")
+            self.lbl_status.pack(side="left", fill="x", expand=True,
+                                 padx=6, pady=3)
+            tk.Label(status, anchor="e", bg=C_BG, fg=C_MUTED, font=F_XS,
+                     text="v{}  |  F6 = Mulai   F7/ESC = Berhenti".format(
+                         APP_VERSION)).pack(side="right", padx=6)
 
         # ----- Strip WAKTU (di atas statusbar) -----
         w = tk.LabelFrame(self.root, text=" WAKTU & UNGGAH (detik) ",
@@ -919,7 +1262,11 @@ class CutUploaderApp:
                 kode, label, detail, jeda_t, ulang))
         if self.sel and self.tree.exists(self.sel):
             try:
-                self.tree.selection_set(self.sel)
+                # hindari selection_set bila seleksi sudah tepat -
+                # event <<TreeviewSelect>> akan memicu render ulang
+                # panel properti DI TENGAH user mengetik (bug UX)
+                if tuple(self.tree.selection()) != (self.sel,):
+                    self.tree.selection_set(self.sel)
                 self.tree.see(self.sel)
             except Exception:
                 pass
@@ -1727,14 +2074,16 @@ class CutUploaderApp:
     def _tentang(self):
         messagebox.showinfo(
             APP_NAME,
-            "{} v{} - Macro Edition\n\n"
-            "Uploader video batch otomatis untuk CutMotions (Kwai).\n"
-            "Tampilan editor makro ala Jitbit Macro Recorder.\n\n"
-            "Alur: Jadwal (A-E) > Tambah video + Shift+turun (F-H2) >\n"
+            "{} v{} - Macro Studio Edition\n\n"
+            "DUA MODE dalam satu aplikasi:\n\n"
+            "1. STUDIO MAKRO (baru v5.0) - editor alur kerja bebas\n"
+            "ala Jitbit Macro Recorder: semua jenis aksi jadi menu\n"
+            "tersendiri di atas (+ Klik, + Jeda, + Cari Gambar,\n"
+            "+ Ketik Teks, + Tekan Tombol, + Scroll, + Ulangi) dan\n"
+            "tabel kosong di bawahnya untuk menyusun alur sendiri.\n\n"
+            "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions:\n"
+            "Jadwal (A-E) > Tambah video + Shift+turun (F-H2) >\n"
             "Caption per baris (I) > Submit (J).\n\n"
-            "v4.2: CARI GAMBAR bisa diaktifkan di semua langkah\n"
-            "(klik di gambar ATAU pindah saja), plus SALIN/TEMPEL\n"
-            "langkah A-J jadi titik klik tambahan sendiri.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
             .format(APP_NAME, APP_VERSION, MAX_BATCH))
@@ -1856,6 +2205,14 @@ class CutUploaderApp:
                 APP_NAME, "Library pynput belum terpasang.\n\n"
                           "Buka CMD lalu jalankan:\n  pip install pynput")
             return
+        if self.shell is not self:
+            lain = self.shell.tab_lain(self)
+            if lain is not None and lain.running:
+                messagebox.showwarning(
+                    APP_NAME,
+                    "STUDIO MAKRO sedang menjalankan alurnya.\n\n"
+                    "Tunggu sampai selesai atau tekan F7 dulu.")
+                return
         snap = self._snapshot()
         try:
             jumlah = int(snap["jumlah"])
@@ -2911,10 +3268,1581 @@ class CutUploaderApp:
             self._save_riwayat()
             if self.running:
                 self.stop_event.set()
-            if PYNPUT_OK and hasattr(self, "_listener"):
-                self._listener.stop()
+            if self.shell is self:
+                if PYNPUT_OK and hasattr(self, "_listener"):
+                    self._listener.stop()
+                self.root.destroy()
+        except Exception:
+            pass
+
+    def antrian_video_studio(self):
+        """Daftar video (urut A-Z, hormati skip & jumlah) untuk Studio.
+
+        Dipakai placeholder {caption}/{video} pada blok ULANGI di
+        STUDIO MAKRO - urutannya sama dengan baris video di situs.
+        """
+        semua = daftar_video(self.vars["folder"].get().strip())
+        if self.vars["skip_uploaded"].get():
+            sudah = self._riwayat_folder()
+            semua = [f for f in semua if f not in sudah]
+        try:
+            jumlah = max(1, int(self.vars["jumlah"].get()))
+        except ValueError:
+            jumlah = len(semua) or 1
+        return semua[:jumlah]
+
+
+# ============================================================
+# v5.0 - TAB STUDIO MAKRO (editor alur kerja bebas ala Jitbit)
+# ============================================================
+C_UNGU = "#6B4FA0"     # langkah TEKAN TOMBOL / ULANGI
+C_TEAL = "#0E7C86"     # langkah SCROLL
+
+
+class StudioMakroTab:
+    """Tab STUDIO MAKRO - susun alur kerja klik sendiri satu per satu.
+
+    Bagian atas  : toolbar semua jenis langkah (menu aksi).
+    Bagian bawah : tabel ALUR KERJA (awalnya kosong) + panel
+                   PROPERTI LANGKAH sesuai jenis langkah terpilih.
+    """
+
+    def __init__(self, wadah, shell):
+        self.wadah = wadah
+        self.root = wadah          # untuk .after() & pemilik dialog
+        self.shell = shell
+        self.stop_event = threading.Event()
+        self.running = False
+        self.langkah = []          # daftar langkah generik (dict)
+        self.papan_klip = None
+        self._uid = 0
+        self.sel = None
+        self.makro_path = os.path.join(data_dir(), "makro_terakhir.json")
+        self.pv = {}
+        self._loading_prop = False
+        self.lbl_ambil = None
+
+        self.vars = {"mundur": tk.StringVar(value="5")}
+
+        if PYNPUT_OK:
+            self.kb = shell.kb
+            self.mouse = shell.mouse
+        else:
+            self.kb = None
+            self.mouse = None
+
+        self._build_ui()
+        self._muat_otomatis()
+
+    # ================== PEMBANGUNAN TAMPILAN ==================
+    def _build_ui(self):
+        # ----- Toolbar 1: jalankan + MENU TAMBAH LANGKAH -----
+        tb1 = tk.Frame(self.wadah, bg=C_BG, bd=1, relief="raised")
+        tb1.pack(side="top", fill="x")
+        self.btn_start = self._tb_btn(tb1, "JALANKAN  (F6)", self._start,
+                                      bg=C_BLUE, fg="white",
+                                      aktif=C_BLUE_D)
+        self.btn_stop = self._tb_btn(tb1, "BERHENTI  (F7)", self._stop,
+                                     bg=C_RED, fg="white",
+                                     aktif=C_RED_D)
+        self.btn_stop.config(state="disabled",
+                             disabledforeground="#F2C4BE")
+        self._tb_pemisah(tb1)
+        for jenis in ("KLIK", "JEDA", "GAMBAR", "KETIK", "TOMBOL",
+                      "SCROLL", "CATATAN"):
+            self._tb_btn(tb1, LABEL_TB[jenis],
+                         lambda j=jenis: self._tambah(j))
+        self._tb_pemisah(tb1)
+        self._tb_btn(tb1, "+ ULANGI MULAI",
+                     lambda: self._tambah("LOOP_MULAI"))
+        self._tb_btn(tb1, "+ ULANGI AKHIR",
+                     lambda: self._tambah("LOOP_AKHIR"))
+
+        # ----- Toolbar 2: sunting + file + alat gambar -----
+        tb2 = tk.Frame(self.wadah, bg=C_BG, bd=1, relief="raised")
+        tb2.pack(side="top", fill="x")
+        self._tb_btn(tb2, "SALIN", self._salin)
+        self._tb_btn(tb2, "TEMPEL", self._tempel)
+        self._tb_btn(tb2, "HAPUS", self._hapus)
+        self._tb_btn(tb2, "NAIK", self._naik)
+        self._tb_btn(tb2, "TURUN", self._turun)
+        self._tb_btn(tb2, "AKTIF / MATI", self._toggle_aktif)
+        self._tb_pemisah(tb2)
+        self._tb_btn(tb2, "SIMPAN MAKRO", self._simpan_makro)
+        self._tb_btn(tb2, "BUKA MAKRO", self._buka_makro)
+        self._tb_btn(tb2, "MAKRO BARU", self._makro_baru)
+        self._tb_pemisah(tb2)
+        self._tb_btn(tb2, "TEMPLATE CUTMOTIONS", self._template_cutmotions)
+        self._tb_pemisah(tb2)
+        self._tb_btn(tb2, "POTONG GAMBAR", self._potong_dari_menu)
+        self._tb_btn(tb2, "TES CARI", self._tes_cari)
+
+        # ----- Strip mundur -----
+        strip = tk.Frame(self.wadah, bg=C_BG)
+        strip.pack(side="top", fill="x", padx=8, pady=(4, 0))
+        tk.Label(strip, text="MUNDUR SEBELUM MULAI (detik):", bg=C_BG,
+                 fg=C_MUTED, font=F_XS).pack(side="left")
+        tk.Entry(strip, textvariable=self.vars["mundur"], width=4,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 justify="center",
+                 highlightthickness=0).pack(side="left", padx=(4, 10),
+                                            ipady=2)
+        tk.Label(strip, text="Jeda setiap langkah diatur lewat kolom JEDA "
+                             "/ panel PROPERTI.  Klik kanan baris = "
+                             "salin/tempel/hapus/urutkan.",
+                 bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
+
+        # ----- Area tengah: tabel alur kerja + panel properti -----
+        paned = tk.PanedWindow(self.wadah, orient="vertical",
+                               sashwidth=5, bg=C_LINE, bd=0)
+        paned.pack(side="top", fill="both", expand=True, padx=8, pady=4)
+
+        f_tb = tk.LabelFrame(paned, text=" ALUR KERJA MAKRO  (mulai "
+                             "dari kosong - pilih tombol + di atas untuk "
+                             "menambah langkah satu per satu) ",
+                             bg=C_BG, fg=C_BLUE, font=F_H, bd=1,
+                             relief="groove")
+        paned.add(f_tb, minsize=260, height=340, stretch="always")
+        kolom = ("no", "nama", "detail", "jeda", "ulang")
+        self.tree = ttk.Treeview(f_tb, columns=kolom, show="headings",
+                                 style="Makro.Treeview",
+                                 selectmode="browse")
+        for k, t, w_, a in [
+            ("no", "#", 44, "center"),
+            ("nama", "LANGKAH", 215, "w"),
+            ("detail", "PARAMETER", 330, "w"),
+            ("jeda", "JEDA", 62, "center"),
+            ("ulang", "ULANGI", 170, "w"),
+        ]:
+            self.tree.heading(k, text=t)
+            self.tree.column(k, width=w_, anchor=a,
+                             stretch=(k == "detail"))
+        vsb = ttk.Scrollbar(f_tb, orient="vertical",
+                            command=self.tree.yview)
+        self.tree.configure(yscrollcommand=vsb.set)
+        self.tree.pack(side="left", fill="both", expand=True,
+                       padx=(6, 0), pady=(2, 6))
+        vsb.pack(side="left", fill="y", pady=(2, 6), padx=(0, 6))
+        # warna per jenis langkah
+        self.tree.tag_configure("genap", background=C_STRIPE)
+        self.tree.tag_configure("ganjil", background=C_PANEL)
+        self.tree.tag_configure("tklik", foreground=C_TEXT)
+        self.tree.tag_configure("tjeda", foreground=C_ORANGE)
+        self.tree.tag_configure("tgambar", foreground=C_BLUE)
+        self.tree.tag_configure("tketik", foreground=C_GREEN)
+        self.tree.tag_configure("ttombol", foreground=C_UNGU)
+        self.tree.tag_configure("tscroll", foreground=C_TEAL)
+        self.tree.tag_configure("tcatatan", foreground=C_MUTED)
+        self.tree.tag_configure("tloop", foreground=C_UNGU, font=F_H)
+        self.tree.tag_configure("off", foreground="#A4A8AE")
+        self.tree.bind("<<TreeviewSelect>>", self._on_pilih_baris)
+        self.tree.bind("<Control-c>", lambda _e: self._salin())
+        self.tree.bind("<Control-v>", lambda _e: self._tempel())
+        self.tree.bind("<Delete>", lambda _e: self._hapus())
+        self.tree.bind("<Button-3>", self._menu_klik_kanan)
+
+        self.f_prop = tk.LabelFrame(paned, text=" PROPERTI LANGKAH ",
+                                    bg=C_BG, fg=C_BLUE, font=F_H, bd=1,
+                                    relief="groove")
+        paned.add(self.f_prop, minsize=220, height=250, stretch="always")
+        self.prop_body = tk.Frame(self.f_prop, bg=C_BG)
+        self.prop_body.pack(fill="both", expand=True, padx=8, pady=(2, 6))
+
+    # ---------- pembantu tampilan ----------
+    def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None):
+        b = tk.Button(parent, text=teks, command=cmd,
+                      bg=bg or C_BG, fg=fg or C_TEXT,
+                      font=("Segoe UI", 9, "bold"), relief="flat", bd=1,
+                      padx=8, pady=4, cursor="hand2",
+                      activebackground=aktif or C_SELROW,
+                      activeforeground=fg or C_TEXT)
+        b.pack(side="left", padx=(2, 2), pady=2)
+        b.bind("<Enter>", lambda e: b.config(relief="raised"))
+        b.bind("<Leave>", lambda e: b.config(relief="flat"))
+        return b
+
+    def _tb_pemisah(self, parent):
+        tk.Frame(parent, bg=C_LINE, width=2).pack(side="left", fill="y",
+                                                  padx=4, pady=4)
+
+    def _baris_prop(self, label, lebar_label=30):
+        row = tk.Frame(self.prop_body, bg=C_BG)
+        row.pack(fill="x", pady=1)
+        tk.Label(row, text=label, bg=C_BG, fg=C_MUTED, font=F_XS,
+                 width=lebar_label, anchor="e").pack(side="left",
+                                                     padx=(0, 6))
+        return row
+
+    def _ent_prop(self, row, var, lebar=8, tengah=True):
+        e = tk.Entry(row, textvariable=var, width=lebar, bg=C_PANEL,
+                     fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                     justify="center" if tengah else "left",
+                     highlightthickness=0)
+        e.pack(side="left", ipady=3)
+        return e
+
+    def _btn_prop(self, row, teks, cmd, bg=C_BLUE_L, fg=C_BLUE_D):
+        b = tk.Button(row, text=teks, command=cmd, bg=bg, fg=fg,
+                      font=F_XS, relief="raised", bd=1, cursor="hand2",
+                      activebackground=C_SELROW, activeforeground=fg)
+        b.pack(side="left", padx=(6, 0), ipadx=6, ipady=2)
+        return b
+
+    def _tampilkan_info(self, teks, warna=C_ORANGE):
+        if self.lbl_ambil is not None and self.lbl_ambil.winfo_exists():
+            self.lbl_ambil.config(text=teks, fg=warna)
+
+    # ================== BANTUAN STATUS (thread-safe) ==================
+    def _set_status(self, msg, color=C_GREEN):
+        def do():
+            try:
+                self.shell.lbl_status.config(text=msg, fg=color)
+            except Exception:
+                pass
+        self.root.after(0, do)
+
+    def _set_progress(self, msg):
+        self._set_status(msg, C_BLUE)
+
+    def _sleep(self, seconds):
+        """Tidur yang bisa dibatalkan kapan saja lewat tombol stop."""
+        end = time.time() + seconds
+        while not self.stop_event.is_set():
+            remain = end - time.time()
+            if remain <= 0:
+                break
+            time.sleep(min(0.05, remain))
+
+    # ================== TABEL ALUR KERJA ==================
+    def _uid_baru(self):
+        self._uid += 1
+        return self._uid
+
+    def _get(self, uid):
+        if not uid:
+            return None
+        for l in self.langkah:
+            if l.get("uid") == uid:
+                return l
+        return None
+
+    def _idx_of(self, uid):
+        for i, l in enumerate(self.langkah):
+            if l.get("uid") == uid:
+                return i
+        return None
+
+    def _detail_langkah(self, l):
+        jenis = l["jenis"]
+        pos = l.get("posisi")
+        pos_t = "({},{})".format(pos[0], pos[1]) if pos else "belum diatur"
+        if jenis == "KLIK":
+            mode = str(l.get("tombol_mouse") or "Klik kiri").lower()
+            n = int(_angka(l.get("klik"), 1, 0, 500))
+            geser = int(_angka(l.get("geser"), 0, 0, 100000))
+            teks = "{} | {}x".format(pos_t, mode)
+            if n != 1:
+                teks += " x{}".format(n)
+            if geser:
+                teks += " | geser +{} px/putaran".format(geser)
+            return teks
+        if jenis == "JEDA":
+            return "tunggu {:.1f} detik".format(
+                _angka(l.get("detik"), 1.0, 0, 86400))
+        if jenis == "GAMBAR":
+            g = l.get("gambar") or {}
+            gm = os.path.basename(str(g.get("path") or "")) \
+                if g.get("path") else "(gambar belum dipilih)"
+            aksi_t = ("pindah saja"
+                      if g.get("aksi") == "Pindah saja" else "klik gambar")
+            return "{} | {} | {}".format(pos_t, gm, aksi_t)
+        if jenis == "KETIK":
+            t = str(l.get("teks") or "")
+            if len(t) > 42:
+                t = t[:42] + "..."
+            extra = " | Ctrl+A dulu" if l.get("ctrl_a") else ""
+            if l.get("enter"):
+                extra += " | Enter"
+            return '"{}"{}'.format(t, extra)
+        if jenis == "TOMBOL":
+            return "tekan {} x{}".format(
+                l.get("tombol_kb"),
+                int(_angka(l.get("jumlah_kb"), 1, 1, 500)))
+        if jenis == "SCROLL":
+            return "{} x{}".format(
+                l.get("arah"),
+                int(_angka(l.get("jumlah_scroll"), 3, 0, 1000)))
+        if jenis == "CATATAN":
+            t = str(l.get("catatan") or l.get("nama") or "")
+            if len(t) > 60:
+                t = t[:60] + "..."
+            return t
+        if jenis == "LOOP_MULAI":
+            if l.get("ikut_video"):
+                return "ulangi sebanyak jumlah video (tab CutMotions)"
+            return "ulangi {}x".format(int(_angka(l.get("jumlah_loop"),
+                                                  2, 0, 100000)))
+        return "kembali ke ULANGI-MULAI di atas"
+
+    def _ulang_langkah(self, l):
+        jenis = l["jenis"]
+        if jenis == "KLIK":
+            n = int(_angka(l.get("klik"), 1, 0, 500))
+            return "pindah saja" if n == 0 else "{} klik".format(n)
+        if jenis == "JEDA":
+            return "-"
+        if jenis == "GAMBAR":
+            return "cari gambar"
+        if jenis == "KETIK":
+            return "1 ketikan"
+        if jenis == "TOMBOL":
+            return "{} tekanan".format(int(_angka(l.get("jumlah_kb"), 1,
+                                                  1, 500)))
+        if jenis == "SCROLL":
+            return "{}x gulungan".format(int(_angka(
+                l.get("jumlah_scroll"), 3, 0, 1000)))
+        if jenis == "LOOP_MULAI":
+            if l.get("ikut_video"):
+                return "x jumlah video"
+            return "{}x".format(int(_angka(l.get("jumlah_loop"), 2, 0,
+                                           100000)))
+        if jenis == "LOOP_AKHIR":
+            return "akhir blok"
+        return "-"
+
+    def _refresh_tabel(self):
+        if not hasattr(self, "tree"):
+            return
+        anak = self.tree.get_children()
+        if anak:
+            self.tree.delete(*anak)
+        for i, l in enumerate(self.langkah):
+            jenis = l["jenis"]
+            nama = str(l.get("nama") or "") or LABEL_JENIS[jenis]
+            if jenis == "CATATAN" and not l.get("nama"):
+                nama = "CATATAN"
+            aktif = bool(l.get("aktif", True))
+            if not aktif:
+                nama = "(nonaktif) " + nama
+            detail = self._detail_langkah(l)
+            jeda_t = "{:.1f}s".format(_angka(l.get("jeda"), 0.5, 0,
+                                             86400))
+            tag = {"KLIK": "tklik", "GAMBAR": "tgambar", "KETIK": "tketik",
+                   "TOMBOL": "ttombol", "SCROLL": "tscroll",
+                   "CATATAN": "tcatatan", "JEDA": "tjeda",
+                   "LOOP_MULAI": "tloop", "LOOP_AKHIR": "tloop"}.get(
+                       jenis, "tklik")
+            if not aktif:
+                tag = "off"
+            zebra = "genap" if i % 2 == 0 else "ganjil"
+            self.tree.insert("", "end", iid=l["uid"], tags=(tag, zebra),
+                             values=(i + 1, nama, detail, jeda_t,
+                                     self._ulang_langkah(l)))
+        if self.sel and self.tree.exists(self.sel):
+            try:
+                # hindari selection_set bila seleksi sudah tepat -
+                # event <<TreeviewSelect>> akan memicu render ulang
+                # panel properti DI TENGAH user mengetik (bug UX)
+                if tuple(self.tree.selection()) != (self.sel,):
+                    self.tree.selection_set(self.sel)
+                self.tree.see(self.sel)
+            except Exception:
+                pass
+        self._simpan_auto()
+
+    def _on_pilih_baris(self, _ev=None):
+        sel = self.tree.selection()
+        if sel:
+            self.sel = sel[0]
+            self._render_properti()
+
+    # ================== TAMBAH / SUNTING LANGKAH ==================
+    def _tambah(self, jenis):
+        l = studio_langkah_baru(jenis, self._uid_baru())
+        i = self._idx_of(self.sel)
+        if i is None:
+            self.langkah.append(l)
+        else:
+            self.langkah.insert(i + 1, l)
+        self.sel = l["uid"]
+        self._refresh_tabel()
+        try:
+            self.tree.selection_set(l["uid"])
+            self.tree.see(l["uid"])
+        except Exception:
+            pass
+        self._render_properti()
+        self._set_status("Langkah {} ditambahkan - atur di panel "
+                         "PROPERTI LANGKAH di bawah.".format(
+                             LABEL_JENIS[jenis]), C_GREEN)
+
+    def _salin(self):
+        l = self._get(self.sel)
+        if not l:
+            messagebox.showinfo(APP_NAME, "Klik dulu satu baris langkah "
+                                          "yang mau disalin.")
+            return
+        self.papan_klip = json.loads(json.dumps(l))
+        self._set_status("Langkah '{}' disalin - klik baris tujuan lalu "
+                         "TEMPEL (Ctrl+V).".format(
+                             l.get("nama") or LABEL_JENIS[l["jenis"]]),
+                         C_GREEN)
+
+    def _tempel(self):
+        if not self.papan_klip:
+            messagebox.showinfo(APP_NAME, "Belum ada langkah yang "
+                                          "disalin.\n\nKlik satu baris "
+                                          "lalu SALIN (Ctrl+C) dulu.")
+            return
+        baru = json.loads(json.dumps(self.papan_klip))
+        baru["uid"] = "s{}".format(self._uid_baru())
+        i = self._idx_of(self.sel)
+        if i is None:
+            self.langkah.append(baru)
+        else:
+            self.langkah.insert(i + 1, baru)
+        self.sel = baru["uid"]
+        self._refresh_tabel()
+        try:
+            self.tree.selection_set(baru["uid"])
+            self.tree.see(baru["uid"])
+        except Exception:
+            pass
+        self._render_properti()
+        self._set_status("Langkah ditempel - semua parameternya ikut "
+                         "tersalin, silakan disunting.", C_GREEN)
+
+    def _hapus(self):
+        l = self._get(self.sel)
+        if not l:
+            messagebox.showinfo(APP_NAME, "Pilih dulu baris langkah yang "
+                                          "mau dihapus.")
+            return
+        if not messagebox.askyesno(
+                APP_NAME, "Hapus langkah '{}'?".format(
+                    l.get("nama") or LABEL_JENIS[l["jenis"]])):
+            return
+        i = self._idx_of(l["uid"])
+        self.langkah.remove(l)
+        self.sel = None
+        if i is not None and 0 <= i < len(self.langkah):
+            self.sel = self.langkah[i]["uid"]
+        elif self.langkah:
+            self.sel = self.langkah[-1]["uid"]
+        self._refresh_tabel()
+        self._render_properti()
+        self._set_status("Langkah dihapus.", C_ORANGE)
+
+    def _geser_langkah(self, delta):
+        i = self._idx_of(self.sel)
+        if i is None:
+            return
+        j = i + delta
+        if j < 0 or j >= len(self.langkah):
+            return
+        self.langkah[i], self.langkah[j] = self.langkah[j], \
+            self.langkah[i]
+        self._refresh_tabel()
+        try:
+            self.tree.selection_set(self.sel)
+            self.tree.see(self.sel)
+        except Exception:
+            pass
+
+    def _naik(self):
+        self._geser_langkah(-1)
+
+    def _turun(self):
+        self._geser_langkah(1)
+
+    def _toggle_aktif(self):
+        l = self._get(self.sel)
+        if not l:
+            return
+        l["aktif"] = not bool(l.get("aktif", True))
+        self._refresh_tabel()
+        self._set_status("Langkah {}.".format(
+            "DINYALAKAN" if l["aktif"] else "DIMATIKAN (dilewati saat "
+                                            "jalan)"),
+            C_GREEN if l["aktif"] else C_ORANGE)
+
+    def _menu_klik_kanan(self, ev):
+        iid = self.tree.identify_row(ev.y)
+        if iid:
+            self.tree.selection_set(iid)
+        m = tk.Menu(self.wadah, tearoff=0)
+        m.add_command(label="Salin langkah ini  (Ctrl+C)",
+                      command=self._salin)
+        m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
+                      command=self._tempel)
+        m.add_separator()
+        m.add_command(label="Naikkan", command=self._naik)
+        m.add_command(label="Turunkan", command=self._turun)
+        m.add_command(label="Nyalakan / Matikan",
+                      command=self._toggle_aktif)
+        m.add_separator()
+        m.add_command(label="Hapus langkah ini  (Del)",
+                      command=self._hapus)
+        try:
+            m.tk_popup(ev.x_root, ev.y_root)
         finally:
-            self.root.destroy()
+            m.grab_release()
+
+    # ================== PANEL PROPERTI ==================
+    def _render_properti(self):
+        self._loading_prop = True
+        for wdg in self.prop_body.winfo_children():
+            wdg.destroy()
+        self.lbl_ambil = None
+        l = self._get(self.sel)
+        if not l:
+            tk.Label(
+                self.prop_body,
+                text="ALUR KERJA MASIH KOSONG / BELUM ADA BARIS "
+                     "TERPILIH.\n\n"
+                     "Cara pakai:\n"
+                     "1. Klik salah satu tombol + di toolbar atas "
+                     "(mis. + KLIK TITIK, + JEDA, + CARI GAMBAR, "
+                     "+ KETIK TEKS).\n"
+                     "2. Klik barisnya di tabel ALUR KERJA.\n"
+                     "3. Atur propertinya di panel ini (posisi, teks, "
+                     "jeda, jumlah klik, gambar referensi, dll).\n"
+                     "4. Ulangi sampai alur selesai, lalu JALANKAN "
+                     "(F6).\n\n"
+                     "Contoh alur sederhana:\n"
+                     "+ CARI GAMBAR (klik tombol login)  >  + KETIK "
+                     "TEKS (email)  >  + TEKAN TOMBOL (Tab)  >  "
+                     "+ KETIK TEKS (kata sandi)  >  + TEKAN TOMBOL "
+                     "(Enter).",
+                bg=C_BG, fg=C_MUTED, font=F_S, anchor="w",
+                justify="left", wraplength=880).pack(fill="x",
+                                                     pady=(4, 0))
+            self._loading_prop = False
+            return
+        jenis = l["jenis"]
+        judul = str(l.get("nama") or "") or LABEL_JENIS[jenis]
+        self.pv = {
+            "nama": tk.StringVar(value=str(l.get("nama") or "")),
+            "jeda": tk.StringVar(value="{:.1f}".format(
+                _angka(l.get("jeda"), 0.5, 0, 86400))),
+        }
+        kepala = tk.Frame(self.prop_body, bg=C_BG)
+        kepala.pack(fill="x", pady=(0, 4))
+        tk.Label(kepala, text="{}   -   {}".format(judul,
+                                                   LABEL_JENIS[jenis]),
+                 bg=C_BG, fg=C_TEXT, font=F_H, anchor="w",
+                 wraplength=860, justify="left").pack(fill="x")
+
+        # ---- nama + jeda (semua jenis) ----
+        r = self._baris_prop("NAMA LANGKAH (opsional)")
+        self._ent_prop(r, self.pv["nama"], 30, tengah=False)
+        r = self._baris_prop("JEDA SEBELUM LANGKAH (detik)")
+        self._ent_prop(r, self.pv["jeda"], 6)
+
+        pos = l.get("posisi")
+        if jenis in ("KLIK", "GAMBAR"):
+            self.pv["x"] = tk.StringVar(value=str(pos[0]) if pos else "")
+            self.pv["y"] = tk.StringVar(value=str(pos[1]) if pos else "")
+            r = self._baris_prop("POSISI X , Y")
+            self._ent_prop(r, self.pv["x"], 6)
+            tk.Label(r, text=",", bg=C_BG, fg=C_MUTED,
+                     font=F_N).pack(side="left", padx=2)
+            self._ent_prop(r, self.pv["y"], 6)
+            self._btn_prop(r, "AMBIL (5 dtk)",
+                           lambda: self._ambil_posisi(l["uid"]))
+            self._btn_prop(r, "LIHAT",
+                           lambda: self._lihat_posisi(l["uid"]), bg=C_BG)
+            tk.Label(r, text="bisa juga diketik manual", bg=C_BG,
+                     fg=C_MUTED, font=F_XS).pack(side="left", padx=6)
+
+        if jenis == "KLIK":
+            self.pv["tombol_mouse"] = tk.StringVar(
+                value=l.get("tombol_mouse")
+                if l.get("tombol_mouse") in MOUSE_OPSI else "Klik kiri")
+            self.pv["klik"] = tk.StringVar(value=str(
+                int(_angka(l.get("klik"), 1, 0, 500))))
+            self.pv["jeda_klik"] = tk.StringVar(value="{:.2f}".format(
+                _angka(l.get("jeda_klik"), 0.3, 0.05, 60)))
+            self.pv["geser"] = tk.StringVar(value=str(
+                int(_angka(l.get("geser"), 0, 0, 100000))))
+            r = self._baris_prop("JENIS KLIK")
+            tk.OptionMenu(r, self.pv["tombol_mouse"],
+                          *MOUSE_OPSI).pack(side="left")
+            tk.Label(r, text="JUMLAH KLIK:", bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=(12, 4))
+            self._ent_prop(r, self.pv["klik"], 6)
+            tk.Label(r, text="JEDA ANTAR KLIK (detik):", bg=C_BG,
+                     fg=C_MUTED, font=F_XS).pack(side="left",
+                                                 padx=(12, 4))
+            self._ent_prop(r, self.pv["jeda_klik"], 6)
+            r = self._baris_prop("GESER PER PUTARAN ULANGI (px)")
+            self._ent_prop(r, self.pv["geser"], 7)
+            tk.Label(r, text="0 = tanpa geser. Untuk klik per baris "
+                             "video dalam blok ULANGI: isi jarak antar "
+                             "baris (Y turun sejauh nilai ini x nomor "
+                             "putaran).",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, wraplength=520,
+                     justify="left").pack(side="left", padx=6)
+        elif jenis == "JEDA":
+            self.pv["detik"] = tk.StringVar(value="{:.1f}".format(
+                _angka(l.get("detik"), 1.0, 0, 86400)))
+            r = self._baris_prop("TUNGGU BERAPA DETIK")
+            self._ent_prop(r, self.pv["detik"], 8)
+            tk.Label(r, text="mis. 2.5 (boleh koma atau titik)",
+                     bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left",
+                                                          padx=6)
+        elif jenis == "GAMBAR":
+            g = l.get("gambar") or \
+                studio_langkah_baru("GAMBAR", 0)["gambar"]
+            self.pv["g_path"] = tk.StringVar(
+                value=str(g.get("path") or ""))
+            self.pv["g_aksi"] = tk.StringVar(
+                value=g.get("aksi") if g.get("aksi") in GAMBAR_AKSI_OPSI
+                else "Klik di gambar")
+            self.pv["g_gagal"] = tk.StringVar(
+                value=g.get("gagal") if g.get("gagal")
+                in GAMBAR_GAGAL_OPSI else "Klik titik X,Y")
+            self.pv["g_radius"] = tk.StringVar(
+                value=str(g.get("radius") or "300"))
+            self.pv["g_mirip"] = tk.StringVar(
+                value=str(g.get("mirip") or "0.80"))
+            tk.Label(self.prop_body,
+                     text="Cari potongan gambar di layar dalam radius "
+                          "titik acuan X,Y. SAAT KETEMU bisa LANGSUNG "
+                          "DIKLIK atau hanya DIPINDAH tanpa klik.",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            r = self._baris_prop("GAMBAR REFERENSI")
+            self._ent_prop(r, self.pv["g_path"], 42, tengah=False)
+            self._btn_prop(r, "PILIH GAMBAR...",
+                           lambda: self._pilih_gambar(l["uid"]))
+            self._btn_prop(r, "POTONG GAMBAR...",
+                           lambda: self._potong_gambar(l["uid"]))
+            r = self._baris_prop("SAAT KETEMU:")
+            tk.OptionMenu(r, self.pv["g_aksi"],
+                          *GAMBAR_AKSI_OPSI).pack(side="left")
+            tk.Label(r, text="SAAT TIDAK KETEMU:", bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=(12, 4))
+            tk.OptionMenu(r, self.pv["g_gagal"],
+                          *GAMBAR_GAGAL_OPSI).pack(side="left")
+            r = self._baris_prop("RADIUS (px) | KEMIRIPAN:")
+            self._ent_prop(r, self.pv["g_radius"], 6)
+            self._ent_prop(r, self.pv["g_mirip"], 6)
+            self._btn_prop(r, "TES CARI LANGKAH INI", self._tes_cari)
+            tk.Label(self.prop_body,
+                     text="Tips: pakai POTONG GAMBAR supaya ukurannya "
+                          "PERSIS tampilan layar. Zoom browser jangan "
+                          "diubah setelah gambar dipotong.",
+                     bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(
+                         fill="x", pady=(4, 0))
+        elif jenis == "KETIK":
+            self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
+            self.pv["ctrl_a"] = tk.BooleanVar(
+                value=bool(l.get("ctrl_a")))
+            self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            r = self._baris_prop("TEKS YANG DIKETIK")
+            self._ent_prop(r, self.pv["teks"], 46, tengah=False)
+            tk.Label(self.prop_body,
+                     text="Placeholder: {caption} = caption dasar + nama "
+                          "video ke-i  |  {video} = nama video ke-i  |  "
+                          "{no} = nomor putaran ULANGI (1, 2, 3, ...)",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Ctrl+A dulu (timpa isi kotak yang lama)",
+                           variable=self.pv["ctrl_a"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+            tk.Checkbutton(self.prop_body,
+                           text="Tekan Enter setelah selesai mengetik",
+                           variable=self.pv["enter"], bg=C_BG, fg=C_TEXT,
+                           font=F_XS, anchor="w").pack(fill="x")
+        elif jenis == "TOMBOL":
+            self.pv["tombol_kb"] = tk.StringVar(
+                value=str(l.get("tombol_kb") or "Enter"))
+            self.pv["jumlah_kb"] = tk.StringVar(value=str(
+                int(_angka(l.get("jumlah_kb"), 1, 1, 500))))
+            self.pv["jeda_klik"] = tk.StringVar(value="{:.2f}".format(
+                _angka(l.get("jeda_klik"), 0.3, 0.05, 60)))
+            r = self._baris_prop("TOMBOL YANG DITEKAN")
+            ttk.Combobox(r, textvariable=self.pv["tombol_kb"],
+                         values=list(TOMBOL_KB_OPSI), width=20,
+                         font=F_N).pack(side="left", ipady=2)
+            tk.Label(r, text="  (bisa ketik 1 huruf sendiri, mis. a)",
+                     bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left",
+                                                          padx=4)
+            r = self._baris_prop("JUMLAH TEKAN")
+            self._ent_prop(r, self.pv["jumlah_kb"], 6)
+            tk.Label(r, text="JEDA ANTAR TEKAN (detik):", bg=C_BG,
+                     fg=C_MUTED, font=F_XS).pack(side="left",
+                                                 padx=(12, 4))
+            self._ent_prop(r, self.pv["jeda_klik"], 6)
+        elif jenis == "SCROLL":
+            self.pv["arah"] = tk.StringVar(
+                value=l.get("arah")
+                if l.get("arah") in ("Turun", "Naik") else "Turun")
+            self.pv["jumlah_scroll"] = tk.StringVar(value=str(
+                int(_angka(l.get("jumlah_scroll"), 3, 0, 1000))))
+            r = self._baris_prop("ARAH SCROLL")
+            tk.OptionMenu(r, self.pv["arah"], "Turun",
+                          "Naik").pack(side="left")
+            tk.Label(r, text="JUMLAH GULUNGAN:", bg=C_BG, fg=C_MUTED,
+                     font=F_XS).pack(side="left", padx=(12, 4))
+            self._ent_prop(r, self.pv["jumlah_scroll"], 6)
+        elif jenis == "CATATAN":
+            self.pv["catatan"] = tk.StringVar(
+                value=str(l.get("catatan") or ""))
+            r = self._baris_prop("ISI CATATAN")
+            self._ent_prop(r, self.pv["catatan"], 46, tengah=False)
+            tk.Label(self.prop_body,
+                     text="Catatan hanya penanda di tabel - tidak ada "
+                          "aksi yang dijalankan.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS,
+                     anchor="w").pack(fill="x")
+        elif jenis == "LOOP_MULAI":
+            self.pv["jumlah_loop"] = tk.StringVar(value=str(
+                int(_angka(l.get("jumlah_loop"), 2, 0, 100000))))
+            self.pv["ikut_video"] = tk.BooleanVar(
+                value=bool(l.get("ikut_video")))
+            r = self._baris_prop("JUMLAH ULANGAN")
+            self._ent_prop(r, self.pv["jumlah_loop"], 7)
+            tk.Checkbutton(self.prop_body,
+                           text="Ikut JUMLAH VIDEO di tab Alur CutMotions "
+                                "(angka di sini diabaikan) - dipakai "
+                                "untuk caption per baris video",
+                           variable=self.pv["ikut_video"], bg=C_BG,
+                           fg=C_TEXT, font=F_XS,
+                           anchor="w").pack(fill="x")
+            tk.Label(self.prop_body,
+                     text="Semua langkah di ANTARA 'ULANGI-MULAI' dan "
+                          "'ULANGI-AKHIR' diulang sesuai jumlah di atas. "
+                          "Gunakan GESER TURUN pada langkah KLIK di "
+                          "dalamnya agar klik turun ke baris berikutnya.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(
+                         fill="x", pady=(4, 0))
+        else:  # LOOP_AKHIR
+            tk.Label(self.prop_body,
+                     text="Akhir blok ULANGI - alur kembali ke "
+                          "ULANGI-MULAI di atas selama jumlah ulangan "
+                          "belum habis.",
+                     bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(
+                         fill="x", pady=(4, 0))
+
+        # ---- aktif + info ----
+        self.pv["aktif"] = tk.BooleanVar(value=bool(l.get("aktif", True)))
+        tk.Checkbutton(self.prop_body,
+                       text="LANGKAH AKTIF (lepas centang = dilewati "
+                            "saat jalan)",
+                       variable=self.pv["aktif"], bg=C_BG, fg=C_TEXT,
+                       font=F_XS, anchor="w").pack(fill="x", pady=(4, 0))
+        self.lbl_ambil = tk.Label(self.prop_body, text="", bg=C_BG,
+                                  fg=C_ORANGE, font=F_XS, anchor="w",
+                                  wraplength=860, justify="left")
+        self.lbl_ambil.pack(fill="x", pady=(4, 0))
+        for var in self.pv.values():
+            var.trace_add("write", self._terapkan_prop)
+        self._loading_prop = False
+
+    def _terapkan_prop(self, *_):
+        if self._loading_prop:
+            return
+        l = self._get(self.sel)
+        if not l:
+            return
+        try:
+            x = int(float(str(self.pv["x"].get()).strip() or "nan"))
+            y = int(float(str(self.pv["y"].get()).strip() or "nan"))
+            l["posisi"] = [x, y]
+        except (KeyError, ValueError, TypeError):
+            pass
+        try:
+            l["jeda"] = max(0.0, float(
+                str(self.pv["jeda"].get()).replace(",", ".")))
+        except (ValueError, TypeError):
+            pass
+        l["nama"] = self.pv["nama"].get()
+        jenis = l["jenis"]
+        if jenis == "KLIK":
+            l["tombol_mouse"] = self.pv["tombol_mouse"].get()
+            l["klik"] = int(_angka(self.pv["klik"].get(), 1, 0, 500))
+            l["jeda_klik"] = _angka(self.pv["jeda_klik"].get(), 0.3,
+                                    0.05, 60)
+            l["geser"] = int(_angka(self.pv["geser"].get(), 0, 0,
+                                    100000))
+        elif jenis == "JEDA":
+            l["detik"] = _angka(self.pv["detik"].get(), 1.0, 0, 86400)
+        elif jenis == "GAMBAR":
+            g = l.setdefault("gambar", {})
+            g["path"] = self.pv["g_path"].get().strip()
+            aksi = self.pv["g_aksi"].get()
+            g["aksi"] = (aksi if aksi in GAMBAR_AKSI_OPSI
+                         else "Klik di gambar")
+            gagal = self.pv["g_gagal"].get()
+            g["gagal"] = (gagal if gagal in GAMBAR_GAGAL_OPSI
+                          else "Klik titik X,Y")
+            g["radius"] = self.pv["g_radius"].get().strip()
+            g["mirip"] = self.pv["g_mirip"].get().strip()
+        elif jenis == "KETIK":
+            l["teks"] = self.pv["teks"].get()
+            l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
+            l["enter"] = bool(self.pv["enter"].get())
+        elif jenis == "TOMBOL":
+            l["tombol_kb"] = (self.pv["tombol_kb"].get().strip()
+                              or "Enter")
+            l["jumlah_kb"] = int(_angka(self.pv["jumlah_kb"].get(), 1,
+                                        1, 500))
+            l["jeda_klik"] = _angka(self.pv["jeda_klik"].get(), 0.3,
+                                    0.05, 60)
+        elif jenis == "SCROLL":
+            l["arah"] = self.pv["arah"].get()
+            l["jumlah_scroll"] = int(_angka(
+                self.pv["jumlah_scroll"].get(), 3, 0, 1000))
+        elif jenis == "CATATAN":
+            l["catatan"] = self.pv["catatan"].get()
+        elif jenis == "LOOP_MULAI":
+            l["jumlah_loop"] = int(_angka(
+                self.pv["jumlah_loop"].get(), 2, 0, 100000))
+            l["ikut_video"] = bool(self.pv["ikut_video"].get())
+        l["aktif"] = bool(self.pv["aktif"].get())
+        self._refresh_tabel()
+
+    # ================== AMBIL / LIHAT POSISI ==================
+    def _ambil_posisi(self, uid):
+        if not PYNPUT_OK:
+            messagebox.showerror(APP_NAME,
+                                 "Library pynput belum terpasang.\n\n"
+                                 "Buka CMD lalu jalankan:\n"
+                                 "  pip install pynput")
+            return
+        l = self._get(uid)
+        if not l:
+            return
+        judul = str(l.get("nama") or "") or LABEL_JENIS[l["jenis"]]
+
+        def kerja():
+            try:
+                for s in range(5, 0, -1):
+                    self.root.after(0, lambda s=s: self._tampilkan_info(
+                        "Arahkan mouse ke titik '{}' dan diamkan... {}"
+                        .format(judul, s)))
+                    self.root.after(0, lambda s=s: self._set_status(
+                        "Ambil posisi '{}' ... {}".format(judul, s),
+                        C_ORANGE))
+                    time.sleep(1)
+                px, py = self.mouse.position
+
+                def isi():
+                    l["posisi"] = [int(px), int(py)]
+                    self._refresh_tabel()
+                    if self.sel == uid:
+                        self._render_properti()
+                    self._tampilkan_info(
+                        "Posisi tersimpan: X={}, Y={}".format(int(px),
+                                                              int(py)),
+                        C_GREEN)
+                    self._set_status("'{}' = ({}, {}) tersimpan."
+                                     .format(judul, int(px), int(py)),
+                                     C_GREEN)
+
+                self.root.after(0, isi)
+            except Exception:
+                self.root.after(0, lambda: self._tampilkan_info(
+                    "Gagal mengambil posisi.", C_RED))
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    def _lihat_posisi(self, uid):
+        if not PYNPUT_OK:
+            return
+        l = self._get(uid)
+        if not l or not l.get("posisi"):
+            messagebox.showinfo(APP_NAME, "Posisi ini belum diatur. Klik "
+                                          "dulu AMBIL (atau isi X,Y "
+                                          "manual).")
+            return
+        try:
+            self.mouse.position = (l["posisi"][0], l["posisi"][1])
+        except Exception:
+            pass
+
+    # ================== GAMBAR REFERENSI ==================
+    def _pilih_gambar(self, uid=None):
+        uid = uid or self.sel
+        l = self._get(uid)
+        if not l or l["jenis"] != "GAMBAR":
+            messagebox.showinfo(APP_NAME, "Pilih dulu baris CARI GAMBAR "
+                                          "di tabel.")
+            return
+        f = filedialog.askopenfilename(
+            title="Pilih gambar referensi (potongan layar)",
+            filetypes=[("Gambar", "*.png *.jpg *.jpeg *.bmp"),
+                       ("Semua file", "*.*")])
+        if f:
+            l.setdefault("gambar", {})["path"] = f
+            self._refresh_tabel()
+            if self.sel == uid:
+                self._render_properti()
+            self._set_status("Gambar referensi terpasang: {}".format(f),
+                             C_GREEN)
+
+    def _potong_dari_menu(self):
+        self._potong_gambar(None)
+
+    def _potong_gambar(self, uid=None):
+        if not PIL_OK or not CV_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "Fitur potong gambar butuh Pillow + OpenCV.\n\n"
+                "Buka CMD lalu jalankan:\n"
+                "  pip install pillow opencv-python")
+            return
+        uid = uid or self.sel
+        l = self._get(uid)
+        if not l or l["jenis"] != "GAMBAR":
+            messagebox.showinfo(
+                APP_NAME,
+                "POTONG GAMBAR dipakai untuk langkah CARI GAMBAR.\n\n"
+                "Klik dulu baris CARI GAMBAR di tabel (atau tambah "
+                "lewat tombol '+ CARI GAMBAR').")
+            return
+        self._potong_uid = uid
+
+        def kerja():
+            try:
+                for s in range(3, 0, -1):
+                    self.root.after(0, lambda s=s: self._set_status(
+                        "Screenshot layar dalam {} detik - pastikan area "
+                        "yang mau dipotong terlihat...".format(s),
+                        C_ORANGE))
+                    time.sleep(1)
+                img = ImageGrab.grab()
+                self.root.after(0, lambda: JendelaPotong(
+                    self.wadah, img, self._gambar_terpotong))
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror(
+                    APP_NAME,
+                    "Gagal mengambil screenshot:\n{}".format(e)))
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    def _gambar_terpotong(self, path):
+        l = self._get(getattr(self, "_potong_uid", None))
+        if l:
+            l.setdefault("gambar", {})["path"] = path
+            self._refresh_tabel()
+            if self.sel == l["uid"]:
+                self._render_properti()
+        self._set_status("Gambar referensi tersimpan: {}".format(path),
+                         C_GREEN)
+
+    def _tes_cari(self):
+        if not PYNPUT_OK:
+            messagebox.showerror(APP_NAME, "Library pynput belum "
+                                           "terpasang.")
+            return
+        if not CV_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "opencv-python belum terpasang - pencarian gambar tidak "
+                "bisa dipakai.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install opencv-python\n\n"
+                "Atau pakai CutUploaderPro.exe (OpenCV sudah menyatu).")
+            return
+        l = self._get(self.sel)
+        if not l or l["jenis"] != "GAMBAR":
+            messagebox.showinfo(APP_NAME, "Pilih dulu baris CARI GAMBAR "
+                                          "yang mau dites.")
+            return
+        g = l.get("gambar") or {}
+        path = str(g.get("path") or "").strip()
+        pos = l.get("posisi")
+        nama = str(l.get("nama") or "") or LABEL_JENIS["GAMBAR"]
+        if not path or not os.path.isfile(path):
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu gambar referensi langkah {}.\n\nCara "
+                "termudah: klik 'POTONG GAMBAR...', lalu seret kotak "
+                "di atas tulisan/tombolnya.".format(nama))
+            return
+        if not pos:
+            messagebox.showinfo(
+                APP_NAME,
+                "Atur dulu POSISI X,Y langkah {} sebagai titik acuan "
+                "pencarian (tombol AMBIL).".format(nama))
+            return
+        radius = int(_angka(g.get("radius"), 300, 50, 2000))
+        mirip = _angka(g.get("mirip"), 0.8, 0.5, 0.99)
+
+        def kerja():
+            self.root.after(0, lambda: self._set_status(
+                "Mencari '{}' dalam radius {} px (multi-skala)...".format(
+                    os.path.basename(path), radius), C_ORANGE))
+            hasil, pesan = cari_di_layar(path, pos[0], pos[1], radius,
+                                         mirip)
+
+            def lapor():
+                if hasil:
+                    x, y, skor = hasil
+                    try:
+                        self.mouse.position = (x, y)
+                    except Exception:
+                        pass
+                    mode_t = ("pindah saja"
+                              if g.get("aksi") == "Pindah saja"
+                              else "akan diklik")
+                    self._set_status(
+                        "TES OK: gambar KETEMU di ({}, {}) - kemiripan "
+                        "{:.0%}. Mouse dipindah ke sana (tidak diklik; "
+                        "mode langkah ini: {}).".format(x, y, skor,
+                                                        mode_t), C_GREEN)
+                    self._tampilkan_info(
+                        "TES OK: ketemu di ({}, {}), kemiripan {:.0%}."
+                        .format(x, y, skor), C_GREEN)
+                else:
+                    self._set_status("TES GAGAL: " + pesan, C_RED)
+                    self._tampilkan_info("TES GAGAL: " + pesan, C_RED)
+                    messagebox.showwarning(APP_NAME,
+                                           "Gambar tidak ketemu.\n\n"
+                                           + pesan)
+
+            self.root.after(0, lapor)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    # ================== SIMPAN / BUKA MAKRO ==================
+    def _simpan_auto(self):
+        """Auto-save makro aktif ke folder data (diam-diam)."""
+        try:
+            with open(self.makro_path, "w", encoding="utf-8") as f:
+                json.dump({"app": APP_NAME, "versi": APP_VERSION,
+                           "jenis": "studio", "langkah": self.langkah},
+                          f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
+    def _muat_otomatis(self):
+        if not os.path.exists(self.makro_path):
+            return
+        try:
+            with open(self.makro_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            ls = studio_bersihkan(data.get("langkah"))
+            if not ls:
+                return
+            self.langkah = ls
+            maks = 0
+            for l in ls:
+                try:
+                    maks = max(maks, int(str(l["uid"]).lstrip("s")))
+                except ValueError:
+                    pass
+            self._uid = maks
+            self.sel = ls[0]["uid"]
+            self._refresh_tabel()
+            self._render_properti()
+        except Exception:
+            pass
+
+    def _makro_baru(self):
+        if self.langkah and not messagebox.askyesno(
+                APP_NAME,
+                "Kosongkan alur kerja sekarang?\n\nAlur saat ini akan "
+                "hilang - simpan dulu (SIMPAN MAKRO) bila perlu."):
+            return
+        self.langkah = []
+        self.sel = None
+        self._refresh_tabel()
+        self._render_properti()
+        self._set_status("Makro baru dibuat - alur kerja kosong. Pilih "
+                         "tombol + untuk menambah langkah.", C_GREEN)
+
+    def _simpan_makro(self):
+        f = filedialog.asksaveasfilename(
+            title="Simpan makro Studio",
+            defaultextension=".json",
+            initialfile="makro_{}.json".format(
+                datetime.datetime.now().strftime("%Y%m%d")),
+            filetypes=[("Makro Studio", "*.json")])
+        if not f:
+            return
+        try:
+            with open(f, "w", encoding="utf-8") as d:
+                json.dump({"app": APP_NAME, "versi": APP_VERSION,
+                           "jenis": "studio", "langkah": self.langkah},
+                          d, indent=2, ensure_ascii=False)
+            self._set_status("Makro tersimpan: {}".format(f), C_GREEN)
+        except Exception as e:
+            messagebox.showerror(APP_NAME,
+                                 "Gagal menyimpan makro:\n" + str(e))
+
+    def _buka_makro(self):
+        f = filedialog.askopenfilename(
+            title="Buka makro Studio",
+            filetypes=[("Makro Studio", "*.json"),
+                       ("Semua file", "*.*")])
+        if not f:
+            return
+        try:
+            with open(f, "r", encoding="utf-8") as s:
+                data = json.load(s)
+        except Exception as e:
+            messagebox.showerror(APP_NAME,
+                                 "Gagal membaca makro:\n" + str(e))
+            return
+        ls = studio_bersihkan(data.get("langkah"))
+        if not ls:
+            messagebox.showwarning(APP_NAME, "File makro tidak berisi "
+                                             "langkah yang sah.")
+            return
+        self.langkah = ls
+        maks = 0
+        for l in ls:
+            try:
+                maks = max(maks, int(str(l["uid"]).lstrip("s")))
+            except ValueError:
+                pass
+        self._uid = maks
+        self.sel = ls[0]["uid"]
+        self._refresh_tabel()
+        self._render_properti()
+        self._set_status("Makro dimuat: {} langkah dari {}".format(
+            len(ls), f), C_GREEN)
+
+    # ================== TEMPLATE CUTMOTIONS ==================
+    def _template_cutmotions(self):
+        cut = self.shell.tab_cut if self.shell is not self else None
+        if cut is None:
+            messagebox.showinfo(APP_NAME, "Mode mandiri tidak punya tab "
+                                          "CutMotions.")
+            return
+        if not messagebox.askyesno(
+                APP_NAME,
+                "Muat TEMPLATE ALUR CUTMOTIONS (A-J) ke Studio?\n\n"
+                "Alur kerja Studio saat ini akan DIGANTI dengan versi "
+                "bebasnya: A jadwal, C cari gambar negara, D tanggal, "
+                "F tambah video, H Shift+turun, I caption per baris "
+                "(blok ULANGI), J submit.\n\nSetelah jadi template, "
+                "semua langkah bebas disunting, disalin, dihapus, atau "
+                "ditambah."):
+            return
+        V = cut.vars
+        cfg = {
+            "posisi": cut.posisi,
+            "skip_jadwal": bool(V["skip_jadwal"].get()),
+            "tanggal": V["tanggal"].get().strip(),
+            "klik_bebas1": V["klik_bebas1"].get(),
+            "scroll_bebas1": V["scroll_bebas1"].get(),
+            "arah_scroll": V["arah_scroll"].get(),
+            "klik_bebas2": V["klik_bebas2"].get(),
+            "klik_submit": V["klik_submit"].get(),
+            "jumlah": V["jumlah"].get(),
+            "tunggu": V["tunggu"].get(),
+            "jarak_baris": V["jarak_baris"].get(),
+            "auto_kirim": bool(V["auto_kirim"].get()),
+            "gambar_c": dict(cut.gambar_langkah.get("pos_pilih_neg")
+                             or {}),
+        }
+        self.langkah = template_cutmotions_steps(cfg,
+                                                 mulai_uid=self._uid)
+        self._uid += len(self.langkah)
+        self.sel = self.langkah[0]["uid"] if self.langkah else None
+        self._refresh_tabel()
+        self._render_properti()
+        self._set_status("Template CutMotions dimuat: {} langkah - klik "
+                         "barisnya untuk menyunting.".format(
+                             len(self.langkah)), C_GREEN)
+
+    # ================== JALANKAN / BERHENTI ==================
+    def _start(self):
+        if self.running:
+            return
+        if not PYNPUT_OK:
+            messagebox.showerror(
+                APP_NAME, "Library pynput belum terpasang.\n\n"
+                          "Buka CMD lalu jalankan:\n  pip install pynput")
+            return
+        lain = self.shell.tab_lain(self) if self.shell is not self \
+            else None
+        if lain is not None and lain.running:
+            messagebox.showwarning(
+                APP_NAME,
+                "ALUR CUTMOTIONS sedang berjalan.\n\nTunggu sampai "
+                "selesai atau tekan F7 dulu.")
+            return
+        if not self.langkah:
+            messagebox.showinfo(
+                APP_NAME,
+                "Alur kerja masih KOSONG.\n\nKlik salah satu tombol + di "
+                "toolbar (mis. + KLIK TITIK, + JEDA, + CARI GAMBAR) "
+                "untuk menambah langkah pertama.\n\nAtau klik TEMPLATE "
+                "CUTMOTIONS untuk mengisi alur CutMotions otomatis.")
+            return
+        # ---- validasi blok ULANGI ----
+        buka = 0
+        for l in self.langkah:
+            if not l.get("aktif", True):
+                continue
+            if l["jenis"] == "LOOP_MULAI":
+                buka += 1
+            elif l["jenis"] == "LOOP_AKHIR":
+                if buka == 0:
+                    if not messagebox.askyesno(
+                            APP_NAME,
+                            "Ada ULANGI-AKHIR tanpa ULANGI-MULAI di "
+                            "atasnya. Baris itu akan diabaikan. "
+                            "Lanjut?"):
+                        return
+                    break
+                buka -= 1
+        if buka > 0:
+            if not messagebox.askyesno(
+                    APP_NAME,
+                    "Ada {} blok ULANGI-MULAI tanpa ULANGI-AKHIR. "
+                    "Blok itu dijalankan satu kali saja. Lanjut?".format(
+                        buka)):
+                return
+        # ---- validasi gambar langkah CARI GAMBAR ----
+        butuh_cv = False
+        for l in self.langkah:
+            if l["jenis"] == "GAMBAR" and l.get("aktif", True):
+                butuh_cv = True
+                p = str((l.get("gambar") or {}).get("path") or "")
+                if not p or not os.path.isfile(p):
+                    messagebox.showwarning(
+                        APP_NAME,
+                        "Langkah CARI GAMBAR '{}' belum punya file "
+                        "gambar.\n\nKlik barisnya lalu POTONG GAMBAR / "
+                        "PILIH GAMBAR.".format(
+                            l.get("nama") or LABEL_JENIS["GAMBAR"]))
+                    return
+        if butuh_cv and not CV_OK:
+            if not messagebox.askyesno(
+                    APP_NAME,
+                    "opencv-python belum terpasang sehingga CARI GAMBAR "
+                    "tidak bisa jalan (akan klik titik acuan saja).\n\n"
+                    "Lanjut?"):
+                return
+        cut = self.shell.tab_cut if self.shell is not self else None
+        videos = cut.antrian_video_studio() if cut is not None else []
+        caption = cut.vars["caption"].get() if cut is not None else ""
+        try:
+            mundur = int(_angka(self.vars["mundur"].get(), 5, 0, 60))
+        except Exception:
+            mundur = 5
+        snap = {
+            "mundur": mundur,
+            "langkah": json.loads(json.dumps(self.langkah)),
+            "videos": list(videos),
+            "caption": caption,
+        }
+        self._simpan_auto()
+        self.stop_event.clear()
+        self.running = True
+        self.btn_start.config(state="disabled")
+        self.btn_stop.config(state="normal")
+        threading.Thread(target=self._worker, args=(snap,),
+                         daemon=True).start()
+
+    def _stop(self):
+        if self.running:
+            self.stop_event.set()
+            self._set_status("Menghentikan makro...", C_ORANGE)
+
+    def _finish(self, msg, warn=False):
+        def do():
+            self.running = False
+            self.btn_start.config(state="normal")
+            self.btn_stop.config(state="disabled")
+            try:
+                self.shell.lbl_status.config(
+                    text=msg, fg=C_RED if warn else C_GREEN)
+            except Exception:
+                pass
+        self.root.after(0, do)
+
+    # ================== MESIN EKSEKUSI MAKRO ==================
+    def _klik_titik(self, titik):
+        try:
+            self.mouse.position = (int(titik[0]), int(titik[1]))
+            time.sleep(0.15)
+            self.mouse.click(Button.left, 1)
+        except Exception:
+            pass
+
+    def _studio_klik(self, l, loop_stack):
+        titik = l.get("posisi")
+        if not titik:
+            self._set_status("Posisi klik belum diatur - langkah "
+                             "dilewati.", C_ORANGE)
+            return
+        idx = loop_stack[-1]["idx"] if loop_stack else 0
+        geser = int(_angka(l.get("geser"), 0, 0, 100000)) * idx
+        tujuan = (int(titik[0]), int(titik[1]) + geser)
+        n = int(_angka(l.get("klik"), 1, 0, 500))
+        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
+        mode = l.get("tombol_mouse") if l.get("tombol_mouse") \
+            in MOUSE_OPSI else "Klik kiri"
+        try:
+            self.mouse.position = tujuan
+            time.sleep(0.12)
+        except Exception:
+            pass
+        for k in range(n):
+            if self.stop_event.is_set():
+                break
+            try:
+                if mode == "Klik kanan":
+                    self.mouse.click(Button.right, 1)
+                elif mode == "Klik dobel":
+                    self.mouse.click(Button.left, 2)
+                else:
+                    self.mouse.click(Button.left, 1)
+            except Exception:
+                pass
+            if k < n - 1:
+                time.sleep(jk)
+
+    def _studio_gambar(self, l):
+        """Kembalikan "stop" bila alur harus dihentikan."""
+        titik = l.get("posisi")
+        g = l.get("gambar") or {}
+        path = str(g.get("path") or "").strip()
+        nama = str(l.get("nama") or "") or LABEL_JENIS["GAMBAR"]
+        if not titik:
+            self._set_status("Titik acuan '{}' belum diatur - langkah "
+                             "dilewati.".format(nama), C_ORANGE)
+            return None
+        if not path or not os.path.isfile(path) or not CV_OK:
+            self._set_status("Gambar/opencv tidak tersedia untuk '{}' - "
+                             "klik titik acuan X,Y.".format(nama),
+                             C_ORANGE)
+            self._klik_titik(titik)
+            return None
+        radius = int(_angka(g.get("radius"), 300, 50, 2000))
+        mirip = _angka(g.get("mirip"), 0.8, 0.5, 0.99)
+        hasil = None
+        pesan = ""
+        for percobaan in range(1, 4):
+            self._set_status(
+                "Cari gambar '{}' dalam radius {} px (percobaan {}/3, "
+                "multi-skala)...".format(os.path.basename(path), radius,
+                                         percobaan), C_GREEN)
+            hasil, pesan = cari_di_layar(path, titik[0], titik[1],
+                                         radius, mirip)
+            if hasil:
+                break
+            self._sleep(1.0)
+        if hasil:
+            x, y, skor = hasil
+            if str(g.get("aksi")) == "Pindah saja":
+                try:
+                    self.mouse.position = (x, y)
+                except Exception:
+                    pass
+                self._set_status(
+                    "Gambar '{}' KETEMU di ({}, {}) - kemiripan {:.0%} - "
+                    "mouse DIPINDAH tanpa klik.".format(nama, x, y, skor),
+                    C_GREEN)
+                return None
+            self._set_status(
+                "Gambar '{}' KETEMU di ({}, {}) - kemiripan {:.0%} - "
+                "diklik.".format(nama, x, y, skor), C_GREEN)
+            self._klik_titik((x, y))
+            return None
+        pilihan = str(g.get("gagal") or "Klik titik X,Y")
+        if pilihan == "Stop alur":
+            self._finish("Dihentikan: gambar '{}' tidak ketemu 3x. {}"
+                         .format(os.path.basename(path), pesan), warn=True)
+            return "stop"
+        if pilihan == "Lewati langkah":
+            self._set_status("Gambar '{}' tidak ketemu - langkah "
+                             "dilewati. {}".format(nama, pesan), C_ORANGE)
+            return None
+        self._set_status("Gambar '{}' tidak ketemu - pakai klik titik "
+                         "acuan. {}".format(nama, pesan), C_ORANGE)
+        self._klik_titik(titik)
+        return None
+
+    def _studio_ketik(self, l, loop_stack, caption, videos):
+        idx = loop_stack[-1]["idx"] if loop_stack else 0
+        teks = isi_placeholder(l.get("teks", ""), idx, caption, videos)
+        if not teks and not l.get("enter"):
+            return
+        try:
+            if l.get("ctrl_a"):
+                time.sleep(0.2)
+                with self.kb.pressed(Key.ctrl):
+                    self.kb.press("a")
+                    self.kb.release("a")
+                time.sleep(0.15)
+            if teks:
+                self.kb.type(teks)
+            if l.get("enter"):
+                time.sleep(0.1)
+                self.kb.press(Key.enter)
+                self.kb.release(Key.enter)
+        except Exception as e:
+            self._set_status("Gagal mengetik: {}".format(e), C_ORANGE)
+
+    def _studio_tombol(self, l):
+        nama = str(l.get("tombol_kb") or "Enter").strip() or "Enter"
+        n = int(_angka(l.get("jumlah_kb"), 1, 1, 500))
+        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
+        mod, kunci = TOMBOL_MAP.get(nama, ("", None))
+        try:
+            if kunci is None:
+                if len(nama) == 1:
+                    for k in range(n):
+                        if self.stop_event.is_set():
+                            break
+                        self.kb.type(nama)
+                        if k < n - 1:
+                            time.sleep(jk)
+                else:
+                    self._set_status("Tombol '{}' tidak dikenal - "
+                                     "dilewati.".format(nama), C_ORANGE)
+                return
+            obj = getattr(Key, kunci, None)
+            if obj is None:
+                self._set_status("Tombol '{}' tidak dikenal - dilewati."
+                                 .format(nama), C_ORANGE)
+                return
+
+            def tekan():
+                self.kb.press(obj)
+                self.kb.release(obj)
+
+            if mod == "shift":
+                with self.kb.pressed(Key.shift):
+                    for k in range(n):
+                        if self.stop_event.is_set():
+                            break
+                        tekan()
+                        if k < n - 1:
+                            time.sleep(jk)
+            elif mod == "ctrl":
+                with self.kb.pressed(Key.ctrl):
+                    for k in range(n):
+                        if self.stop_event.is_set():
+                            break
+                        tekan()
+                        if k < n - 1:
+                            time.sleep(jk)
+            else:
+                for k in range(n):
+                    if self.stop_event.is_set():
+                        break
+                    tekan()
+                    if k < n - 1:
+                        time.sleep(jk)
+        except Exception as e:
+            self._set_status("Gagal menekan tombol: {}".format(e),
+                             C_ORANGE)
+
+    def _studio_scroll(self, l):
+        n = int(_angka(l.get("jumlah_scroll"), 3, 0, 1000))
+        arah = -3 if l.get("arah") == "Turun" else 3
+        jk = max(0.05, _angka(l.get("jeda_klik"), 0.3, 0.05, 60))
+        for k in range(n):
+            if self.stop_event.is_set():
+                break
+            try:
+                self.mouse.scroll(0, arah)
+            except Exception:
+                pass
+            if k < n - 1:
+                time.sleep(jk)
+
+    def _worker(self, snap):
+        try:
+            langkah = snap["langkah"]
+            n = len(langkah)
+            if n == 0:
+                self._finish("Tidak ada langkah yang dijalankan.",
+                             warn=True)
+                return
+            if snap["mundur"] > 0:
+                for s in range(snap["mundur"], 0, -1):
+                    if self.stop_event.is_set():
+                        self._finish("Dibatalkan sebelum mulai.",
+                                     warn=True)
+                        return
+                    self._set_status(
+                        "Makro mulai dalam {} detik - siapkan "
+                        "halaman/aplikasi tujuan...".format(s), C_ORANGE)
+                    self._sleep(1.0)
+            videos = snap.get("videos") or []
+            caption = snap.get("caption") or ""
+            loop_stack = []
+            i = 0
+            aman = 0
+            while i < n:
+                if self.stop_event.is_set():
+                    self._finish("Makro dihentikan (F7) di langkah {}/{}."
+                                 .format(i + 1, n), warn=True)
+                    return
+                aman += 1
+                if aman > 500000:
+                    self._finish("Dihentikan: alur ULANGI terlalu panjang "
+                                 "(kemungkinan loop tanpa akhir).",
+                                 warn=True)
+                    return
+                l = langkah[i]
+                if not l.get("aktif", True):
+                    i += 1
+                    continue
+                self._set_progress("LANGKAH {}/{} - {}".format(
+                    i + 1, n,
+                    str(l.get("nama") or "") or LABEL_JENIS[l["jenis"]]))
+                self._sleep(max(0.0, _angka(l.get("jeda"), 0.5, 0,
+                                            86400)))
+                jenis = l["jenis"]
+                if jenis == "CATATAN":
+                    pass
+                elif jenis == "JEDA":
+                    d = _angka(l.get("detik"), 1.0, 0, 86400)
+                    self._set_status("Tunggu {:.1f} detik...".format(d),
+                                     C_GREEN)
+                    self._sleep(d)
+                elif jenis == "LOOP_MULAI":
+                    if l.get("ikut_video"):
+                        jumlah = len(videos)
+                    else:
+                        jumlah = int(_angka(l.get("jumlah_loop"), 2, 0,
+                                            100000))
+                    if jumlah <= 0:
+                        j = cari_akhir_loop(langkah, i)
+                        i = (j + 1) if j >= 0 else i + 1
+                        continue
+                    loop_stack.append({"mulai": i, "sisa": jumlah,
+                                       "idx": 0})
+                elif jenis == "LOOP_AKHIR":
+                    if loop_stack:
+                        top = loop_stack[-1]
+                        top["sisa"] -= 1
+                        top["idx"] += 1
+                        if top["sisa"] > 0:
+                            i = top["mulai"] + 1
+                            continue
+                        loop_stack.pop()
+                elif jenis == "KLIK":
+                    self._studio_klik(l, loop_stack)
+                elif jenis == "GAMBAR":
+                    if self._studio_gambar(l) == "stop":
+                        return
+                elif jenis == "KETIK":
+                    self._studio_ketik(l, loop_stack, caption, videos)
+                elif jenis == "TOMBOL":
+                    self._studio_tombol(l)
+                elif jenis == "SCROLL":
+                    self._studio_scroll(l)
+                i += 1
+            self._finish("Makro selesai! {} langkah sudah dijalankan."
+                         .format(n))
+        except Exception as e:
+            self._finish("Terjadi error: {}".format(e), warn=True)
 
 
 # ------------------------------------------------------------
@@ -3041,9 +4969,211 @@ class JendelaPotong(tk.Toplevel):
         self.on_simpan(path)
 
 
+# ============================================================
+# v5.0 - KERANGKA UTAMA: menubar + 2 tab + statusbar + hotkey
+# ============================================================
+class ShellApp:
+    """Kerangka aplikasi v5.0 Macro Studio Edition.
+
+    - Tab 1: STUDIO MAKRO (editor alur bebas ala Jitbit)
+    - Tab 2: ALUR CUTMOTIONS (A-J, seperti versi sebelumnya)
+    - Menubar & statusbar bersama, hotkey F6/F7 mengikuti tab aktif.
+    """
+
+    def __init__(self, root):
+        self.root = root
+        root.title("{} v{} - Macro Studio".format(APP_NAME, APP_VERSION))
+        root.configure(bg=C_BG)
+        root.geometry("1080x880")
+        root.minsize(1000, 760)
+        if sys.platform == "win32":
+            try:
+                root.iconbitmap(os.path.join(app_dir(), "icon.ico"))
+            except Exception:
+                pass
+
+        if PYNPUT_OK:
+            self.kb = KeyboardController()
+            self.mouse = MouseController()
+            self._listener = kb_mod.Listener(on_press=self._on_key)
+            self._listener.daemon = True
+            self._listener.start()
+        else:
+            self.kb = None
+            self.mouse = None
+
+        # ----- statusbar bersama (paling bawah) -----
+        status = tk.Frame(root, bg=C_BG, bd=1, relief="sunken")
+        status.pack(side="bottom", fill="x")
+        self.lbl_status = tk.Label(
+            status, anchor="w", bg=C_BG, fg=C_GREEN, font=F_S,
+            text="STUDIO MAKRO: pilih tombol + di atas untuk menambah "
+                 "langkah pertama  |  ALUR CUTMOTIONS: login manual dulu "
+                 "di situs, lalu tekan F6")
+        self.lbl_status.pack(side="left", fill="x", expand=True,
+                             padx=6, pady=3)
+        tk.Label(status, anchor="e", bg=C_BG, fg=C_MUTED, font=F_XS,
+                 text="v{}  |  F6 = Mulai   F7/ESC = Berhenti".format(
+                     APP_VERSION)).pack(side="right", padx=6)
+
+        # ----- notebook 2 tab -----
+        gaya = ttk.Style()
+        try:
+            gaya.theme_use("clam")
+        except Exception:
+            pass
+        gaya.configure("TNotebook", background=C_BG, borderwidth=0)
+        gaya.configure("TNotebook.Tab", font=F_H, padding=(14, 7))
+        gaya.map("TNotebook.Tab",
+                 background=[("selected", C_BLUE),
+                             ("!selected", "#DDE3EA")],
+                 foreground=[("selected", "white"),
+                             ("!selected", C_TEXT)])
+        self.nb = ttk.Notebook(root)
+        self.nb.pack(fill="both", expand=True)
+        f_studio = tk.Frame(self.nb, bg=C_BG)
+        f_cut = tk.Frame(self.nb, bg=C_BG)
+        self.nb.add(f_studio, text="  STUDIO MAKRO (alur bebas)  ")
+        self.nb.add(f_cut, text="  ALUR CUTMOTIONS (A-J)  ")
+
+        self.tab_studio = StudioMakroTab(f_studio, self)
+        self.tab_cut = CutMotionsTab(f_cut, self)
+        self._build_menubar()
+        root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # ---------- menubar ----------
+    def _build_menubar(self):
+        menubar = tk.Menu(self.root)
+
+        m_berkas = tk.Menu(menubar, tearoff=0)
+        m_berkas.add_command(label="Makro Baru (kosongkan Studio)",
+                             command=self.tab_studio._makro_baru)
+        m_berkas.add_command(label="Buka Makro Studio...",
+                             command=self.tab_studio._buka_makro)
+        m_berkas.add_command(label="Simpan Makro Studio...",
+                             command=self.tab_studio._simpan_makro)
+        m_berkas.add_separator()
+        m_berkas.add_command(label="Simpan Profil CutMotions...",
+                             command=self.tab_cut._simpan_profil)
+        m_berkas.add_command(label="Buka Profil CutMotions...",
+                             command=self.tab_cut._buka_profil)
+        m_berkas.add_separator()
+        m_berkas.add_command(label="Keluar", command=self._on_close)
+        menubar.add_cascade(label="Berkas", menu=m_berkas)
+
+        m_lang = tk.Menu(menubar, tearoff=0)
+        for jenis, label in [
+            ("KLIK", "Tambah KLIK TITIK"),
+            ("JEDA", "Tambah JEDA / TUNGGU"),
+            ("GAMBAR", "Tambah CARI GAMBAR (klik / pindah kursor)"),
+            ("KETIK", "Tambah KETIK TEKS"),
+            ("TOMBOL", "Tambah TEKAN TOMBOL"),
+            ("SCROLL", "Tambah SCROLL"),
+            ("CATATAN", "Tambah CATATAN"),
+        ]:
+            m_lang.add_command(
+                label=label,
+                command=lambda j=jenis: self.tab_studio._tambah(j))
+        m_lang.add_separator()
+        m_lang.add_command(label="Tambah ULANGI - MULAI",
+                           command=lambda: self.tab_studio._tambah(
+                               "LOOP_MULAI"))
+        m_lang.add_command(label="Tambah ULANGI - AKHIR",
+                           command=lambda: self.tab_studio._tambah(
+                               "LOOP_AKHIR"))
+        m_lang.add_separator()
+        m_lang.add_command(label="Salin Langkah  (Ctrl+C)",
+                           command=self.tab_studio._salin)
+        m_lang.add_command(label="Tempel Langkah  (Ctrl+V)",
+                           command=self.tab_studio._tempel)
+        m_lang.add_command(label="Hapus Langkah  (Del)",
+                           command=self.tab_studio._hapus)
+        menubar.add_cascade(label="Studio", menu=m_lang)
+
+        m_alat = tk.Menu(menubar, tearoff=0)
+        m_alat.add_command(label="Potong Gambar Referensi (langkah "
+                                 "Studio terpilih)",
+                           command=self.tab_studio._potong_dari_menu)
+        m_alat.add_command(label="Tes Cari Gambar (langkah Studio "
+                                 "terpilih)",
+                           command=self.tab_studio._tes_cari)
+        m_alat.add_separator()
+        m_alat.add_command(label="Muat Template Alur CutMotions ke Studio",
+                           command=self.tab_studio._template_cutmotions)
+        m_alat.add_separator()
+        m_alat.add_command(label="Lihat Riwayat Upload...",
+                           command=self.tab_cut._lihat_riwayat)
+        m_alat.add_command(label="Bersihkan Riwayat Folder Ini",
+                           command=self.tab_cut._bersihkan_riwayat)
+        m_alat.add_separator()
+        m_alat.add_command(label="Reset Semua Posisi CutMotions",
+                           command=self.tab_cut._reset_posisi)
+        m_alat.add_command(label="Cek Kelengkapan Library",
+                           command=self.tab_cut._cek_lengkap)
+        menubar.add_cascade(label="Alat", menu=m_alat)
+
+        m_bantu = tk.Menu(menubar, tearoff=0)
+        m_bantu.add_command(label="Buka Panduan",
+                            command=self.tab_cut._buka_panduan)
+        m_bantu.add_command(label="Tentang", command=self._tentang)
+        menubar.add_cascade(label="Bantuan", menu=m_bantu)
+        self.root.config(menu=menubar)
+
+    # ---------- routing tab & hotkey ----------
+    def tab_aktif(self):
+        try:
+            return (self.tab_studio
+                    if self.nb.index(self.nb.select()) == 0
+                    else self.tab_cut)
+        except Exception:
+            return self.tab_studio
+
+    def tab_lain(self, t):
+        return self.tab_cut if t is self.tab_studio else self.tab_studio
+
+    def _on_key(self, key):
+        try:
+            if key == kb_mod.Key.f6:
+                self.root.after(0, lambda: self.tab_aktif()._start())
+            elif key in (kb_mod.Key.f7, kb_mod.Key.esc):
+                self.root.after(0, self._stop_semua)
+        except Exception:
+            pass
+
+    def _stop_semua(self):
+        self.tab_studio._stop()
+        self.tab_cut._stop()
+
+    def _tentang(self):
+        messagebox.showinfo(
+            APP_NAME,
+            "{} v{} - Macro Studio Edition\n\n"
+            "DUA MODE dalam satu aplikasi:\n\n"
+            "1. STUDIO MAKRO (baru v5.0) - editor alur kerja bebas\n"
+            "ala Jitbit Macro Recorder: semua jenis aksi jadi menu\n"
+            "tersendiri di atas (+ Klik, + Jeda, + Cari Gambar,\n"
+            "+ Ketik Teks, + Tekan Tombol, + Scroll, + Ulangi) dan\n"
+            "tabel kosong di bawahnya untuk menyusun alur sendiri.\n\n"
+            "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
+            "Maksimal {} video sekali jalan (aturan situs).\n"
+            "Login dilakukan manual - tidak ada data akun yang disimpan."
+            .format(APP_NAME, APP_VERSION, MAX_BATCH))
+
+    def _on_close(self):
+        try:
+            self.tab_studio._simpan_auto()
+            self.tab_cut._save_settings()
+            self.tab_cut._save_riwayat()
+            self._stop_semua()
+            if PYNPUT_OK and hasattr(self, "_listener"):
+                self._listener.stop()
+        finally:
+            self.root.destroy()
+
+
 def main():
     root = tk.Tk()
-    app = CutUploaderApp(root)
+    app = ShellApp(root)
     if "--selftest" in sys.argv:
         def _ok():
             print("SELFTEST_OK")
@@ -3051,16 +5181,35 @@ def main():
         root.after(1800, _ok)
     if "--selftest-prop" in sys.argv:
         def _pilih():
-            app.tree.selection_set("pos_pilih_neg")
-            app.tree.event_generate("<<TreeviewSelect>>")
+            app.tab_cut.tree.selection_set("pos_pilih_neg")
+            app.tab_cut.tree.event_generate("<<TreeviewSelect>>")
         root.after(800, _pilih)
 
         def _ok2():
             print("SELFTEST_PROP_OK")
             root.destroy()
         root.after(3000, _ok2)
+    if "--selftest-studio" in sys.argv:
+        def _isi():
+            st = app.tab_studio
+            st._tambah("KLIK")
+            st._tambah("JEDA")
+            st._tambah("KETIK")
+            st._tambah("LOOP_MULAI")
+            st._tambah("KLIK")
+            st._tambah("LOOP_AKHIR")
+            st._naik()
+            st._turun()
+            print("STUDIO_STEPS_OK", len(st.langkah))
+        root.after(700, _isi)
+
+        def _ok3():
+            print("SELFTEST_STUDIO_OK")
+            root.destroy()
+        root.after(2800, _ok3)
     root.mainloop()
-    if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv):
+    if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
+            or ("--selftest-studio" in sys.argv):
         print("SELFTEST_DONE")
 
 

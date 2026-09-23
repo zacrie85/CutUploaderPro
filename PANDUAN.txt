@@ -1,7 +1,6 @@
 ============================================================
-  CUTUPLOADER PRO v4.2 - MACRO EDITION - PANDUAN LENGKAP
-  Uploader video batch otomatis untuk CutMotions (Kwai)
-  Tampilan baru ala Jitbit Macro Recorder
+  CUTUPLOADER PRO v5.0 - MACRO STUDIO EDITION - PANDUAN
+  Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
 ------------------------------------------------------------
@@ -11,7 +10,7 @@ Ada 3 cara, pilih yang paling gampang:
 
 CARA A - INSTALLER (paling gampang, seperti aplikasi biasa):
   1. Buka  https://github.com/zacrie85/CutUploaderPro/releases
-  2. Download  CutUploaderPro-Setup.exe  (rilis v4.2 ke atas)
+  2. Download  CutUploaderPro-Setup.exe  (rilis v5.0 ke atas)
   3. Kalau muncul biru "Windows protected your PC", klik
      "More info" -> "Run anyway" (ini normal untuk aplikasi
      tanpa tanda tangan digital berbayar).
@@ -30,7 +29,152 @@ CARA C - PAKAI PYTHON (untuk yang sudah paham Python):
   tidak butuh apa-apa lagi.
 
 ------------------------------------------------------------
-2. PERSIAPAN SEBELUM MENJALANKAN (DILAKUKAN MANUAL)
+2. DUA MODE DALAM SATU APLIKASI (BARU DI V5.0)
+------------------------------------------------------------
+Saat dibuka, di bagian atas ada DUA TAB:
+
+  [ STUDIO MAKRO (alur bebas) ]  [ ALUR CUTMOTIONS (A-J) ]
+
+1) STUDIO MAKRO - seperti Jitbit Macro Recorder sungguhan:
+   SEMUA jenis aksi jadi MENU tersendiri di bagian atas
+   (Klik titik, Jeda, Cari Gambar, Ketik Teks, Tekan Tombol,
+   Scroll, Catatan, Ulangi), dan di bawahnya ADA TABEL
+   KOSONG. Anda menyusun alur kerja klik-per-klik sendiri,
+   satu langkah satu langkah, sesuai kebutuhan apa saja
+   (tidak harus CutMotions - bisa login situs lain, aplikasi
+   Windows, apa pun yang berulang).
+
+2) ALUR CUTMOTIONS (A-J) - alur otomatis khusus uploader
+   CutMotions seperti versi-versi sebelumnya (jadwal, tambah
+   video, caption per baris, submit). Semua pengaturan lama
+   Anda tetap ada dan tidak berubah.
+
+Hotkey berlaku untuk tab yang SEDANG AKTIF:
+  F6 = Mulai      F7 / ESC = Berhenti
+
+------------------------------------------------------------
+3. STUDIO MAKRO - SUSUN ALUR SENDIRI (BARU DI V5.0)
+------------------------------------------------------------
+Tampilannya persis konsep Jitbit yang Anda minta:
+  - BAGIAN ATAS : semua menu langkah (2 baris tombol)
+  - BAGIAN BAWAH: tabel ALUR KERJA (mulai kosong) + panel
+    PROPERTI LANGKAH untuk baris yang diklik
+
+CARA PAKAI (contoh):
+  1. Klik tombol "+ CARI GAMBAR"  -> baris baru muncul di
+     tabel.
+  2. Klik barisnya -> panel PROPERTI terbuka di bawah.
+  3. Isi POSISI X,Y (AMBIL 5 dtk atau ketik manual), POTONG
+     GAMBAR, pilih "Saat ketemu: Klik di gambar".
+  4. Klik "+ KETIK" untuk menambah langkah mengetik, isi
+     teksnya, centang "Ctrl+A dulu" bila perlu menimpa.
+  5. Tambahkan "+ JEDA", "+ TOMBOL" (Enter/Tab/panah), dst
+     sampai alurnya utuh.
+  6. Tekan F6 (atau JALANKAN) -> alur dijalankan urut dari
+     atas ke bawah.
+
+MENUIS LANGKAH DI TOOLBAR ATAS (baris pertama):
+  + KLIK          klik kiri/kanan/dobel di satu titik
+                  (bisa diulang, ada jeda antar klik)
+  + JEDA          tunggu beberapa detik
+  + CARI GAMBAR   cari potongan gambar di layar; hasilnya
+                  bisa LANGSUNG DIKLIK atau hanya DIPINDAH
+                  tanpa klik; kalau tidak ketemu: klik titik
+                  acuan / lewati / stop
+  + KETIK         mengetik teks (opsional Ctrl+A dulu dan
+                  Enter setelahnya)
+  + TOMBOL        menekan tombol keyboard: Enter, Tab, Esc,
+                  Spasi, panah, Shift+Panah Bawah, Ctrl+A,
+                  Ctrl+C/V, F2/F4/F5, atau 1 huruf apa saja
+  + SCROLL        menggulung roda mouse Naik/Turun sejumlah
+                  gulungan
+  + CATATAN       penanda/komentar saja (tidak dieksekusi)
+  + ULANGI MULAI  pembuka blok pengulangan
+  + ULANGI AKHIR  penutup blok pengulangan
+
+TOMBOL SUNTING (baris kedua toolbar):
+  SALIN (Ctrl+C) - kop semua isi langkah terpilih
+  TEMPEL (Ctrl+V) - sisipkan salinan SETELAH baris terpilih;
+    semua parameternya ikut, tinggal Anda ubah sedikit ->
+    inilah cara gampang membuat "titik klik berikutnya"
+  HAPUS (Del) - hapus langkah terpilih
+  NAIK / TURUN - geser urutan langkah
+  AKTIF / MATI - matikan langkah tanpa menghapus (dilewati
+    saat jalan; barisnya jadi abu-abu "(nonaktif)")
+  Klik kanan baris juga memunculkan menu yang sama.
+
+PANEL PROPERTI LANGKAH (menyesuaikan jenis langkah):
+  Semua langkah punya: NAMA LANGKAH (bebas, mis. "klik
+  tombol login"), JEDA SEBELUM LANGKAH (detik), dan
+  centang LANGKAH AKTIF.
+  - KLIK     : POSISI X,Y (+ AMBIL 5 dtk / LIHAT), JENIS
+               KLIK (kiri/kanan/dobel), JUMLAH KLIK, JEDA
+               ANTAR KLIK, GESER PER PUTARAN ULANGI (px).
+  - JEDA     : TUNGGU BERAPA DETIK.
+  - CARI GAMBAR: POSISI acuan X,Y, GAMBAR REFERENSI (PILIH/
+               POTONG), SAAT KETEMU (Klik di gambar / Pindah
+               saja), SAAT TIDAK KETEMU (Klik titik X,Y /
+               Lewati langkah / Stop alur), RADIUS,
+               KEMIRIPAN, TES CARI LANGKAH INI.
+  - KETIK    : TEKS YANG DIKETIK + placeholder (lihat di
+               bawah), Ctrl+A dulu, Enter setelahnya.
+  - TOMBOL   : pilih tombol dari daftar atau ketik 1 huruf,
+               JUMLAH TEKAN, JEDA ANTAR TEKAN.
+  - SCROLL   : ARAH (Turun/Naik), JUMLAH GULUNGAN.
+  - ULANGI MULAI: JUMLAH ULANGAN, atau centang "Ikut JUMLAH
+               VIDEO di tab Alur CutMotions".
+
+BLOK ULANGI (mengulang sepotong alur):
+  Letakkan langkah-langkah yang mau diulang DI ANTARA
+  "ULANGI MULAI" dan "ULANGI AKHIR". Contoh: klik Edit ->
+  ketik caption -> klik Konfirmasi, diulang 20x. Isi
+  JUMLAH ULANGAN pada ULANGI MULAI. Blok boleh bersarang
+  (loop di dalam loop).
+  GESER PER PUTARAN ULANGI pada langkah KLIK di dalam blok
+  membuat klik turun ke baris berikutnya: isi jarak antar
+  baris (mis. 85) -> putaran ke-1 klik di Y asli, putaran
+  ke-2 turun 85 px, putaran ke-3 turun 170 px, dst.
+
+PLACEHOLDER UNTUK KETIK (otomatis mengikuti video):
+  {caption} = caption dasar + nama video ke-i (mis.
+              "#dangdut - melati"), diambil dari tab Alur
+              CutMotions (folder, caption, jumlah, riwayat)
+  {video}   = nama video ke-i tanpa ekstensi
+  {no}      = nomor putaran ULANGI (1, 2, 3, ...)
+  Video ke-i diambil urut nama A-Z, hormati centang "lewati
+  yang sudah terupload" - sama persis dengan urutan baris
+  video di situs.
+
+SIMPAN / BUKA MAKRO:
+  - SIMPAN MAKRO  : simpan alur ke file .json (mis.
+    "makro_upload_dangdut.json") - bisa disimpan banyak
+    makro berbeda.
+  - BUKA MAKRO    : muat kembali.
+  - MAKRO BARU    : kosongkan alur kerja.
+  - Makro aktif OTOMATIS TERSIMPAN setiap ada perubahan ke
+    folder data (%LOCALAPPDATA%\CutUploaderPro), jadi saat
+    aplikasi dibuka lagi alur terakhir langsung muncul.
+  - Menubar BERKAS juga berisi semua perintah ini.
+
+TEMPLATE CUTMOTIONS:
+  Klik "TEMPLATE CUTMOTIONS" -> alur A-J versi bebas
+  langsung terisi ke Studio (mengambil posisi & pengaturan
+  dari tab Alur CutMotions, termasuk blok ULANGI caption
+  dan placeholder {caption}). Setelah itu semua langkahnya
+  bebas Anda sunting/hapus/tambah - cara paling cepat
+  membuat variasi alur CutMotions tanpa mulai dari nol.
+
+CONTOH ALUR SEDERHANA (login situs):
+  + CARI GAMBAR  (gambar: tulisan tombol "Masuk", saat
+                  ketemu: Klik di gambar)
+  + JEDA         2 detik
+  + KETIK        email Anda
+  + TOMBOL       Tab
+  + KETIK        kata sandi
+  + TOMBOL       Enter
+
+------------------------------------------------------------
+4. PERSIAPAN SEBELUM MENJALANKAN (ALUR CUTMOTIONS)
 ------------------------------------------------------------
 Aplikasi ini TIDAK menyentuh login Anda (email/password tidak
 pernah diminta atau disimpan). Lakukan sendiri di browser:
@@ -40,9 +184,8 @@ pernah diminta atau disimpan). Lakukan sendiri di browser:
   4. Diamkan di halaman itu, lalu tekan F6 di aplikasi.
 
 ------------------------------------------------------------
-3. KENALAN DENGAN TAMPILAN BARU (ALA JITBIT)
+5. TAMPILAN TAB ALUR CUTMOTIONS (ALA JITBIT)
 ------------------------------------------------------------
-V4.0 bergaya Jitbit Macro Recorder:
   - TOOLBAR paling atas : JALANKAN (F6), BERHENTI (F7),
     TES CARI GAMBAR, POTONG GAMBAR REFERENSI,
     SALIN LANGKAH, TEMPEL LANGKAH, HAPUS SALINAN,
@@ -57,10 +200,11 @@ V4.0 bergaya Jitbit Macro Recorder:
     Del = hapus salinan.
   - WAKTU & UNGGAH      : mundur, jeda dialog, jeda antar
     langkah, tunggu upload, tombol terapkan jeda ke semua.
-  - STATUSBAR bawah     : kabar jalannya makro.
+  - STATUSBAR bawah     : kabar jalannya makro (bersama
+    dengan tab Studio).
 
 ------------------------------------------------------------
-4. MENISI POSISI KLIK (X, Y)
+6. MENISI POSISI KLIK (X, Y)
 ------------------------------------------------------------
 Cara 1 (paling mudah):
   - Klik baris langkahnya di tabel -> panel PROPERTI terbuka.
@@ -83,10 +227,10 @@ Kondisi halaman saat mengambil posisi (PENTING):
   - J  : halaman discroll sampai BAWAH (Submit terlihat).
 
 ------------------------------------------------------------
-5. JEDA ANTAR KLIK (BARU DI V4.0)
+7. JEDA ANTAR KLIK
 ------------------------------------------------------------
-Sekarang setiap langkah punya 2 macam jeda yang bisa Anda
-atur sendiri di panel PROPERTI LANGKAH:
+Setiap langkah punya 2 macam jeda yang bisa Anda atur sendiri
+di panel PROPERTI LANGKAH:
   - JEDA SEBELUM LANGKAH  = waktu tunggu sebelum langkah itu
     dieksekusi (kolom "JEDA" di tabel). Default 1.0 detik.
   - JEDA ANTAR KLIK       = jarak antara klik dengan klik
@@ -102,15 +246,16 @@ Jeda lain yang tetap ada di bagian WAKTU:
     dialog pilih file / editor caption / dropdown terbuka.
   - TUNGGU UPLOAD PER VIDEO (default 60 detik) - dikali jumlah
     video; naikkan kalau internet lambat.
-Semua jeda otomatis tersimpan dan ikut dalam profil.
+Di Studio Makro, jeda diatur per langkah lewat kolom JEDA
+di tabel + MUNDUR SEBELUM MULAI milik Studio.
 
 ------------------------------------------------------------
-6. ARTI LANGKAH A-J (SESUAI URUTAN SITUS)
+8. ARTI LANGKAH A-J (SESUAI URUTAN SITUS)
 ------------------------------------------------------------
   A  Klik "Jadwal rilis / publikasi"
   B  Klik dropdown "NEGARA"
   C  Pilih negara - klik biasa ATAU pencarian gambar
-     (lihat bagian 7)
+     (lihat bagian 9)
   D  Klik kolom tanggal, tanggal-jam diketik otomatis
      (format 2026-09-10 02:05:01, detik boleh dilewat)
   E  Klik "OKE"
@@ -137,14 +282,17 @@ Tips penting untuk langkah I:
     diambil.
 
 ------------------------------------------------------------
-7. PENCARIAN GAMBAR (SEMUA LANGKAH, BARU DI V4.2)
+9. PENCARIAN GAMBAR (SEMUA LANGKAH, DAN STUDIO MAKRO)
 ------------------------------------------------------------
-Dulu pencarian gambar hanya untuk langkah C (pilih negara).
-Sekarang SEMUA langkah (A-J dan salinannya) bisa memakainya:
+Semua langkah A-J (dan salinannya) bisa memakai pencarian
+gambar; di Studio Makro tersedia sebagai langkah "+ CARI
+GAMBAR" tersendiri:
   1. Klik baris langkahnya di tabel.
   2. Di panel PROPERTI, lihat seksi "PENCARIAN GAMBAR
-     (opsional)" di bagian bawah.
-  3. Centang "Aktifkan CARI GAMBAR pada langkah ini".
+     (opsional)" (tab CutMotions) atau properti langkah
+     CARI GAMBAR (Studio).
+  3. Centang "Aktifkan CARI GAMBAR pada langkah ini"
+     (tab CutMotions).
   4. PILIH GAMBAR... atau POTONG GAMBAR... (screenshot layar
      hidup - paling akurat).
   5. Atur perilakunya:
@@ -157,8 +305,8 @@ Sekarang SEMUA langkah (A-J dan salinannya) bisa memakainya:
                         atau "Stop alur".
   6. RADIUS & KEMIRIPAN boleh dikosongkan (pakai nilai
      global) atau diisi khusus untuk langkah ini.
-  7. TES CARI LANGKAH INI = coba dulu tanpa menjalankan
-     seluruh alur (mouse dipindah ke gambar, tidak diklik).
+  7. TES CARI = coba dulu tanpa menjalankan seluruh alur
+     (mouse dipindah ke gambar, tidak diklik).
 Titik X,Y langkah tetap penting sebagai PUSAT PENCARIAN
 (radius dihitung dari titik itu) dan klik cadangan.
 
@@ -172,36 +320,34 @@ PENYEBAB "CARI GAMBAR ERROR" YANG PALING SERING, DAN SOLUSINYA:
   1. Gambar referensi dipotong dari FILE screenshot yang
      ukurannya beda dengan layar asli (mis. screenshot 80%
      atau di-scale Windows).
-     SOLUSI BARU v4.0: tombol POTONG GAMBAR REFERENSI -
-     aplikasi screenshot layar yang HIDUP, Anda seret kotak
-     di atas tulisan negaranya, SIMPAN. Ukurannya dijamin
-     cocok 1:1.
-     v4.1: potongan otomatis tersimpan ke folder data
-     %LOCALAPPDATA%\CutUploaderPro (bukan folder Program
-     Files yang terkunci Windows - dulu ini penyebab error
-     "Errno 13 Permission denied" saat SIMPAN AREA).
+     SOLUSI: tombol POTONG GAMBAR - aplikasi screenshot
+     layar yang HIDUP, Anda seret kotak di atas tulisannya,
+     SIMPAN. Ukurannya dijamin cocok 1:1. Potongan otomatis
+     tersimpan ke folder data %LOCALAPPDATA%\CutUploaderPro
+     (bukan folder Program Files yang terkunci Windows -
+     dulu ini penyebab error "Errno 13 Permission denied"
+     saat SIMPAN AREA; sudah diperbaiki sejak v4.1).
   2. Zoom browser berubah sejak gambar dipotong.
-     SOLUSI v4.0: pencarian sekarang MULTI-SKALA (mencoba
-     70% - 125%), tapi tetap paling akurat bila zoom tetap.
+     SOLUSI: pencarian MULTI-SKALA (mencoba 70% - 125%),
+     tapi tetap paling akurat bila zoom tetap.
   3. Radius terlalu kecil / ambang kemiripan terlalu tinggi.
      SOLUSI: radius default 300 (boleh sampai 2000),
      kemiripan default 0.80 (turunkan ke 0.70 kalau susah).
-  4. Versi EXE buatan sendiri dulu TIDAK membawa OpenCV
-     (build_exe.bat lama mengecualikan PIL/numpy).
-     SOLUSI: build_exe.bat v4.0 sudah memasukkan semuanya,
-     dan Setup.exe/EXE dari rilis GitHub otomatis lengkap.
-  5. Pesan error dulu tidak jelas.
-     SOLUSI: sekarang TES CARI melaporkan penyebabnya secara
+  4. Versi EXE buatan sendiri dulu TIDAK membawa OpenCV.
+     SOLUSI: build_exe.bat sudah memasukkan semuanya, dan
+     Setup.exe/EXE dari rilis GitHub otomatis lengkap.
+  5. Pesan error tidak jelas.
+     SOLUSI: TES CARI melaporkan penyebabnya secara
      gamblang (mis. "kemiripan terbaik 62%, ambang 80%").
 Urutan yang disarankan:
   1. Buka daftar negara di situs.
   2. Klik POTONG GAMBAR -> seret kotak SEMPIT di atas tulisan
      negaranya (jangan banyak ruang kosong) -> SIMPAN AREA.
-  3. Klik TES CARI GAMBAR -> mouse harusnya melompat ke
-     tulisan itu. Ulangi sampai sukses, baru JALANKAN.
+  3. Klik TES CARI -> mouse harusnya melompat ke tulisan itu.
+     Ulangi sampai sukses, baru JALANKAN.
 
 ------------------------------------------------------------
-7b. SALIN / TEMPEL LANGKAH (BARU DI V4.2)
+9b. SALIN / TEMPEL LANGKAH (CUTMOTIONS)
 ------------------------------------------------------------
 Langkah A-J bisa DIGANDAKAN jadi titik klik tambahan yang
 Anda atur sendiri (posisi, jeda, jumlah klik, cari gambar):
@@ -230,19 +376,26 @@ Urutan eksekusi salinan mengikuti posisi baris di tabel:
   I1-I3 ikut LOOP caption per baris, salinan J setelah
   Submit).
 
+Mau kebebasan penuh mengatur urutan? Muat alur A-J ke Studio
+lewat tombol "TEMPLATE CUTMOTIONS" - di Studio semua langkah
+bisa diurut ulang (NAIK/TURUN), dihapus, dan ditambah bebas.
+
 ------------------------------------------------------------
-8. PROFIL MAKRO (PENGGANTI DAFTAR BROWSER)
+10. PROFIL MAKRO & FILE MAKRO
 ------------------------------------------------------------
-Karena posisinya kini banyak (A-J), v4.0 memakai cara Jitbit:
+  Tab Alur CutMotions:
   - SIMPAN PROFIL  : simpan semua posisi + jeda + pengaturan
     ke satu file .json (mis. "profil_chrome_akun1.json").
   - BUKA PROFIL    : muat kembali. Mau pakai 2 browser/akun?
     Simpan 2 profil, buka sesuai kebutuhan.
-  - Pengaturan terakhir otomatis tersimpan juga
+  Tab Studio Makro:
+  - SIMPAN/BUKA MAKRO untuk alur kerja bebas (bisa banyak
+    file makro).
+  - Pengaturan terakhir kedua tab otomatis tersimpan juga
     (di folder data: %LOCALAPPDATA%\CutUploaderPro).
 
 ------------------------------------------------------------
-9. RIWAYAT & LEWATI YANG SUDAH TERUPLOAD
+11. RIWAYAT & LEWATI YANG SUDAH TERUPLOAD
 ------------------------------------------------------------
 - Setelah batch selesai, daftar video dicatat ke
   cutuploader_riwayat.json (urut baris situs).
@@ -251,48 +404,54 @@ Karena posisinya kini banyak (A-J), v4.0 memakai cara Jitbit:
 - Kalau di tengah jalan dihentikan (F7) saat menunggu upload,
   jalankan F6 lagi: semua video sudah masuk -> aplikasi
   menawarkan LANJUT KE FASE CAPTION.
+- Placeholder {caption}/{video} di Studio Makro juga mengikuti
+  riwayat ini (urutan baris sama dengan situs).
 - Alat > Lihat Riwayat / Bersihkan Riwayat folder ini.
 
 ------------------------------------------------------------
-10. SARAN UJI COBA (PENTING!)
+12. SARAN UJI COBA (PENTING!)
 ------------------------------------------------------------
 1. JUMLAH VIDEO = 1 dulu.
 2. G: klik = 1, scroll = 0. H2: klik = 1. J: klik = 1.
 3. Jalankan F6 sambil dilihat. Baru naikkan bertahap ke
    5, 10, 20 setelah lancar.
-4. Darurat: tekan F7/ESC, atau geser mouse ke pojok KIRI
+4. Untuk makro Studio: jalankan dengan MUNDUR 5 detik dan
+   amati satu per satu; pakai TES CARI sebelum CARI GAMBAR.
+5. Darurat: tekan F7/ESC, atau geser mouse ke pojok KIRI
    ATAS layar (failsafe otomatis).
 
 ------------------------------------------------------------
-11. TROUBLESHOOTING CEPAT
+13. TROUBLESHOOTING CEPAT
 ------------------------------------------------------------
 - Klik meleset       : zoom/ukuran jendela browser berubah
                        sejak posisi diambil. Ambil ulang.
 - SIMPAN AREA potongan gambar error "Errno 13 Permission
-  denied" (versi lama): itu karena dulu potongan disimpan
-  ke folder aplikasi di C:\Program Files yang dikunci
-  Windows. SUDAH DIPERBAIKI di v4.1 - potongan sekarang
-  otomatis tersimpan ke folder data yang bebas tulis:
-  %LOCALAPPDATA%\CutUploaderPro
-  (lihat keterangan di bawah jendela potong). Kalau tetap
-  gagal, muncul dialog pilih lokasi sendiri (Documents/
-  Desktop). Upgrade ke Setup.exe v4.1.
+  denied" (versi lama): sudah diperbaiki sejak v4.1 -
+  potongan otomatis tersimpan ke folder data yang bebas
+  tulis: %LOCALAPPDATA%\CutUploaderPro. Kalau tetap gagal,
+  muncul dialog pilih lokasi sendiri (Documents/Desktop).
 - TES CARI gagal     : potong ulang gambar dengan POTONG
                        GAMBAR, perbesar radius, turunkan
                        kemiripan ke 0.70.
 - Klik pertama jalan, dialog file tidak terbuka: naikkan
   JEDA BUKA DIALOG/EDITOR menjadi 3-4 detik.
 - Upload berhenti di tengah: naikkan TUNGGU UPLOAD PER VIDEO.
+- Makro Studio "ULANGI terlalu panjang": ada blok ULANGI
+  yang jumlah ulangannya tidak masuk akal (ribuan). Cek
+  JUMLAH ULANGAN / centang "ikut jumlah video".
+- ULANGI-AKHIR tanpa ULANGI-MULAI (atau sebaliknya):
+  aplikasi memperingatkan sebelum jalan - rapikan pasangan
+  bloknya di tabel.
 - Anti-virus menandai EXE: itu false positive aplikasi tanpa
   tanda tangan digital. Tambahkan pengecualian, atau bangun
   sendiri dengan build_exe.bat.
 
 ------------------------------------------------------------
-12. KEAMANAN
+14. KEAMANAN
 ------------------------------------------------------------
 - Login 100% manual; aplikasi tidak melihat/menyimpan
   email, password, atau cookie Anda.
-- Semua data (profil, riwayat) hanya tersimpan di komputer
-  Anda sebagai file JSON biasa.
+- Semua data (profil, makro, riwayat) hanya tersimpan di
+  komputer Anda sebagai file JSON biasa.
 
 Selamat mencoba! F6 = Mulai, F7/ESC = Berhenti.
