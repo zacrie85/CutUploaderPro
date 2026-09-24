@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v6.0  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v6.1  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -72,6 +72,14 @@
        (aplikasi mengetik "nama1.mp4" "nama2.mp4" ... di
        kotak 'Nama file' dialog pilih file; tidak lagi
        bergantung urutan tampil dialog atau riwayat)
+     - v6.1: TANPA PILIH FOLDER - cukup PILIH VIDEO...
+       (bisa banyak sekaligus, bahkan dari folder berbeda).
+       Nama setiap video yang dipilih LANGSUNG TERSIMPAN di
+       daftar, dipakai PERSIS untuk caption, lalu daftar itu
+       OTOMATIS HILANG setelah caption selesai diproses.
+       Karena nama yang diketik di dialog kini PATH LENGKAP,
+       dialog boleh terbuka di folder mana pun - urutan
+       pilih = urutan upload = urutan caption.
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -84,7 +92,9 @@
        G  Klik bebas berulang (0-500x) dan/atau scroll (0-50x)
        H  Klik video pertama + tahan SHIFT + panah bawah
           (v6.0: ATAU mengetik "nama1.mp4" "nama2.mp4" ...
-          persis sesuai daftar caption di kotak 'Nama file')
+          persis sesuai daftar caption di kotak 'Nama file';
+          v6.1: nama diketik PATH LENGKAP - dialog boleh
+          terbuka di folder mana pun)
        H2 Klik bebas (mis. tombol "Buka" pada dialog file)
        I  Caption per video: klik "Edit" -> ketik caption ->
           klik "Konfirmasi" (bergeser turun per baris)
@@ -124,6 +134,14 @@
        sama dengan nama di caption karena aplikasi mengetik
        nama-nama file dari daftarnya LANGSUNG; urutan tampil
        dialog (nama/tanggal) dan riwayat tidak berpengaruh.
+     - v6.1: TIDAK PERLU PILIH FOLDER lagi - klik PILIH
+       VIDEO... lalu pilih satu/banyak file video (boleh
+       campur folder, boleh ditambah bertahap lewat TAMBAH
+       VIDEO). Nama-namanya tersimpan di daftar kartu VIDEO
+       & CAPTION, otomatis dipakai di caption PERSIS per
+       baris, dan OTOMATIS DIHAPUS dari daftar begitu alur
+       selesai (data tidak menumpuk). JUMLAH VIDEO ikut
+       terisi sendiri sesuai banyaknya video dipilih.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -154,6 +172,7 @@ import datetime
 import os
 import sys
 import shutil
+import tempfile
 
 # Tampilan tajam & koordinat presisi di layar Windows High-DPI.
 # Penting supaya posisi klik dan hasil screenshot cocok 1:1
@@ -239,7 +258,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.0"
+APP_VERSION = "6.1"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -1602,7 +1621,7 @@ def studio_jalankan_langkah(mesin, l, idx=0, videos=None, caption="",
                                    jumlah_total)
         if not teks:
             mesin._set_status(
-                "Tidak ada teks untuk diketik (folder video / jumlah "
+                "Tidak ada teks untuk diketik (daftar video / jumlah "
                 "kosong) - langkah dilewati.", C_ORANGE)
             return None
         if l.get("posisi"):
@@ -1816,15 +1835,16 @@ def daftar_video(folder):
 
 
 def nama_file_dialog(daftar):
-    """v6.0: bangun teks untuk diketik di kotak 'Nama file' dialog buka.
+    """v6.0/v6.1: bangun teks untuk diketik di kotak 'Nama file' dialog buka.
 
     Windows (dan dialog buka file standar) menerima BANYAK file
     sekaligus bila namanya ditulis BERANTAI DENGAN TANDA KUTIP:
-        "video pertama.mp4" "video kedua.mp4"
-    Hasilnya: file yang terpilih PERSIS daftar yang diminta, dalam
-    urutan yang sama - tidak lagi bergantung pada urutan tampil
-    dialog (nama/tanggal/ukuran). Ini membuat nama video yang
-    diupload PASTI sama dengan nama yang dipakai di caption.
+        "C:\\video\\pertama.mp4" "C:\\video\\kedua.mp4"
+    v6.1: `daftar` berisi PATH LENGKAP dari daftar video terpilih,
+    jadi dialog pilih file boleh terbuka di folder mana pun - nama
+    yang diketik tetap ketemu. Hasilnya: file yang terpilih PERSIS
+    daftar yang diminta, dalam urutan yang sama (urutan pilih =
+    urutan upload = urutan caption).
     """
     return " ".join('"{}"'.format(str(f)) for f in (daftar or []))
 
@@ -2376,14 +2396,21 @@ class CutMotionsTab(PerekamAksiMixin):
         self._loading = True                      # penjaga trace variabel
         self._loading_prop = False
 
-        # ---- riwayat upload: {folder_lower: [nama file, ...]} ----
+        # ---- riwayat upload: {kunci: [nama file, ...]} ----
         # urutan isi riwayat = urutan baris video di situs (atas ke bawah)
         self.riwayat = {}
+
+        # ---- v6.1: daftar video TERPILIH (path lengkap) ----
+        # urutan = urutan saat user memilih di dialog = urutan upload
+        # = urutan caption. Nama-namanya tampil di kartu VIDEO &
+        # CAPTION dan OTOMATIS DIHAPUS begitu alur selesai sukses.
+        self.video_terpilih = []
+        self.video_dir_ingat = ""   # folder terakhir dibuka dialog pilih
 
         # ---- variabel isian (StringVar agar mudah disimpan/muat) ----
         V = self.vars = {}
         for kunci, bawaan in [
-            ("folder", ""), ("jumlah", "5"), ("caption", "#dangdut"),
+            ("jumlah", "5"), ("caption", "#dangdut"),
             ("mundur", "5"), ("jeda_dialog", "2"), ("jeda_langkah", "1"),
             ("tunggu", "60"), ("tanggal", "2026-09-10 02:05:01"),
             ("radius", "300"), ("kemiripan", "0.80"),
@@ -2457,7 +2484,7 @@ class CutMotionsTab(PerekamAksiMixin):
             m_alat.add_separator()
             m_alat.add_command(label="Lihat Riwayat Upload...",
                                command=self._lihat_riwayat)
-            m_alat.add_command(label="Bersihkan Riwayat Folder Ini",
+            m_alat.add_command(label="Bersihkan Riwayat Upload",
                                command=self._bersihkan_riwayat)
             m_alat.add_separator()
             m_alat.add_command(label="Reset Semua Posisi",
@@ -2578,23 +2605,58 @@ class CutMotionsTab(PerekamAksiMixin):
         self._tb_btn(tb_r2, "BUKA PROFIL", self._buka_profil)
 
         # ----- Strip VIDEO & CAPTION (kartu membulat) -----
+        # v6.1: TANPA PILIH FOLDER - user cukup memilih file
+        # videonya langsung (bisa banyak + campur folder); nama
+        # masing-masing LANGSUNG TERSIMPAN di daftar di bawah,
+        # dipakai PERSIS untuk caption, dan otomatis kosong lagi
+        # setelah alur selesai.
         kartu_v = KartuBulat(self.root, judul="VIDEO & CAPTION",
                              padding=(10, 6, 10, 8))
         kartu_v.pack(side="top", fill="x", padx=8, pady=(6, 4))
         v = kartu_v.badan
         r1 = tk.Frame(v, bg=C_BG)
         r1.pack(fill="x", padx=8, pady=(4, 2))
-        tk.Label(r1, text="FOLDER VIDEO", bg=C_BG, fg=C_MUTED,
+        tk.Label(r1, text="VIDEO TERPILIH", bg=C_BG, fg=C_MUTED,
                  font=F_XS, anchor="w").pack(side="left")
-        tk.Entry(r1, textvariable=self.vars["folder"], bg=C_PANEL,
-                 fg=C_TEXT, relief="solid", bd=1, font=F_N,
-                 highlightthickness=0).pack(side="left", fill="x",
-                                            expand=True, padx=6, ipady=3)
-        tk.Button(r1, text="PILIH FOLDER...", command=self._pilih_folder,
+        self.lbl_video_status = tk.Label(
+            r1, text="Belum ada video - klik PILIH VIDEO...",
+            bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w")
+        self.lbl_video_status.pack(side="left", fill="x", expand=True,
+                                   padx=6)
+        tk.Button(r1, text="PILIH VIDEO...", command=self._pilih_video,
+                  bg=C_BLUE, fg="white", font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_BLUE_D).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Button(r1, text="TAMBAH VIDEO...", command=self._tambah_video,
                   bg=C_BLUE_L, fg=C_BLUE_D, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
                   activebackground=C_SELROW).pack(side="left", padx=2,
                                                   ipadx=6, ipady=2)
+        tk.Button(r1, text="HAPUS TERPILIH",
+                  command=self._hapus_video_pilihan,
+                  bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_SELROW).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Button(r1, text="KOSONGKAN", command=self._kosongkan_video,
+                  bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_SELROW).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        # ---- daftar nama video yang tersimpan (bisa dipilih utk
+        #      dihapus per item lewat HAPUS TERPILIH) ----
+        f_daftar = tk.Frame(v, bg=C_BG)
+        f_daftar.pack(fill="x", padx=8, pady=(0, 2))
+        self.lb_video = tk.Listbox(
+            f_daftar, bg=C_PANEL, fg=C_TEXT, font=F_MONO,
+            relief="solid", bd=1, height=4, exportselection=False,
+            selectmode="extended", activestyle="none")
+        self.lb_video.pack(side="left", fill="both", expand=True)
+        vsb_v = ttk.Scrollbar(f_daftar, orient="vertical",
+                              command=self.lb_video.yview)
+        self.lb_video.configure(yscrollcommand=vsb_v.set)
+        vsb_v.pack(side="left", fill="y")
         r2 = tk.Frame(v, bg=C_BG)
         r2.pack(fill="x", padx=8, pady=(0, 2))
         tk.Label(r2, text="JUMLAH VIDEO (maks {}):".format(MAX_BATCH),
@@ -2627,12 +2689,13 @@ class CutMotionsTab(PerekamAksiMixin):
             variable=self.vars["ketik_nama"], bg=C_BG, fg=C_TEXT,
             font=F_XS, anchor="w").pack(anchor="w")
         tk.Label(
-            r_ketik, text="Aktif: aplikasi mengetik \"nama1.mp4\" "
-                          "\"nama2.mp4\" ... di kotak 'Nama file' dialog "
-                          "sehingga video yang masuk PERSIS daftar "
-                          "caption (tidak terpengaruh urutan tampil "
-                          "dialog). Langkah H (klik video pertama + "
-                          "Shift+panah) tidak dipakai.",
+            r_ketik, text="Aktif: aplikasi mengetik nama-nama video "
+                          "TERPILIH (path lengkap) di kotak 'Nama file' "
+                          "dialog sehingga video yang masuk PERSIS daftar "
+                          "caption - dialog boleh terbuka di folder mana "
+                          "pun, tidak perlu disamakan lagi. Langkah H "
+                          "(klik video pertama + Shift+panah) tidak "
+                          "dipakai.",
             bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
             justify="left").pack(fill="x")
 
@@ -4487,53 +4550,158 @@ class CutMotionsTab(PerekamAksiMixin):
 
         threading.Thread(target=kerja, daemon=True).start()
 
-    # ================== FOLDER, JUMLAH, CAPTION ==================
-    def _pilih_folder(self):
-        folder = filedialog.askdirectory(title="Pilih folder video")
-        if folder:
-            self.vars["folder"].set(os.path.normpath(folder))
-            self._save_settings()
+    # ================== PILIH VIDEO (v6.1, tanpa folder) ==================
+    def _pilih_video(self):
+        """Pilih satu/banyak file video LANGSUNG (tanpa pilih folder).
+
+        Nama + path lengkap setiap file yang dipilih LANGSUNG
+        TERSIMPAN di daftar (urutan pilihan dipertahankan), lalu
+        dipakai PERSIS untuk typing di dialog & caption. Daftar
+        lama DIGANTI dengan pilihan baru.
+        """
+        filetypes = [("File video", " ".join("*" + e for e in VIDEO_EXTS)),
+                     ("Semua file", "*.*")]
+        awal = self.video_dir_ingat or os.path.expanduser("~")
+        paths = filedialog.askopenfilenames(
+            title="Pilih video yang mau diupload",
+            initialdir=awal if os.path.isdir(awal) else None,
+            filetypes=filetypes)
+        if not paths:
+            return
+        self._set_video_list([os.path.normpath(p) for p in paths])
+
+    def _tambah_video(self):
+        """v6.1: TAMBAH video ke daftar tanpa menghapus yang lama
+        (bisa dari folder lain; yang sudah ada tidak diduplikat)."""
+        filetypes = [("File video", " ".join("*" + e for e in VIDEO_EXTS)),
+                     ("Semua file", "*.*")]
+        awal = self.video_dir_ingat or os.path.expanduser("~")
+        paths = filedialog.askopenfilenames(
+            title="Tambah video ke daftar",
+            initialdir=awal if os.path.isdir(awal) else None,
+            filetypes=filetypes)
+        if not paths:
+            return
+        baru = list(self.video_terpilih)
+        n_ditambah = 0
+        for p in (os.path.normpath(x) for x in paths):
+            if p not in baru:
+                baru.append(p)
+                n_ditambah += 1
+        if n_ditambah:
+            self._set_video_list(baru)
+            self._set_status("{} video ditambahkan ke daftar.".format(
+                n_ditambah), C_GREEN)
+        else:
+            self._set_status("Tidak ada video baru (semua sudah di "
+                             "daftar).", C_ORANGE)
+
+    def _hapus_video_pilihan(self):
+        """v6.1: hapus baris-baris yang sedang disorot di daftar."""
+        if not hasattr(self, "lb_video"):
+            return
+        idxs = list(self.lb_video.curselection())
+        if not idxs:
+            messagebox.showinfo(
+                APP_NAME, "Sorot dulu video di daftar yang mau dihapus, "
+                          "lalu klik HAPUS TERPILIH.")
+            return
+        sisa = [p for i, p in enumerate(self.video_terpilih)
+                if i not in set(idxs)]
+        self._set_video_list(sisa)
+        self._set_status("{} video dibuang dari daftar.".format(
+            len(idxs)), C_ORANGE)
+
+    def _kosongkan_video(self):
+        """v6.1: kosongkan seluruh daftar video terpilih."""
+        if not self.video_terpilih:
+            return
+        if messagebox.askyesno(
+                APP_NAME,
+                "Kosongkan daftar {} video terpilih?\n\n"
+                "(riwayat upload tidak ikut terhapus)".format(
+                    len(self.video_terpilih))):
+            self._set_video_list([])
+            self._set_status("Daftar video dikosongkan.", C_ORANGE)
+
+    def _set_video_list(self, paths):
+        """Pasang daftar video terpilih baru + rapikan UI & jumlah."""
+        self.video_terpilih = list(paths or [])
+        # ingat folder terakhir supaya dialog pilih berikutnya terbuka
+        # di tempat yang sama
+        for p in reversed(self.video_terpilih):
+            d = os.path.dirname(p)
+            if os.path.isdir(d):
+                self.video_dir_ingat = d
+                break
+        # jumlah video ikut terisi otomatis sesuai banyaknya pilihan
+        if self.video_terpilih:
+            self.vars["jumlah"].set(str(len(self.video_terpilih)))
+        self._refresh_video_list()
+        self._update_count()
+        self._update_preview()
+        self._save_settings()
+
+    def _refresh_video_list(self):
+        """Tampilkan ulang daftar nama video tersimpan di kartu."""
+        if not hasattr(self, "lb_video"):
+            return
+        self.lb_video.delete(0, "end")
+        for i, p in enumerate(self.video_terpilih, 1):
+            self.lb_video.insert("end", "{}. {}".format(
+                i, os.path.basename(p)))
+        if hasattr(self, "lbl_video_status"):
+            if not self.video_terpilih:
+                self.lbl_video_status.config(
+                    text="Belum ada video - klik PILIH VIDEO...",
+                    fg=C_ORANGE)
+            else:
+                self.lbl_video_status.config(
+                    text="{} video tersimpan (urutan pilihan)".format(
+                        len(self.video_terpilih)), fg=C_GREEN)
+
+    def _video_terpakai(self):
+        """Daftar video yang akan dipakai alur: hormati centang
+        'lewati yang sudah terupload' dengan mencocokkan NAMA file
+        di riwayat (v6.1: riwayat tidak lagi terikat folder)."""
+        semua = list(self.video_terpilih)
+        if self.vars["skip_uploaded"].get():
+            sudah = self._riwayat_video()
+            semua = [p for p in semua
+                     if os.path.basename(p) not in sudah]
+        return semua
 
     def _kunci_riwayat(self):
-        return (self.vars["folder"].get().strip().lower()
-                or "(tanpa folder)")
+        return "(video terpilih)"
 
-    def _riwayat_folder(self):
+    def _riwayat_video(self):
         return set(self.riwayat.get(self._kunci_riwayat(), []))
 
     def _update_count(self, *_):
         if not hasattr(self, "lbl_count"):
             return
-        folder = self.vars["folder"].get().strip()
-        semua = daftar_video(folder)
-        if not folder:
-            self.lbl_count.config(text="Folder belum dipilih.",
-                                  fg=C_MUTED)
-        elif not semua:
+        semua = self._video_terpakai()
+        total = len(self.video_terpilih)
+        if not total:
             self.lbl_count.config(
-                text="Tidak ada file video di folder ini "
-                     "(cari .mp4 .mov .avi dll).", fg=C_ORANGE)
+                text="Pilih videonya dulu di atas.", fg=C_MUTED)
+        elif self.vars["skip_uploaded"].get():
+            self.lbl_count.config(
+                text="{} video terpilih - {} akan diproses."
+                     .format(total, len(semua)), fg=C_BLUE)
         else:
-            if self.vars["skip_uploaded"].get():
-                sisa = [f for f in semua if f not in self._riwayat_folder()]
-                self.lbl_count.config(
-                    text="{} video (urut nama A-Z) - {} belum terupload."
-                         .format(len(semua), len(sisa)), fg=C_BLUE)
-            else:
-                self.lbl_count.config(
-                    text="{} video ditemukan (urut nama A-Z).".format(
-                        len(semua)), fg=C_BLUE)
+            self.lbl_count.config(
+                text="{} video terpilih (urutan pilihan).".format(
+                    total), fg=C_BLUE)
 
     def _update_preview(self, *_):
         if not hasattr(self, "lbl_preview"):
             return
-        semua = daftar_video(self.vars["folder"].get().strip())
-        if self.vars["skip_uploaded"].get() and semua:
-            sudah = self._riwayat_folder()
-            belum = [f for f in semua if f not in sudah]
-            contoh = belum[0] if belum else semua[0]
+        semua = self._video_terpakai()
+        if semua:
+            contoh = os.path.basename(semua[0])
         else:
-            contoh = semua[0] if semua else "melati"
+            contoh = "melati"
         teks = compose_caption(self.vars["caption"].get(), contoh)
         n = len(teks)
         self.lbl_preview.config(
@@ -4553,7 +4721,7 @@ class CutMotionsTab(PerekamAksiMixin):
         lb.pack(fill="both", expand=True, padx=10, pady=(10, 4))
         kunci = self._kunci_riwayat()
         isi = self.riwayat.get(kunci, [])
-        lb.insert("end", "Folder: {}".format(kunci))
+        lb.insert("end", "Sumber: video terpilih (v6.1 - tanpa folder)")
         lb.insert("end", "Total {} video tercatat terupload "
                          "(urut baris situs):".format(len(isi)))
         lb.insert("end", "")
@@ -4569,17 +4737,17 @@ class CutMotionsTab(PerekamAksiMixin):
         n = len(self.riwayat.get(kunci, []))
         if n == 0:
             messagebox.showinfo(APP_NAME,
-                                "Riwayat folder ini masih kosong.")
+                                "Riwayat masih kosong.")
             return
         if messagebox.askyesno(
                 APP_NAME,
-                "Hapus riwayat {} video yang sudah terupload?\n\n"
+                "Hapus catatan {} video yang sudah terupload?\n\n"
                 "Setelah dihapus, video yang sama bisa diupload ulang "
                 "dari awal.".format(n)):
             self.riwayat.pop(kunci, None)
             self._save_riwayat()
             self._update_count()
-            self._set_status("Riwayat folder ini dibersihkan.", C_GREEN)
+            self._set_status("Riwayat upload dibersihkan.", C_GREEN)
 
     def _reset_posisi(self):
         if messagebox.askyesno(APP_NAME,
@@ -4635,8 +4803,10 @@ class CutMotionsTab(PerekamAksiMixin):
             "+ Ketik Teks, + Tekan Tombol, + Scroll, + Ulangi) dan\n"
             "tabel kosong di bawahnya untuk menyusun alur sendiri.\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions:\n"
-            "Jadwal (A-E) > Tambah video + Shift+turun (F-H2) >\n"
-            "Caption per baris (I) > Submit (J).\n\n"
+            "PILIH VIDEO (v6.1, tanpa pilih folder - nama tersimpan\n"
+            "otomatis, dipakai di caption, lalu daftarnya hilang\n"
+            "sendiri setelah selesai) > Jadwal (A-E) > Tambah video\n"
+            "(F-H2) > Caption per baris (I) > Submit (J).\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
             .format(APP_NAME, APP_VERSION, MAX_BATCH))
@@ -4709,7 +4879,7 @@ class CutMotionsTab(PerekamAksiMixin):
         """Ambil seluruh pengaturan sekarang untuk dipakai worker."""
         V = self.vars
         return {
-            "folder": V["folder"].get().strip(),
+            "videos": list(self.video_terpilih),   # v6.1: path lengkap
             "jumlah": V["jumlah"].get().strip(),
             "caption": V["caption"].get(),
             "mundur": V["mundur"].get().strip(),
@@ -4806,12 +4976,33 @@ class CutMotionsTab(PerekamAksiMixin):
                         jumlah, MAX_BATCH, MAX_BATCH)):
                 return
             jumlah = MAX_BATCH
-        folder = snap["folder"]
-        if not folder or not os.path.isdir(folder):
+        videos = list(snap.get("videos") or [])
+        if not videos:
             messagebox.showwarning(
-                APP_NAME, "Folder video belum dipilih atau tidak ada:\n"
-                + (folder or "(kosong)"))
+                APP_NAME,
+                "Belum ada video dipilih.\n\nKlik PILIH VIDEO... di "
+                "kartu VIDEO & CAPTION, lalu pilih satu atau banyak "
+                "file videonya (tidak perlu memilih folder lagi).")
             return
+        hilang = [p for p in videos if not os.path.isfile(p)]
+        if hilang:
+            if not messagebox.askyesno(
+                    APP_NAME,
+                    "{} file video tidak ketemu (dipindah/diganti "
+                    "nama?):\n- {}\n\n"
+                    "Buang dari daftar dan lanjut dengan sisanya?"
+                    .format(len(hilang),
+                            "\n- ".join(os.path.basename(p)
+                                        for p in hilang[:10]))):
+                return
+            videos = [p for p in videos if p not in hilang]
+            if not videos:
+                messagebox.showwarning(
+                    APP_NAME,
+                    "Semua video terpilih tidak ketemu. Pilih ulang "
+                    "videonya lewat PILIH VIDEO...")
+                return
+            self._set_video_list(videos)
         # ---- posisi wajib sesuai alur A-J ----
         lewati_jadwal = snap["skip_jadwal"]
         slot_mati = snap.get("slot_mati") or set()
@@ -4930,21 +5121,18 @@ class CutMotionsTab(PerekamAksiMixin):
             return
         if tunggu < 0:
             tunggu = 0
-        # ---- susun daftar video yang mau diupload ----
-        semua = daftar_video(folder)
-        if not semua:
-            messagebox.showwarning(
-                APP_NAME, "Tidak ada file video (.mp4/.mov/dll) di "
-                          "folder ini.")
-            return
+        # ---- susun daftar video yang mau diupload (v6.1: dari
+        #      daftar video TERPILIH, urutan = urutan pilihan) ----
+        semua = list(videos)
         if snap["skip"]:
-            sudah = self._riwayat_folder()
-            semua = [f for f in semua if f not in sudah]
+            sudah = self._riwayat_video()
+            semua = [p for p in semua
+                     if os.path.basename(p) not in sudah]
         if not semua:
             riw = self.riwayat.get(self._kunci_riwayat(), [])
             if riw and messagebox.askyesno(
                     APP_NAME,
-                    "Semua video di folder ini sudah terupload.\n\n"
+                    "Semua video terpilih sudah terupload.\n\n"
                     "Mau lanjut LANGSUNG KE FASE CAPTION untuk {} video "
                     "terakhir? (jadwal & tambah video dilewati)".format(
                         min(jumlah, len(riw)))):
@@ -5593,10 +5781,13 @@ class CutMotionsTab(PerekamAksiMixin):
                     return
 
                 # ---- catat riwayat (tersimpan instan) ----
+                # v6.1: riwayat menyimpan NAMA file (tanpa path) karena
+                # video boleh berasal dari folder mana pun
                 self.riwayat.setdefault(kunci, [])
                 for nama_file in antrian:
-                    if nama_file not in self.riwayat[kunci]:
-                        self.riwayat[kunci].append(nama_file)
+                    nama_pendek = os.path.basename(nama_file)
+                    if nama_pendek not in self.riwayat[kunci]:
+                        self.riwayat[kunci].append(nama_pendek)
                 self._save_riwayat()
 
             # =================================================
@@ -5613,7 +5804,9 @@ class CutMotionsTab(PerekamAksiMixin):
             if len(riw) >= jumlah:
                 daftar_caption = list(riw[-jumlah:])
             else:
-                daftar_caption = list(antrian)
+                # v6.1: antrian berisi PATH LENGKAP -> caption pakai
+                # nama pendeknya saja
+                daftar_caption = [os.path.basename(p) for p in antrian]
             n_cap = len(daftar_caption)
             jarak = max(1, int(snap["jarak_baris"]))
             i = 0
@@ -5746,6 +5939,20 @@ class CutMotionsTab(PerekamAksiMixin):
             self.btn_stop.config(state="disabled")
             self.lbl_status.config(text=msg,
                                    fg=C_RED if warn else C_GREEN)
+            if not warn and self.video_terpilih:
+                # v6.1: daftar nama video yang barusan diproses sampai
+                # caption OTOMATIS DIHAPUS - data tidak menumpuk dan
+                # batch berikutnya tinggal pilih video baru
+                n = len(self.video_terpilih)
+                self.video_terpilih = []
+                self._refresh_video_list()
+                self._update_count()
+                self._update_preview()
+                self._save_settings()
+                self.lbl_status.config(
+                    text=msg + "  |  Daftar {} video terpakai sudah "
+                               "otomatis dikosongkan.".format(n),
+                    fg=C_GREEN)
             self._update_count()
         self.root.after(0, do)
 
@@ -5768,7 +5975,8 @@ class CutMotionsTab(PerekamAksiMixin):
     def _kumpulkan_data(self):
         V = self.vars
         data = {
-            "folder": V["folder"].get(),
+            "video_terpilih": list(self.video_terpilih),   # v6.1
+            "video_dir": self.video_dir_ingat,             # v6.1
             "jumlah": V["jumlah"].get(),
             "caption": V["caption"].get(),
             "mundur": V["mundur"].get(),
@@ -5961,8 +6169,15 @@ class CutMotionsTab(PerekamAksiMixin):
         self._studio_counter = sum(
             1 for x in ekstra_baru if x.get("jenis") in JENIS_STUDIO)
         self._loading = True
+        # v6.1: daftar video terpilih (path lengkap) + folder ingatan
+        vt = data.get("video_terpilih")
+        if isinstance(vt, list):
+            self.video_terpilih = [str(p) for p in vt if str(p).strip()]
+        vd = str(data.get("video_dir") or "")
+        if os.path.isdir(vd):
+            self.video_dir_ingat = vd
         pasangan = [
-            ("folder", V["folder"]), ("jumlah", V["jumlah"]),
+            ("jumlah", V["jumlah"]),
             ("caption", V["caption"]), ("mundur", V["mundur"]),
             ("jeda_dialog", V["jeda_dialog"]),
             ("jeda_langkah", V["jeda_langkah"]),
@@ -6011,6 +6226,7 @@ class CutMotionsTab(PerekamAksiMixin):
         self._loading = False
         self._refresh_tabel()
         self._render_properti()
+        self._refresh_video_list()
         self._update_count()
         self._update_preview()
 
@@ -6063,15 +6279,14 @@ class CutMotionsTab(PerekamAksiMixin):
             pass
 
     def antrian_video_studio(self):
-        """Daftar video (urut A-Z, hormati skip & jumlah) untuk Studio.
+        """v6.1: daftar NAMA video terpilih (hormati skip & jumlah)
+        untuk Studio.
 
         Dipakai placeholder {caption}/{video} pada blok ULANGI di
-        STUDIO MAKRO - urutannya sama dengan baris video di situs.
+        STUDIO MAKRO - urutannya sama dengan urutan pilihan = baris
+        video di situs.
         """
-        semua = daftar_video(self.vars["folder"].get().strip())
-        if self.vars["skip_uploaded"].get():
-            sudah = self._riwayat_folder()
-            semua = [f for f in semua if f not in sudah]
+        semua = [os.path.basename(p) for p in self._video_terpakai()]
         try:
             jumlah = max(1, int(self.vars["jumlah"].get()))
         except ValueError:
@@ -8233,7 +8448,7 @@ class ShellApp:
         m_alat.add_separator()
         m_alat.add_command(label="Lihat Riwayat Upload...",
                            command=self.tab_cut._lihat_riwayat)
-        m_alat.add_command(label="Bersihkan Riwayat Folder Ini",
+        m_alat.add_command(label="Bersihkan Riwayat Upload",
                            command=self.tab_cut._bersihkan_riwayat)
         m_alat.add_separator()
         m_alat.add_command(label="Reset Semua Posisi CutMotions",
@@ -8725,6 +8940,101 @@ def main():
             print("SELFTEST_KETIK_OK")
             root.destroy()
         root.after(3600, _ok10)
+    if "--selftest-pilih" in sys.argv:
+        def _uji_pilih():
+            # v6.1: TANPA PILIH FOLDER - video dipilih langsung,
+            # nama tersimpan, dipakai caption, lalu hilang sendiri
+            cut = app.tab_cut
+            d = os.path.join(tempfile.gettempdir(), "cutup_selftest_pilih")
+            try:
+                os.makedirs(d, exist_ok=True)
+                for n in ("video Satu.mp4", "video Dua.mp4",
+                          "video Tiga.mp4"):
+                    open(os.path.join(d, n), "wb").close()
+                p1 = os.path.join(d, "video Satu.mp4")
+                p2 = os.path.join(d, "video Dua.mp4")
+                p3 = os.path.join(d, "video Tiga.mp4")
+                # 1) set daftar -> urutan pilihan tersimpan
+                cut._set_video_list([p1, p2, p3])
+                print("PILIH_LIST_OK",
+                      cut.video_terpilih == [p1, p2, p3])
+                # 2) jumlah ikut terisi otomatis
+                print("PILIH_JUMLAH_OK",
+                      cut.vars["jumlah"].get() == "3")
+                # 3) label status + daftar tampil nama pendek
+                print("PILIH_STATUS_OK",
+                      "3 video tersimpan"
+                      in str(cut.lbl_video_status.cget("text"))
+                      and cut.lb_video.get(0) == "1. video Satu.mp4")
+                # 4) folder terakhir tercatat untuk dialog berikutnya
+                print("PILIH_DIR_OK", cut.video_dir_ingat == d)
+                # 5) snapshot & simpan membawa path lengkap
+                print("PILIH_SNAPSHOT_OK",
+                      cut._snapshot().get("videos") == [p1, p2, p3])
+                print("PILIH_SIMPAN_OK",
+                      json.loads(json.dumps(cut._kumpulkan_data()))
+                      .get("video_terpilih") == [p1, p2, p3])
+                # 6) muat ulang profil -> daftar kembali; profil lama
+                #    tanpa kunci -> daftar sekarang dipertahankan
+                data = json.loads(json.dumps(cut._kumpulkan_data()))
+                cut._set_video_list([])
+                cut._terapkan_data(data)
+                print("PILIH_MUAT_OK",
+                      cut.video_terpilih == [p1, p2, p3])
+                # 7) typing dialog pakai path lengkap terkutip
+                print("PILIH_DIALOG_OK",
+                      nama_file_dialog([p1, p2])
+                      == '"{}" "{}"'.format(p1, p2))
+                # 8) antrean -> caption pakai nama pendek, urut sama
+                cap = [compose_caption("#dangdut",
+                                       os.path.basename(p))
+                       for p in [p1, p2, p3]]
+                print("PILIH_CAPTION_OK",
+                      cap == ["#dangdut - video Satu",
+                              "#dangdut - video Dua",
+                              "#dangdut - video Tiga"])
+                # 9) riwayat per NAMA: nama sama di folder lain pun
+                #    dianggap sudah terupload bila centang aktif
+                cut.riwayat[cut._kunci_riwayat()] = ["video Dua.mp4"]
+                cut.vars["skip_uploaded"].set(True)
+                print("PILIH_RIWAYAT_OK",
+                      cut._video_terpakai() == [p1, p3])
+                # 10) studio: placeholder {video} dari nama terpilih
+                cut.vars["jumlah"].set("2")
+                print("PILIH_STUDIO_OK",
+                      cut.antrian_video_studio()
+                      == ["video Satu.mp4", "video Tiga.mp4"])
+                # 11) hapus baris tersorot di daftar
+                cut._set_video_list([p1, p2, p3])
+                cut.lb_video.selection_clear(0, "end")
+                cut.lb_video.selection_set(1)      # video Dua
+                cut._hapus_video_pilihan()
+                print("PILIH_HAPUS_OK",
+                      cut.video_terpilih == [p1, p3])
+                # 12) file yang hilang ketahuan (validasi _start)
+                ph = os.path.join(d, "hilang.mp4")
+                cut._set_video_list([p1, ph, p3])
+                print("PILIH_HILANG_OK",
+                      [p for p in cut._snapshot()["videos"]
+                       if not os.path.isfile(p)] == [ph])
+                # 13) _finish sukses -> daftar OTOMATIS kosong
+                cut._set_video_list([p1, p3])
+                cut.running = True
+                cut._finish("Selesai! 2 video diproses.")
+                root.update()
+                print("PILIH_BERSIH_OK",
+                      cut.video_terpilih == []
+                      and "otomatis dikosongkan"
+                      in str(cut.lbl_status.cget("text")))
+                print("PILIH_DONE")
+            finally:
+                shutil.rmtree(d, ignore_errors=True)
+        root.after(700, _uji_pilih)
+
+        def _ok11():
+            print("SELFTEST_PILIH_OK")
+            root.destroy()
+        root.after(3600, _ok11)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -8734,7 +9044,8 @@ def main():
             or ("--selftest-multi" in sys.argv) \
             or ("--selftest-uid" in sys.argv) \
             or ("--selftest-hapus" in sys.argv) \
-            or ("--selftest-ketik" in sys.argv):
+            or ("--selftest-ketik" in sys.argv) \
+            or ("--selftest-pilih" in sys.argv):
         print("SELFTEST_DONE")
 
 

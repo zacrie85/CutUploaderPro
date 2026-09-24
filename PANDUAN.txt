@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.0 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.1 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -162,13 +162,15 @@ BLOK ULANGI (mengulang sepotong alur):
 PLACEHOLDER UNTUK KETIK (otomatis mengikuti video):
   {caption} = caption dasar + nama video ke-i (mis.
               "#dangdut - melati"), diambil dari tab Alur
-              CutMotions (folder, caption, jumlah, riwayat)
+              CutMotions (video terpilih, caption, jumlah,
+              riwayat)
   {video}   = nama video ke-i tanpa ekstensi
   {no}      = nomor putaran ULANGI (1, 2, 3, ...)
   {jumlah}  = jumlah video total (v5.2)
-  Video ke-i diambil urut nama A-Z, hormati centang "lewati
-  yang sudah terupload" - sama persis dengan urutan baris
-  video di situs.
+  Video ke-i diambil sesuai URUTAN PILIHAN di daftar video
+  terpilih (v6.1), hormati centang "lewati yang sudah
+  terupload" - sama persis dengan urutan baris video di
+  situs.
   TIPS v5.2: untuk caption dan jumlah video lebih gampang
   pakai menu "+ VIDEO+CAPTION" daripada placeholder manual.
 
@@ -221,8 +223,10 @@ pernah diminta atau disimpan). Lakukan sendiri di browser:
     BARU DI V5.5), TES CARI GAMBAR, POTONG GAMBAR
     REFERENSI, SALIN LANGKAH - lalu di baris kedua: TEMPEL
     LANGKAH, HAPUS SALINAN, SIMPAN PROFIL, BUKA PROFIL.
-  - VIDEO & CAPTION     : pilih folder video, jumlah video
-    (maks 20), caption dasar, pratinjau caption.
+  - VIDEO & CAPTION     : PILIH VIDEO... langsung tanpa pilih
+    folder (v6.1 - nama setiap video tersimpan otomatis di
+    daftar, bisa campur folder, jumlah video terisi sendiri),
+    caption dasar, pratinjau caption.
   - LANGKAH MAKRO       : tabel berisi langkah A-J + salinan
     (baris biru bertanda "+") + langkah STUDIO (baris ungu
     bertanda "S", v5.5). KLIK SATU BARIS lalu sunting
@@ -298,7 +302,9 @@ di tabel + MUNDUR SEBELUM MULAI milik Studio.
      (jumlah video - 1)x  -> 5-20 video terpilih sekaligus
      (v6.0: kalau KETIK NAMA FILE aktif - bawaan - langkah
      ini DIGANTI aplikasi mengetik "nama1.mp4" "nama2.mp4"
-     ... persis sesuai daftar caption di kotak 'Nama file')
+     ... persis sesuai daftar caption di kotak 'Nama file';
+     v6.1: yang diketik PATH LENGKAP video terpilih, jadi
+     dialog boleh terbuka di folder mana pun)
   H2 Klik bebas (tombol "Buka" pada dialog file)
   I  Caption per video: klik Edit -> klik kotak caption ->
      Ctrl+A -> ketik "#dangdut - namafile" -> klik Konfirmasi.
@@ -353,6 +359,39 @@ potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
 
+BARU DI V6.1 - TANPA PILIH FOLDER: CUKUP PILIH VIDEO, NAMA
+TERSIMPAN OTOMATIS, HILANG SENDIRI SETELAH SELESAI:
+  Keluhan: sebelumnya aplikasi menuntut MEMILIH FOLDER video
+  dulu supaya nama file bisa disamakan dengan caption. Ribet,
+  dan dialog pilih file harus dibuka di folder yang tepat.
+  Kini FOLDER TIDAK DIPERLUKAN lagi:
+  1. Klik PILIH VIDEO... di kartu VIDEO & CAPTION, lalu pilih
+     satu / beberapa / banyak file video sekaligus (tahan
+     Ctrl/Shift di dialog Windows). Boleh CAMPUR FOLDER.
+  2. Nama setiap video yang dipilih LANGSUNG TERSIMPAN di
+     daftar kartu (bernomor sesuai urutan pilihan). Urutan
+     pilih = urutan upload = urutan caption.
+  3. JUMLAH VIDEO terisi OTOMATIS sesuai banyaknya video
+     dipilih (boleh diubah manual kalau mau kurangi).
+  4. Saat alur jalan, aplikasi mengetik nama-nama itu (path
+     lengkap) di kotak 'Nama file' dialog -> video yang masuk
+     PERSIS daftar, TIDAK TERGANTUNG folder yang terbuka di
+     dialog. Nama di caption PASTI sama dengan videonya.
+  5. Setelah caption selesai diproses (alur tuntas), daftar
+     video terpilih OTOMATIS DIHAPUS - data tidak menumpuk,
+     batch berikutnya tinggal PILIH VIDEO lagi. (Bila alur
+     dihentikan di tengah, daftar DIPERTAHANKAN supaya bisa
+     dilanjutkan.)
+  Tombol pendukung:
+  - PILIH VIDEO...    : ganti daftar dengan pilihan baru.
+  - TAMBAH VIDEO...   : tambah video tanpa menghapus daftar
+    (yang sudah ada tidak diduplikat).
+  - HAPUS TERPILIH    : buang baris yang disorot di daftar.
+  - KOSONGKAN         : kosongkan seluruh daftar.
+  Daftar ikut tersimpan di profil, jadi aplikasi dibuka ulang
+  pun videonya masih tercantum (sampai alur selesai /
+  dikosongkan manual).
+
 BARU DI V6.0 - NAMA VIDEO YANG DIUPLOAD PASTI SAMA DENGAN CAPTION:
   Keluhan: video yang terupload dan nama yang masuk di caption
   BEDA - caption sudah benar, tapi video yang terupload tidak
@@ -380,9 +419,11 @@ BARU DI V6.0 - NAMA VIDEO YANG DIUPLOAD PASTI SAMA DENGAN CAPTION:
      diatur lagi saat mode ini aktif.
   5. Mau kembali ke cara lama (klik + Shift+panah)? Cukup
      hilangkan centang 'KETIK NAMA FILE di dialog pilih file'.
-  Catatan: pastikan dialog terbuka di FOLDER yang benar (sama
-  seperti cara lama) dan jangan sentuh keyboard/mouse selama
-  alur berjalan.
+  Catatan (v6.0): dialog harus terbuka di folder yang benar.
+  SEJAK v6.1 CATATAN INI TIDAK BERLAKU LAGI - nama diketik
+  path lengkap, dialog boleh terbuka di folder mana pun.
+  Tetap satu aturan lama: jangan sentuh keyboard/mouse
+  selama alur berjalan.
 
 BARU DI V5.9 - ERROR ANGKA DIPERBAIKI + SEMUA LANGKAH BISA DIHAPUS:
   1) ERROR "JUMLAH VIDEO dan WAKTU harus diisi dengan angka" DIPERBAIKI:
@@ -759,7 +800,7 @@ bisa diurut ulang (NAIK/TURUN), dihapus, dan ditambah bebas.
   menawarkan LANJUT KE FASE CAPTION.
 - Placeholder {caption}/{video} di Studio Makro juga mengikuti
   riwayat ini (urutan baris sama dengan situs).
-- Alat > Lihat Riwayat / Bersihkan Riwayat folder ini.
+- Alat > Lihat Riwayat / Bersihkan Riwayat Upload.
 
 ------------------------------------------------------------
 12. SARAN UJI COBA (PENTING!)

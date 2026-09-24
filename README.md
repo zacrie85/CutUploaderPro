@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.0)
+# CutUploader Pro — Macro Studio Edition (v6.1)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v6.0: KETIK NAMA FILE di dialog pilih file — nama video yang diupload PASTI SAMA dengan yang dipakai di caption** (aplikasi mengetik `"nama1.mp4" "nama2.mp4" ...` persis sesuai daftarnya; tidak lagi bergantung urutan tampil dialog atau riwayat upload).
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.0: KETIK NAMA FILE di dialog pilih file — nama video yang diupload PASTI SAMA dengan yang dipakai di caption**, dan **baru v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO (bisa banyak, boleh campur folder); nama setiap video LANGSUNG TERSIMPAN, dipakai PERSIS untuk caption, lalu daftarnya OTOMATIS HILANG setelah alur selesai**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.0**:
+Dari halaman [Releases](../../releases) rilis **v6.1**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.0.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.1.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -40,7 +40,7 @@ Persis konsep Jitbit Macro Recorder: **semua jenis aksi jadi menu tersendiri di 
 
 - Panel **PROPERTI LANGKAH** menyesuaikan jenis langkah terpilih (posisi + AMBIL 5 dtk, teks, jeda, gambar referensi, dll).
 - **SALIN / TEMPEL / HAPUS / NAIK / TURUN / AKTIF-MATI** — klik kanan baris atau Ctrl+C/V/Del; tempel menyisipkan salinan lengkap setelah baris terpilih (cara gampang bikin titik klik berikutnya).
-- **Placeholder teks**: `{caption}` = caption dasar + nama video ke-i, `{video}` = nama video ke-i, `{no}` = nomor putaran, `{jumlah}` = jumlah video — mengikuti folder/jumlah/riwayat di tab CutMotions (atau pakai menu `+ VIDEO+CAPTION` yang lebih praktis).
+- **Placeholder teks**: `{caption}` = caption dasar + nama video ke-i, `{video}` = nama video ke-i, `{no}` = nomor putaran, `{jumlah}` = jumlah video — mengikuti daftar video terpilih/jumlah/riwayat di tab CutMotions (atau pakai menu `+ VIDEO+CAPTION` yang lebih praktis).
 - **GESER PER PUTARAN ULANGI** — klik di dalam blok ULANGI otomatis turun N px per putaran (untuk caption per baris video).
 - **SIMPAN/BUKA MAKRO** (.json) + **auto-save** makro aktif; **TEMPLATE CUTMOTIONS** mengisi alur A-J versi bebas sekali klik, lalu bebas disunting.
 
@@ -62,6 +62,22 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
 
+### Baru v6.1: TANPA pilih folder — pilih videonya langsung, namanya tersimpan otomatis, hilang sendiri setelah selesai
+
+**Keluhan**: sebelumnya harus **memilih FOLDER video** dulu supaya nama file bisa disamakan dengan caption — ribet, dan dialog pilih file di browser harus kebetulan terbuka di folder yang tepat.
+
+**Kini folder tidak diperlukan lagi**:
+
+1. Klik **PILIH VIDEO...** di kartu VIDEO & CAPTION, lalu pilih satu / beberapa / banyak file video sekaligus (tahan `Ctrl`/`Shift` di dialog Windows). **Boleh campur folder.**
+2. **Nama setiap video yang dipilih LANGSUNG TERSIMPAN** di daftar kartu (bernomor sesuai urutan pilihan) — urutan pilih = urutan upload = urutan caption.
+3. **JUMLAH VIDEO terisi otomatis** sesuai banyaknya video dipilih (boleh diubah manual).
+4. Saat alur jalan, aplikasi mengetik **path lengkap** video-video itu di kotak *Nama file* dialog → video yang masuk **PERSIS daftar**, tidak tergantung folder yang sedang terbuka di dialog. Nama di caption PASTI sama dengan videonya.
+5. Setelah caption selesai diproses (alur tuntas), **daftar video terpilih OTOMATIS DIHAPUS** — data tidak menumpuk; batch berikutnya tinggal PILIH VIDEO lagi. Bila alur dihentikan di tengah, daftar dipertahankan supaya bisa dilanjutkan.
+
+Tombol pendukung: **PILIH VIDEO...** (ganti daftar), **TAMBAH VIDEO...** (menambah tanpa menghapus; anti-duplikat), **HAPUS TERPILIH** (buang baris tersorot), **KOSONGKAN** (kosongkan semua). Daftar ikut tersimpan di profil.
+
+> Ini sekaligus mengangkat catatan v6.0: dialog kini **boleh terbuka di folder mana pun** karena yang diketik adalah path lengkap. Aturan lama tetap berlaku: jangan sentuh keyboard/mouse selama alur berjalan.
+
 ### Baru v6.0: nama video yang diupload PASTI sama dengan caption
 
 **Keluhan**: video yang terupload dan nama yang masuk di caption **BEDA** — caption sudah benar, tapi video yang terupload tidak sesuai nama itu.
@@ -76,7 +92,7 @@ Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafil
 4. Posisi langkah H (video pertama) **tidak perlu diatur lagi** saat mode ini aktif.
 5. Mau kembali ke cara lama (klik + Shift+panah)? Cukup hilangkan centangnya.
 
-> Catatan: pastikan dialog terbuka di FOLDER yang benar (sama seperti cara lama) dan jangan sentuh keyboard/mouse selama alur berjalan.
+> Catatan (v6.0): pastikan dialog terbuka di FOLDER yang benar (sama seperti cara lama). **Sejak v6.1 catatan ini tidak berlaku lagi** — nama diketik path lengkap, dialog boleh terbuka di folder mana pun. Yang tetap: jangan sentuh keyboard/mouse selama alur berjalan.
 
 ### Baru v5.9: error angka diperbaiki + semua langkah bisa dihapus
 
@@ -127,6 +143,15 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v6.1
+
+- **Kartu VIDEO & CAPTION dibangun ulang**: kolom FOLDER VIDEO + PILIH FOLDER diganti **VIDEO TERPILIH + daftar bernomor** dengan tombol **PILIH VIDEO...** (`askopenfilenames`, filter ekstensi video), **TAMBAH VIDEO...** (append anti-duplikat), **HAPUS TERPILIH** (buang baris tersorot), **KOSONGKAN**. `JUMLAH VIDEO` terisi otomatis mengikuti banyak pilihan.
+- **State baru** `video_terpilih` (list path lengkap, urutan = urutan pilih) + `video_dir_ingat` (dialog pilih berikutnya terbuka di folder terakhir); ikut tersimpan di profil/settings (`video_terpilih`, `video_dir`).
+- **Mesin**: `_start` memvalidasi daftar terpilih (kosong → pesan jelas; file hilang → tawarkan buang & lanjut), antrean = path lengkap sesuai urutan pilihan; langkah H mengetik **path lengkap terkutip** via `nama_file_dialog()` → dialog pilih file **boleh terbuka di folder mana pun**; riwayat kini mencatat **nama file** (kunci tetap tunggal "(video terpilih)", tidak lagi terikat folder); fase caption memakai nama pendek dari antrean/riwayat.
+- **Data hilang otomatis**: `_finish` sukses (tidak warn) mengosongkan daftar video terpilih + menegaskan di status bar; bila alur dihentikan di tengah (warn), daftar dipertahankan untuk dilanjutkan.
+- `antrian_video_studio()` kini memakai nama video terpilih (placeholder `{caption}/{video}` Studio ikut urutan pilihan); menu **Bersihkan Riwayat Folder Ini** diganti **Bersihkan Riwayat Upload**; teks bantuan & pesan tidak lagi menyebut wajibnya folder.
+- Selftest baru **`--selftest-pilih`** (14 cek: daftar & urutan, jumlah otomatis, label status, folder ingatan, snapshot, simpan, muat profil, typing path terkutip, caption dari nama pendek, riwayat per nama lintas folder, antrean Studio, hapus baris, deteksi file hilang, pengosongan otomatis pasca-selesai).
 
 ## Perubahan v6.0
 
