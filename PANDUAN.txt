@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.8 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.9 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -349,6 +349,35 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V5.9 - ERROR ANGKA DIPERBAIKI + SEMUA LANGKAH BISA DIHAPUS:
+  1) ERROR "JUMLAH VIDEO dan WAKTU harus diisi dengan angka" DIPERBAIKI:
+     - Dulu: cukup SATU kolom salah/kosong (mis. MUNDUR yang kosong)
+       dan pesannya menyalahkan "JUMLAH VIDEO dan WAKTU" - padahal
+       kolom itu sudah diisi. Bikin bingung.
+     - Kini pesan error MENUNJUK kolom yang tepat, mis.:
+       'Kolom MUNDUR SEBELUM MULAI berisi "5x" - bukan angka yang
+       benar. Perbaiki kolom itu...' - tinggal diperbaiki, selesai.
+     - KOMA diterima sebagai desimal di semua kolom angka (mis.
+       1,5 atau 2,0 - tidak perlu ganti ke titik lagi).
+     - Kolom yang dibiarkan KOSONG otomatis dipakai nilai standarnya
+       (MUNDUR 5, JEDA DIALOG 2, JEDA LANGKAH 1, TUNGGU 60) - tidak
+       lagi menggagalkan alur.
+     - Profil lama yang isinya rusak otomatis dibersihkan saat
+       aplikasi dibuka (kolom angka kembali ke nilai standar).
+  2) SEMUA LANGKAH DI ALUR CUTMOTIONS (A-J) BISA DIHAPUS MANUAL:
+     - Pilih barisnya (bisa banyak: tahan CTRL/SHIFT) lalu tekan
+       HAPUS (Del) atau klik kanan > Hapus. Berlaku juga untuk
+       langkah BAWAAN A-J yang dulu menolak dihapus.
+     - Langkah bawaan yang dihapus hilang dari tabel dan DILEWATI
+       saat alur dijalankan (muncul keterangan "DILEWATI" di
+       status bar). Langkah tambahan yang menempel di belakangnya
+       tetap ikut dijalankan di posisinya.
+     - PENYESALAN TIDAK PERLU: langkah bawaan yang terhapus bisa
+       DIKEMBALIKAN lewat klik kanan tabel > "Kembalikan langkah
+       bawaan yang dihapus" > pilih langkahnya (A, B, C, ...).
+     - Penghapusan bawaan A-J ikut tersimpan di profil - aman
+       walau aplikasi ditutup lalu dibuka lagi.
 
 BARU DI V5.8 - CARI GAMBAR BEBAS DI ALUR CUTMOTIONS (A-J):
   - CARI GAMBAR (dan semua langkah tambahan lain: KLIK TITIK,

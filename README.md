@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.8)
+# CutUploader Pro — Macro Studio Edition (v5.9)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.8: CARI GAMBAR di alur CutMotions (A-J) bisa ditambahkan BERAPAPUN kalinya** (perbaikan langkah hilang setelah hapus + buka ulang aplikasi; profil lama otomatis diperbaiki).
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.9: error "JUMLAH VIDEO dan WAKTU harus diisi angka" diperbaiki (validasi per kolom + koma diterima + kolom kosong pakai nilai standar) dan SEMUA langkah — termasuk bawaan A-J — bisa dihapus manual & dikembalikan lewat klik kanan**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.8**:
+Dari halaman [Releases](../../releases) rilis **v5.9**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.8.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.9.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -62,6 +62,11 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
 
+### Baru v5.9: error angka diperbaiki + semua langkah bisa dihapus
+
+1. **Error "JUMLAH VIDEO dan WAKTU harus diisi dengan angka" DIPERBAIKI** — dulu cukup satu kolom salah/kosong (mis. MUNDUR yang kosong) dan pesannya menyalahkan "JUMLAH VIDEO dan WAKTU" walau kolom itu sudah diisi. Kini validasi **per kolom**: pesan error menunjuk kolom yang tepat beserta isinya. **Koma diterima** sebagai desimal di semua kolom angka (`1,5` → 1.5), dan kolom yang **dibiarkan kosong otomatis dipakai nilai standarnya** (MUNDUR 5, JEDA DIALOG 2, JEDA LANGKAH 1, TUNGGU 60) — tidak lagi menggagalkan alur. Profil lama berisi nilai rusak otomatis dibersihkan saat dibuka.
+2. **SEMUA langkah di ALUR CUTMOTIONS (A-J) bisa DIHAPUS manual** — termasuk langkah bawaan A-J yang dulu menolak dihapus. Pilih barisnya (bisa banyak dengan CTRL/SHIFT) lalu tekan **Del** atau klik kanan → Hapus. Langkah bawaan yang dihapus hilang dari tabel dan **dilewati** saat alur jalan (langkah tambahan yang menempel di belakangnya tetap jalan di posisinya). **Bisa dikembalikan** kapan saja: klik kanan tabel → *"Kembalikan langkah bawaan yang dihapus"* → pilih langkahnya. Penghapusan ikut tersimpan di profil.
+
 ### Baru v5.8: CARI GAMBAR bebas ditambah di alur CutMotions (A-J)
 
 CARI GAMBAR (dan semua langkah tambahan lain) di tab **ALUR CUTMOTIONS (A-J)** kini bisa **ditambahkan BERAPAPUN kalinya** — tidak ada lagi batas "mentok 2x". Penyebabnya bukan batas fitur, melainkan kutu kecil: setelah menghapus langkah (apalagi hapus massal v5.7) lalu aplikasi dibuka ulang, nomor internal langkah baru bisa **menabrak** nomor langkah lama sehingga langkah baru tidak muncul di tabel — kelihatan seperti tidak bisa ditambah lagi. Kini nomor yang sudah dipakai selalu dilewati, dan **profil lama yang sudah terlanjur rusak otomatis DIPERBAIKI** saat dibuka di v5.8 (tanpa perlu mengatur ulang apa pun). Berlaku juga untuk hasil TEMPEL (Ctrl+V) dan hasil REKAM AKSI di tab CutMotions. Diuji dengan selftest baru `--selftest-uid` (7 cek: unik, jumlah, langkah lama utuh, tampil di tabel, penyembuhan profil, nomor lanjut benar, tambah setelah muat tetap unik).
@@ -106,6 +111,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.9
+
+- **Validasi F6 per kolom** (`_baca_angka`): kolom kosong → nilai standar; koma diterima; isian bukan angka → pesan menunjuk kolom spesifik + isinya (dulu: satu pesan generik "JUMLAH VIDEO dan pengaturan WAKTU harus diisi dengan angka" untuk 5 kolom sekaligus).
+- **Sanitasi saat memuat profil** (`_terapkan_data`): 12 kolom angka diperiksa — nilai rusak dari profil lama dibuang dan kembali ke bawaan.
+- **Langkah bawaan A-J bisa dihapus** (`slot_mati`): HAPUS/Del + klik kanan kini menerima slot bawaan; slot mati hilang dari tabel (`_urutan_lengkap` melewati barisnya, langkah tambahan yang menempel tetap tampil & jalan), mesin melewatinya (`_langkah_klik` → "skip"; blok G juga mematikan scroll-nya), validasi posisi wajib mengecualikannya; tersimpan di profil (`slot_mati`) dan **bisa dikembalikan** via menu klik kanan baru "Kembalikan langkah bawaan yang dihapus".
+- Hapus salinan kini membuang SEMUA entri ber-uid (anti sisa dobel); pesan status hapus menyebutkan detail (salinan dihapus / bawaan dimatikan).
+- Selftest baru **`--selftest-hapus`** (13 cek: parser angka 5×, hapus slot bawaan, tampilan tabel, langkah anak utuh, mesin skip, simpan-muat, kembalikan).
 
 ## Perubahan v5.8
 

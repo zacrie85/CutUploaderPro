@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.8  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v5.9  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -60,6 +60,13 @@
        "mentok 2x" karena nomor internal langkah menabrak
        setelah hapus langkah lalu aplikasi dibuka ulang;
        profil lama yang sudah rusak otomatis DISEMBUHKAN)
+     - v5.9: ERROR "JUMLAH VIDEO dan WAKTU harus diisi angka"
+       DIPERBAIKI - validasi kini PER KOLOM (pesan menunjuk
+       kolom yang salah), koma diterima sebagai desimal
+       (mis. 1,5), kolom kosong otomatis dipakai nilai
+       standarnya. PLUS: langkah bawaan A-J kini BISA
+       DIHAPUS (hilang dari tabel & dilewati saat jalan)
+       dan bisa DIKEMBALIKAN lewat klik kanan tabel
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -102,6 +109,9 @@
      - v5.8: CARI GAMBAR bisa ditambah BERAPAPUN kalinya di
        alur ini (perbaikan langkah hilang setelah hapus +
        buka ulang aplikasi; profil lama otomatis disembuhkan).
+     - v5.9: SEMUA langkah - termasuk bawaan A-J - bisa
+       DIHAPUS manual (dilewati saat alur jalan) dan
+       dikembalikan lagi lewat klik kanan tabel.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -217,7 +227,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.8"
+APP_VERSION = "5.9"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -1821,6 +1831,26 @@ def _angka(teks, bawaan, lo=None, hi=None):
     return v
 
 
+def _baca_angka(nama, teks, bawaan=None, bulat=False):
+    """v5.9: baca angka isian untuk validasi F6 (jelas per kolom).
+
+    - Kosong  -> kembalikan `bawaan` (kolom opsional tidak menggagalkan
+      alur lagi; dulu jadi penyebab "JUMLAH VIDEO dan WAKTU harus diisi
+      angka" walau kolom lain sudah diisi).
+    - Koma diterima sebagai desimal (mis. "1,5" -> 1.5; "2,0" -> 2).
+    - Isi tapi bukan angka -> raise ValueError((nama, teks)) supaya
+      pesan error MENUNJUK kolom yang salah, bukan menyalahkan semua.
+    """
+    teks = str(teks if teks is not None else "").strip()
+    if not teks:
+        return bawaan
+    try:
+        v = float(teks.replace(",", "."))
+    except ValueError:
+        raise ValueError((nama, teks))
+    return int(v) if bulat else v
+
+
 def cari_di_layar(gambar_path, cx, cy, radius, kemiripan=0.8):
     """Cari gambar referensi di layar dalam RADIUS piksel dari titik
     acuan (cx, cy) - dipakai untuk memilih negara lewat gambar.
@@ -2309,6 +2339,9 @@ class CutMotionsTab(PerekamAksiMixin):
         self.langkah_extra = []       # list of dict (lihat _tempel_langkah)
         self.papan_klip = None        # langkah yang sedang disalin
         self._extra_counter = 0
+        # v5.9: slot bawaan A-J yang DIHAPUS user (bisa dikembalikan);
+        # langkah mati = tak tampil di tabel & dilewati mesin saat F6
+        self.slot_mati = set()
         self._potong_target = None    # tujuan POTONG GAMBAR aktif
         # v5.6: state REKAM AKSI (mesin bersama, lihat PerekamAksiMixin)
         self.perekam_init_state()
@@ -2771,7 +2804,11 @@ class CutMotionsTab(PerekamAksiMixin):
                     emit(uid)
 
         for k in POS_KUNCI:
-            hasil.append(k)
+            # v5.9: slot yang DIHAPUS (slot_mati) tak tampil, tetapi
+            # langkah tambahan yang menempel padanya tetap tampil &
+            # tetap dijalankan di posisinya
+            if k not in self.slot_mati:
+                hasil.append(k)
             emit(k)
         # salinan yang tak tersambung ke urutan (file profil rusak)
         # tetap ditampilkan supaya tidak hilang
@@ -3892,9 +3929,32 @@ class CutMotionsTab(PerekamAksiMixin):
                       command=self._salin_langkah)
         m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
                       command=self._tempel_langkah)
+        # v5.9: semua langkah (termasuk bawaan A-J) bisa dihapus;
+        # bawaan A-J yang terhapus bisa dikembalikan dari sini
+        if self.slot_mati:
+            sub_k = tk.Menu(m, tearoff=0)
+            menu_gelap(sub_k)
+            for k in POS_KUNCI:
+                if k not in self.slot_mati:
+                    continue
+
+                def kembalikan(k=k):
+                    self.slot_mati.discard(k)
+                    self._refresh_tabel()
+                    self._save_settings()
+                    self._set_status(
+                        "Langkah bawaan {} dikembalikan ke alur.".format(
+                            SLOT_KODE.get(k, k)), C_GREEN)
+
+                sub_k.add_command(
+                    label="Kembalikan {}  ({})".format(
+                        SLOT_KODE.get(k, k), LABEL_POSISI.get(k, k)),
+                    command=kembalikan)
+            m.add_cascade(label="Kembalikan langkah bawaan yang "
+                                "dihapus", menu=sub_k)
         m.add_command(label="Hapus {}  (Del)".format(
                           "langkah terpilih" if n > 1
-                          else "salinan ini"),
+                          else "langkah ini"),
                       command=self._hapus_langkah)
         try:
             m.tk_popup(ev.x_root, ev.y_root)
@@ -4028,10 +4088,14 @@ class CutMotionsTab(PerekamAksiMixin):
                 len(dipaste)), C_GREEN)
 
     def _hapus_langkah(self):
-        """v5.7: hapus SEMUA salinan/langkah Studio terpilih sekaligus.
+        """v5.9: hapus SEMUA langkah terpilih - TERMASUK bawaan A-J.
 
-        Langkah bawaan A-J tetap tidak bisa dihapus - bila ikut
-        terpilih, dia dilewati otomatis (diberitahu di dialog).
+        - Salinan/langkah Studio: benar-benar dibuang dari profil.
+        - Langkah bawaan A-J: ditandai MATI (slot_mati) - hilang dari
+          tabel & dilewati mesin saat F6, tapi bisa DIKEMBALIKAN
+          lewat klik kanan tabel > Kembalikan langkah bawaan.
+        Dulu bawaan A-J menolak dihapus - user meminta semua langkah
+        bisa dihapus manual.
         """
         pilih = list(self.tree.selection())
         if not pilih and self.sel:
@@ -4040,53 +4104,78 @@ class CutMotionsTab(PerekamAksiMixin):
         pilih = [i for i in urut if i in pilih] + \
             [i for i in pilih if i not in urut]
         terhapus = []
+        slot_mati_baru = []
         for iid in pilih:
             if iid in POS_KUNCI:
+                if iid not in self.slot_mati:
+                    slot_mati_baru.append(iid)
                 continue
             ek = self._iid_ekstra(iid)
             if ek:
                 terhapus.append(ek)
-        if not terhapus:
+        if not terhapus and not slot_mati_baru:
             messagebox.showinfo(
                 APP_NAME,
-                "Pilih dulu baris SALINAN yang mau dihapus.\n\nLangkah "
-                "bawaan A-J tidak bisa dihapus - matikan centangnya "
-                "dengan mengatur posisi/jeda saja.\n\nTahan CTRL/SHIFT "
-                "saat mengklik untuk menghapus banyak salinan "
+                "Pilih dulu baris yang mau dihapus.\n\nTahan CTRL/SHIFT "
+                "saat mengklik untuk menghapus banyak langkah "
                 "sekaligus.")
             return
-        n_slot = sum(1 for i in pilih if i in POS_KUNCI)
-        if len(terhapus) == 1:
+        n_slot = len(slot_mati_baru)
+        if len(terhapus) == 1 and not n_slot:
             pesan = "Hapus salinan '{}'?".format(
                 terhapus[0].get("label") or terhapus[0]["uid"])
         else:
-            pesan = ("Hapus {} salinan/langkah terpilih "
-                     "sekaligus?".format(len(terhapus)))
+            pesan = ("Hapus {} langkah terpilih sekaligus?".format(
+                len(terhapus) + n_slot))
             if n_slot:
-                pesan += ("\n\n({} langkah bawaan A-J dilewati - tidak "
-                          "bisa dihapus)".format(n_slot))
+                daftar = ", ".join(SLOT_KODE.get(s, s)
+                                   for s in slot_mati_baru)
+                pesan += ("\n\nTermasuk {} langkah bawaan alur ({}): "
+                          "langkah itu DILEWATI saat jalan, dan bisa "
+                          "DIKEMBALIKAN lewat klik kanan tabel > "
+                          "Kembalikan langkah bawaan.".format(
+                              n_slot, daftar))
         if not messagebox.askyesno(APP_NAME, pesan):
             return
+        for iid in slot_mati_baru:
+            self.slot_mati.add(iid)
         for ek in terhapus:
             iid = ek["uid"]
             # rantai anak-anaknya naik ke acuan si penghapus
             for lain in self.langkah_extra:
                 if lain.get("setelah") == iid:
                     lain["setelah"] = ek.get("setelah") or "pos_jadwal"
-            self.langkah_extra.remove(ek)
-        anchor = terhapus[0].get("setelah") or "pos_jadwal"
-        if anchor not in POS_KUNCI and not self._iid_ekstra(anchor):
+            # v5.9: buang SEMUA entri ber-uid itu (anti sisa dobel)
+            self.langkah_extra[:] = [x for x in self.langkah_extra
+                                     if x.get("uid") != iid]
+        if terhapus:
+            anchor = terhapus[0].get("setelah") or "pos_jadwal"
+        elif slot_mati_baru:
+            anchor = slot_mati_baru[0]
+        else:
             anchor = "pos_jadwal"
         self.sel = anchor
         self._refresh_tabel()
+        urut2 = self._urutan_lengkap()
+        # bila acuan ikut hilang dari tampilan, pilih baris pertama
+        self.sel = anchor if anchor in urut2 else \
+            (urut2[0] if urut2 else None)
         try:
-            if self.tree.exists(self.sel):
+            if self.sel and self.tree.exists(self.sel):
                 self.tree.selection_set(self.sel)
         except Exception:
             pass
         self._render_properti()
         self._save_settings()
-        self._set_status("{} salinan dihapus.".format(len(terhapus)),
+        pesan_h = []
+        if terhapus:
+            pesan_h.append("{} salinan/langkah tambahan dihapus".format(
+                len(terhapus)))
+        if slot_mati_baru:
+            pesan_h.append("{} langkah bawaan dimatikan ({})".format(
+                n_slot, ", ".join(SLOT_KODE.get(s, s)
+                                  for s in slot_mati_baru)))
+        self._set_status("{}.".format("; ".join(pesan_h)).capitalize(),
                          C_ORANGE)
 
     # ================== v5.5: LANGKAH STUDIO DI ALUR A-J ==================
@@ -4594,6 +4683,7 @@ class CutMotionsTab(PerekamAksiMixin):
             "auto_kirim": bool(V["auto_kirim"].get()),
             "posisi": {k: (list(v) if v else None)
                        for k, v in self.posisi.items()},
+            "slot_mati": set(self.slot_mati),   # v5.9: A-J yang dihapus
             "jeda_per": dict(self.jeda_per),
             "jeda_klik_per": dict(self.jeda_klik_per),
             "gambar_langkah": {k: dict(v)
@@ -4621,16 +4711,38 @@ class CutMotionsTab(PerekamAksiMixin):
                     "Tunggu sampai selesai atau tekan F7 dulu.")
                 return
         snap = self._snapshot()
+        # v5.9: validasi PER KOLOM - pesan error menunjuk kolom yang
+        # salah; kolom kosong otomatis dipakai nilai standarnya; koma
+        # diterima sebagai desimal. Dulu: 1 kolom salah/kosong (mis.
+        # MUNDUR) langsung dilaporkan sebagai "JUMLAH VIDEO dan
+        # pengaturan WAKTU harus diisi dengan angka" walau kolom itu
+        # sudah diisi - user bingung.
         try:
-            jumlah = int(snap["jumlah"])
-            mundur = int(snap["mundur"])
-            jeda_dialog = float(snap["jeda_dialog"].replace(",", "."))
-            jeda_langkah = float(snap["jeda_langkah"].replace(",", "."))
-            tunggu = float(snap["tunggu"].replace(",", "."))
-        except ValueError:
+            jumlah = _baca_angka("JUMLAH VIDEO",
+                                 snap["jumlah"], None, bulat=True)
+            mundur = _baca_angka("MUNDUR SEBELUM MULAI",
+                                 snap["mundur"], 5, bulat=True)
+            jeda_dialog = _baca_angka("JEDA BUKA DIALOG/EDITOR",
+                                      snap["jeda_dialog"], 2)
+            jeda_langkah = _baca_angka("JEDA ANTAR LANGKAH (default)",
+                                       snap["jeda_langkah"], 1)
+            tunggu = _baca_angka("TUNGGU UPLOAD PER VIDEO",
+                                 snap["tunggu"], 60)
+        except ValueError as e:
+            nama, isian = e.args[0]
             messagebox.showwarning(
-                APP_NAME, "JUMLAH VIDEO dan pengaturan WAKTU harus diisi "
-                          "dengan angka yang benar.")
+                APP_NAME,
+                "Kolom {} berisi \"{}\" - bukan angka yang benar.\n\n"
+                "Perbaiki kolom itu di kartu WAKTU & UNGGAH (angka "
+                "boleh pakai koma, mis. 1,5). Kolom yang dibiarkan "
+                "kosong otomatis dipakai nilai standarnya.".format(
+                    nama, isian))
+            return
+        if jumlah is None:
+            messagebox.showwarning(
+                APP_NAME,
+                "JUMLAH VIDEO belum diisi.\n\nIsi angkanya dulu di "
+                "kartu VIDEO & CAPTION (mis. 5).")
             return
         if jumlah < 1:
             messagebox.showwarning(APP_NAME, "Jumlah video minimal 1.")
@@ -4652,6 +4764,7 @@ class CutMotionsTab(PerekamAksiMixin):
             return
         # ---- posisi wajib sesuai alur A-J ----
         lewati_jadwal = snap["skip_jadwal"]
+        slot_mati = snap.get("slot_mati") or set()
         for kunci, label, wajib, _ket in POSISI_DEF:
             if not wajib:
                 continue
@@ -4659,6 +4772,8 @@ class CutMotionsTab(PerekamAksiMixin):
                 continue
             if kunci == "pos_submit" and not snap["auto_kirim"]:
                 continue
+            if kunci in slot_mati:      # v5.9: langkah yang dihapus
+                continue                # tidak lagi mewajibkan posisi
             if not snap["posisi"].get(kunci):
                 messagebox.showwarning(
                     APP_NAME,
@@ -4921,6 +5036,13 @@ class CutMotionsTab(PerekamAksiMixin):
           ("skip", None)   - langkah dilewati
           ("stop", pesan)  - alur dihentikan (status sudah diset)
         """
+        # v5.9: langkah bawaan yang DIHAPUS user (slot_mati) dilewati
+        # tanpa diklik - aksi lanjutan blok itu (ketik tanggal, Shift+
+        # panah, dll) ikut aman karena semuanya menunggu aksi "klik"
+        if kunci in (snap.get("slot_mati") or ()):
+            self._set_status("Langkah {} DILEWATI (sudah dihapus dari "
+                             "alur).".format(nama or kunci), C_ORANGE)
+            return "skip", None
         if cfg is None:
             cfg = snap["gambar_langkah"].get(kunci)
         aksi, nilai = self._cari_gambar_langkah(snap, cfg, titik,
@@ -5259,6 +5381,10 @@ class CutMotionsTab(PerekamAksiMixin):
                     return
                 n_klik1 = snap["klik_bebas1"]
                 n_scroll = snap["scroll_bebas1"]
+                # v5.9: langkah G dihapus -> klik DAN scroll-nya skip
+                if "pos_bebas1" in (snap.get("slot_mati") or ()):
+                    n_klik1 = 0
+                    n_scroll = 0
                 if n_klik1 or n_scroll:
                     self._set_status(
                         "Klik bebas {}x + scroll {}x ({})...".format(
@@ -5560,6 +5686,7 @@ class CutMotionsTab(PerekamAksiMixin):
             "klik_submit": V["klik_submit"].get(),
             "auto_kirim": bool(V["auto_kirim"].get()),
             "posisi": {k: v for k, v in self.posisi.items()},
+            "slot_mati": sorted(self.slot_mati),   # v5.9: A-J dihapus
             "jeda_per": {k: float(v) for k, v in self.jeda_per.items()},
             "jeda_klik_per": {k: float(v)
                               for k, v in self.jeda_klik_per.items()},
@@ -5745,10 +5872,28 @@ class CutMotionsTab(PerekamAksiMixin):
             ("klik_submit", V["klik_submit"]),
             ("gambar_ref", V["gambar_ref"]),
         ]
+        # v5.9: kolom angka disanitasi saat dimuat - nilai rusak dari
+        # profil lama dibuang (kembali ke bawaan) sehingga F6 tidak
+        # lagi menabrak error "harus diisi angka" tanpa sebab jelas
+        ANGKA_VAR = ("jumlah", "mundur", "jeda_dialog", "jeda_langkah",
+                     "tunggu", "radius", "kemiripan", "klik_bebas1",
+                     "scroll_bebas1", "klik_bebas2", "jarak_baris",
+                     "klik_submit")
         for key, var in pasangan:
             val = data.get(key)
-            if val is not None:
-                var.set(str(val))
+            if val is None:
+                continue
+            val = str(val)
+            if key in ANGKA_VAR and val.strip():
+                try:
+                    float(val.strip().replace(",", "."))
+                except ValueError:
+                    continue        # nilai rusak -> pakai bawaan saja
+            var.set(val)
+        # v5.9: langkah bawaan A-J yang sempat dihapus (bisa jalan lagi)
+        self.slot_mati = set(
+            str(k) for k in (data.get("slot_mati") or ())
+            if str(k) in POS_KUNCI)
         V["skip_uploaded"].set(bool(data.get("skip_uploaded", True)))
         V["skip_jadwal"].set(bool(data.get("skip_jadwal", False)))
         V["pakai_gambar"].set(bool(data.get("pakai_gambar", False)))
@@ -8349,6 +8494,69 @@ def main():
             print("SELFTEST_UID_OK")
             root.destroy()
         root.after(3600, _ok8)
+    if "--selftest-hapus" in sys.argv:
+        def _uji_hapus():
+            # v5.9: (1) validasi F6 per kolom - koma & kolom kosong OK;
+            # (2) langkah bawaan A-J BISA dihapus & dikembalikan
+            print("ANGKA_BULAT_OK",
+                  _baca_angka("X", "5", None, bulat=True) == 5)
+            print("ANGKA_KOMA_OK", _baca_angka("X", "1,5") == 1.5)
+            print("ANGKA_KOMA_BULAT_OK",
+                  _baca_angka("X", "2,0", None, bulat=True) == 2)
+            print("ANGKA_KOSONG_OK", _baca_angka("X", "", 5) == 5
+                  and _baca_angka("X", None, 2.5) == 2.5)
+            try:
+                _baca_angka("KOLONI UJI", "abc", 1)
+                print("ANGKA_JELEK_OK", False)
+            except ValueError as e:
+                print("ANGKA_JELEK_OK",
+                      e.args[0] == ("KOLONI UJI", "abc"))
+
+            cut = app.tab_cut
+            asli_ask = messagebox.askyesno
+            messagebox.askyesno = lambda *a, **k: True
+            try:
+                # langkah tambahan menempel di E - harus tetap tampil
+                # walau E dihapus
+                cut.tree.selection_set("pos_oke")
+                cut.tree.event_generate("<<TreeviewSelect>>")
+                cut._tambah_studio("GAMBAR")
+                uid_ekstra = cut.langkah_extra[-1]["uid"]
+                cut.tree.selection_set("pos_oke")
+                cut._hapus_langkah()
+                print("HAPUS_SLOT_OK", "pos_oke" in cut.slot_mati)
+                urut = cut._urutan_lengkap()
+                print("HAPUS_TAMPIL_OK", "pos_oke" not in urut)
+                print("HAPUS_ANAK_UTUH_OK", uid_ekstra in urut)
+                tampil = set(cut.tree.get_children())
+                print("HAPUS_BARIS_HILANG_OK", "pos_oke" not in tampil)
+                # mesin: langkah mati -> ("skip", None)
+                snap = cut._snapshot()
+                aksi, nil = cut._langkah_klik(
+                    snap, "pos_oke", None, 1.0, nama="E (tombol OKE)")
+                print("HAPUS_MESIN_SKIP_OK", aksi == "skip" and nil
+                      is None)
+                # simpan-muat: slot_mati ikut tersimpan & dipulihkan
+                data = json.loads(json.dumps(cut._kumpulkan_data()))
+                print("HAPUS_SIMPAN_OK",
+                      data.get("slot_mati") == ["pos_oke"])
+                cut.slot_mati = set()
+                cut._terapkan_data(data)
+                print("HAPUS_MUAT_OK", cut.slot_mati == {"pos_oke"})
+                # kembalikan langkah bawaan
+                cut.slot_mati.discard("pos_oke")
+                cut._refresh_tabel()
+                print("HAPUS_KEMBALI_OK",
+                      "pos_oke" in cut._urutan_lengkap())
+            finally:
+                messagebox.askyesno = asli_ask
+            print("HAPUS_DONE")
+        root.after(700, _uji_hapus)
+
+        def _ok9():
+            print("SELFTEST_HAPUS_OK")
+            root.destroy()
+        root.after(3600, _ok9)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -8356,7 +8564,8 @@ def main():
             or ("--selftest-cutstudio" in sys.argv) \
             or ("--selftest-rekam-cut" in sys.argv) \
             or ("--selftest-multi" in sys.argv) \
-            or ("--selftest-uid" in sys.argv):
+            or ("--selftest-uid" in sys.argv) \
+            or ("--selftest-hapus" in sys.argv):
         print("SELFTEST_DONE")
 
 
