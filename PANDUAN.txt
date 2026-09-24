@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.9 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.0 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -296,6 +296,9 @@ di tabel + MUNDUR SEBELUM MULAI milik Studio.
      (Turun/Naik). Alternatif: klik=1 lalu scroll=beberapa.
   H  Klik video pertama, tahan SHIFT, panah bawah
      (jumlah video - 1)x  -> 5-20 video terpilih sekaligus
+     (v6.0: kalau KETIK NAMA FILE aktif - bawaan - langkah
+     ini DIGANTI aplikasi mengetik "nama1.mp4" "nama2.mp4"
+     ... persis sesuai daftar caption di kotak 'Nama file')
   H2 Klik bebas (tombol "Buka" pada dialog file)
   I  Caption per video: klik Edit -> klik kotak caption ->
      Ctrl+A -> ketik "#dangdut - namafile" -> klik Konfirmasi.
@@ -349,6 +352,37 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.0 - NAMA VIDEO YANG DIUPLOAD PASTI SAMA DENGAN CAPTION:
+  Keluhan: video yang terupload dan nama yang masuk di caption
+  BEDA - caption sudah benar, tapi video yang terupload tidak
+  sesuai nama itu.
+  Penyebabnya: dulu aplikasi hanya MENGKLIK video pertama di
+  dialog pilih file lalu menahan SHIFT + panah bawah. Urutan
+  hasilnya tergantung tampilan dialog (bisa terurut TANGGAL,
+  bukan nama) dan tergantung riwayat "lewati yang sudah
+  terupload" - sehingga video yang terpilih BISA BEDA dari
+  daftar nama yang dipakai untuk caption.
+  Solusi - KETIK NAMA FILE (bawaan AKTIF, centang di kartu
+  VIDEO & CAPTION):
+  1. Saat dialog pilih file terbuka, aplikasi menekan Alt+N
+     (fokus ke kotak 'Nama file'), lalu MENGETIK nama-nama file
+     secara PERSIS: "lagu_a.mp4" "lagu_b.mp4" ... sesuai
+     daftar caption, dalam urutan yang sama.
+  2. Tombol 'Buka' (langkah H2) tetap diklik seperti biasa;
+     kalau H2 dihapus atau jumlah kliknya 0, aplikasi menekan
+     Enter sendiri sebagai konfirmasi.
+  3. Video yang terpilih = PERSIS daftar caption - tidak
+     terpengaruh urutan tampil dialog (nama/tanggal/ukuran)
+     maupun riwayat upload. Nama di caption PASTI sama dengan
+     video yang terupload.
+  4. Karena itu posisi langkah H (video pertama) TIDAK perlu
+     diatur lagi saat mode ini aktif.
+  5. Mau kembali ke cara lama (klik + Shift+panah)? Cukup
+     hilangkan centang 'KETIK NAMA FILE di dialog pilih file'.
+  Catatan: pastikan dialog terbuka di FOLDER yang benar (sama
+  seperti cara lama) dan jangan sentuh keyboard/mouse selama
+  alur berjalan.
 
 BARU DI V5.9 - ERROR ANGKA DIPERBAIKI + SEMUA LANGKAH BISA DIHAPUS:
   1) ERROR "JUMLAH VIDEO dan WAKTU harus diisi dengan angka" DIPERBAIKI:

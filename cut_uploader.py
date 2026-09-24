@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.9  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v6.0  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -67,6 +67,11 @@
        standarnya. PLUS: langkah bawaan A-J kini BISA
        DIHAPUS (hilang dari tabel & dilewati saat jalan)
        dan bisa DIKEMBALIKAN lewat klik kanan tabel
+     - v6.0: KETIK NAMA FILE DI DIALOG - nama video yang
+       diupload PASTI SAMA dengan yang dipakai di caption
+       (aplikasi mengetik "nama1.mp4" "nama2.mp4" ... di
+       kotak 'Nama file' dialog pilih file; tidak lagi
+       bergantung urutan tampil dialog atau riwayat)
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -78,6 +83,8 @@
        F  Klik "+ Tambah video" (dialog pilih file terbuka)
        G  Klik bebas berulang (0-500x) dan/atau scroll (0-50x)
        H  Klik video pertama + tahan SHIFT + panah bawah
+          (v6.0: ATAU mengetik "nama1.mp4" "nama2.mp4" ...
+          persis sesuai daftar caption di kotak 'Nama file')
        H2 Klik bebas (mis. tombol "Buka" pada dialog file)
        I  Caption per video: klik "Edit" -> ketik caption ->
           klik "Konfirmasi" (bergeser turun per baris)
@@ -112,6 +119,11 @@
      - v5.9: SEMUA langkah - termasuk bawaan A-J - bisa
        DIHAPUS manual (dilewati saat alur jalan) dan
        dikembalikan lagi lewat klik kanan tabel.
+     - v6.0: KETIK NAMA FILE di dialog pilih file (checkbox
+       di kartu VIDEO & CAPTION) - video yang diupload PASTI
+       sama dengan nama di caption karena aplikasi mengetik
+       nama-nama file dari daftarnya LANGSUNG; urutan tampil
+       dialog (nama/tanggal) dan riwayat tidak berpengaruh.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -227,7 +239,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.9"
+APP_VERSION = "6.0"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -762,7 +774,8 @@ POSISI_DEF = [
     ("pos_bebas1",     "G - Klik bebas 1",        True,
      "TITIK KLIK BEBAS DI DIALOG PILIH FILE (bisa diulang + scroll)"),
     ("pos_video",      "H - Video pertama",       True,
-     "VIDEO PERTAMA DI DAFTAR FILE (diklik, lalu Shift+panah bawah)"),
+     "VIDEO PERTAMA DI DAFTAR FILE (diklik, lalu Shift+panah bawah; "
+     "TIDAK DIPAKAI bila KETIK NAMA FILE aktif)"),
     ("pos_bebas2",     "H2 - Klik bebas 2",       True,
      "TOMBOL 'BUKA/OPEN' / KLIK BEBAS SETELAH VIDEO TERPILIH"),
     ("pos_edit",       "I1 - EDIT baris-1",       True,
@@ -1802,6 +1815,20 @@ def daftar_video(folder):
     return hasil
 
 
+def nama_file_dialog(daftar):
+    """v6.0: bangun teks untuk diketik di kotak 'Nama file' dialog buka.
+
+    Windows (dan dialog buka file standar) menerima BANYAK file
+    sekaligus bila namanya ditulis BERANTAI DENGAN TANDA KUTIP:
+        "video pertama.mp4" "video kedua.mp4"
+    Hasilnya: file yang terpilih PERSIS daftar yang diminta, dalam
+    urutan yang sama - tidak lagi bergantung pada urutan tampil
+    dialog (nama/tanggal/ukuran). Ini membuat nama video yang
+    diupload PASTI sama dengan nama yang dipakai di caption.
+    """
+    return " ".join('"{}"'.format(str(f)) for f in (daftar or []))
+
+
 def parse_tanggal(teks):
     """Rapikan '2026-09-10 02:05:01' (detik boleh dilewat).
 
@@ -2370,6 +2397,9 @@ class CutMotionsTab(PerekamAksiMixin):
         V["skip_jadwal"] = tk.BooleanVar(value=False)
         V["pakai_gambar"] = tk.BooleanVar(value=False)
         V["auto_kirim"] = tk.BooleanVar(value=True)
+        # v6.0: ketik NAMA FILE di dialog pilih file supaya video yang
+        # diupload PERSIS daftar yang dipakai untuk caption
+        V["ketik_nama"] = tk.BooleanVar(value=True)
         for kunci in V:
             V[kunci].trace_add("write", self._terapkan_opts)
 
@@ -2586,6 +2616,25 @@ class CutMotionsTab(PerekamAksiMixin):
         self.lbl_preview = tk.Label(v, text="-", bg=C_BG, fg=C_GREEN,
                                     font=F_MONO, anchor="w")
         self.lbl_preview.pack(fill="x", padx=8, pady=(0, 4))
+        # v6.0: KETIK NAMA FILE - video yang diupload PASTI sama
+        # dengan nama yang dipakai di caption
+        r_ketik = tk.Frame(v, bg=C_BG)
+        r_ketik.pack(fill="x", padx=8, pady=(0, 2))
+        tk.Checkbutton(
+            r_ketik, text="KETIK NAMA FILE di dialog pilih file - nama "
+                          "video yang diupload PASTI sama dengan caption "
+                          "(disarankan)",
+            variable=self.vars["ketik_nama"], bg=C_BG, fg=C_TEXT,
+            font=F_XS, anchor="w").pack(anchor="w")
+        tk.Label(
+            r_ketik, text="Aktif: aplikasi mengetik \"nama1.mp4\" "
+                          "\"nama2.mp4\" ... di kotak 'Nama file' dialog "
+                          "sehingga video yang masuk PERSIS daftar "
+                          "caption (tidak terpengaruh urutan tampil "
+                          "dialog). Langkah H (klik video pertama + "
+                          "Shift+panah) tidak dipakai.",
+            bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+            justify="left").pack(fill="x")
 
         # ----- Area tengah: tabel langkah + panel properti -----
         paned = tk.PanedWindow(self.root, orient="vertical", sashwidth=5,
@@ -4681,6 +4730,7 @@ class CutMotionsTab(PerekamAksiMixin):
             "jarak_baris": V["jarak_baris"].get().strip(),
             "klik_submit": V["klik_submit"].get().strip(),
             "auto_kirim": bool(V["auto_kirim"].get()),
+            "ketik_nama": bool(V["ketik_nama"].get()),   # v6.0
             "posisi": {k: (list(v) if v else None)
                        for k, v in self.posisi.items()},
             "slot_mati": set(self.slot_mati),   # v5.9: A-J yang dihapus
@@ -4774,6 +4824,11 @@ class CutMotionsTab(PerekamAksiMixin):
                 continue
             if kunci in slot_mati:      # v5.9: langkah yang dihapus
                 continue                # tidak lagi mewajibkan posisi
+            # v6.0: bila KETIK NAMA FILE aktif, posisi H (video
+            # pertama) tidak dipakai - aplikasi mengetik nama file
+            # langsung di kotak 'Nama file' dialog
+            if kunci == "pos_video" and snap.get("ketik_nama"):
+                continue
             if not snap["posisi"].get(kunci):
                 messagebox.showwarning(
                     APP_NAME,
@@ -5421,28 +5476,73 @@ class CutMotionsTab(PerekamAksiMixin):
                 self._sleep(max(0.0, jp.get("pos_bebas1",
                                             jeda_langkah)))
 
-                # ---- H: klik video pertama + Shift + panah bawah ----
+                # ---- H: pilih video di dialog ----
+                # v6.0: mode KETIK NAMA FILE (bawaan) - aplikasi
+                # mengetik "nama1.mp4" "nama2.mp4" ... PERSIS sesuai
+                # daftar caption ke kotak 'Nama file' dialog, jadi
+                # video yang diupload PASTI sama dengan caption
+                # (dulu: klik video pertama + Shift+panah - urutannya
+                #  tergantung tampilan dialog & riwayat, sering BEDA
+                #  dari daftar caption)
                 if self.stop_event.is_set():
                     self._finish("Dihentikan di dialog pilih file.",
                                  warn=True)
                     return
-                self._set_status(
-                    "Klik video pertama + tahan SHIFT + panah bawah {}x "
-                    "(memilih {} video dari atas)...".format(
-                        max(0, jumlah - 1), jumlah), C_GREEN)
-                aksi, _nil = self._langkah_klik(
-                    snap, "pos_video", pos["pos_video"], jeda_dialog,
-                    nama="H (video pertama)")
-                if aksi == "stop":
-                    return
-                if aksi == "klik" and jumlah > 1:
+                ketik_ok = bool(snap.get("ketik_nama")) and bool(antrian)
+                if ketik_ok:
+                    teks_dialog = nama_file_dialog(antrian)
+                    self._set_status(
+                        "Mengetik NAMA FILE {} video persis di kotak "
+                        "'Nama file': {}".format(len(antrian),
+                                                 teks_dialog), C_GREEN)
                     time.sleep(0.3)
-                    jeda_panah = max(0.05, jk.get("pos_video", 0.15))
-                    with self.kb.pressed(Key.shift):
-                        for _ in range(jumlah - 1):
-                            self.kb.press(Key.down)
-                            self.kb.release(Key.down)
-                            time.sleep(jeda_panah)
+                    try:
+                        # Alt+N = fokus kotak 'Nama file' dialog
+                        with self.kb.pressed(Key.alt):
+                            self.kb.press("n")
+                            self.kb.release("n")
+                        time.sleep(0.35)
+                        with self.kb.pressed(Key.ctrl):
+                            self.kb.press("a")
+                            self.kb.release("a")
+                        time.sleep(0.15)
+                        self.kb.type(teks_dialog)
+                    except Exception as e:
+                        self._set_status(
+                            "Gagal mengetik nama file ({}). Lanjut "
+                            "tombol Buka...".format(e), C_ORANGE)
+                    # konfirmasi sendiri BILA H2 tidak akan mengklik
+                    # tombol Buka (klik bebas 2 = 0 atau langkah H2
+                    # sudah dihapus)
+                    buka_sendiri = (int(snap["klik_bebas2"] or 0) <= 0
+                                    or "pos_bebas2" in
+                                    (snap.get("slot_mati") or ()))
+                    if buka_sendiri:
+                        time.sleep(0.3)
+                        self.kb.press(Key.enter)
+                        self.kb.release(Key.enter)
+                        self._set_status(
+                            "Enter dikirim - {} video sesuai daftar "
+                            "caption dipilih.".format(len(antrian)),
+                            C_GREEN)
+                else:
+                    self._set_status(
+                        "Klik video pertama + tahan SHIFT + panah bawah "
+                        "{}x (memilih {} video dari atas)...".format(
+                            max(0, jumlah - 1), jumlah), C_GREEN)
+                    aksi, _nil = self._langkah_klik(
+                        snap, "pos_video", pos.get("pos_video"),
+                        jeda_dialog, nama="H (video pertama)")
+                    if aksi == "stop":
+                        return
+                    if aksi == "klik" and jumlah > 1:
+                        time.sleep(0.3)
+                        jeda_panah = max(0.05, jk.get("pos_video", 0.15))
+                        with self.kb.pressed(Key.shift):
+                            for _ in range(jumlah - 1):
+                                self.kb.press(Key.down)
+                                self.kb.release(Key.down)
+                                time.sleep(jeda_panah)
                 self._jalankan_ekstra(snap, ekstra_setelah("pos_video"),
                                       jumlah, jeda_dialog, jeda_langkah)
                 self._sleep(max(0.0, jp.get("pos_video", jeda_langkah)))
@@ -5623,11 +5723,15 @@ class CutMotionsTab(PerekamAksiMixin):
                         time.sleep(max(0.05, jk.get("pos_submit", 0.3)))
                 self._jalankan_ekstra(snap, ekstra_setelah("pos_submit"),
                                       jumlah, jeda_dialog, jeda_langkah)
+                cara_pilih = ("nama file DIKETIK persis sesuai daftar "
+                              "caption"
+                              if bool(snap.get("ketik_nama"))
+                              else "Shift+turun")
                 self._finish(
                     "Selesai! {} video: jadwal diatur, video ditambahkan "
-                    "(Shift+turun), caption ditulis per baris, dan SUBMIT "
+                    "({}), caption ditulis per baris, dan SUBMIT "
                     "sudah diklik. Cek status rilis di situs.".format(
-                        n_cap))
+                        n_cap, cara_pilih))
             else:
                 self._finish(
                     "Caption {} video selesai! Cek dulu di browser, lalu "
@@ -5685,6 +5789,7 @@ class CutMotionsTab(PerekamAksiMixin):
             "jarak_baris": V["jarak_baris"].get(),
             "klik_submit": V["klik_submit"].get(),
             "auto_kirim": bool(V["auto_kirim"].get()),
+            "ketik_nama": bool(V["ketik_nama"].get()),   # v6.0
             "posisi": {k: v for k, v in self.posisi.items()},
             "slot_mati": sorted(self.slot_mati),   # v5.9: A-J dihapus
             "jeda_per": {k: float(v) for k, v in self.jeda_per.items()},
@@ -5898,6 +6003,9 @@ class CutMotionsTab(PerekamAksiMixin):
         V["skip_jadwal"].set(bool(data.get("skip_jadwal", False)))
         V["pakai_gambar"].set(bool(data.get("pakai_gambar", False)))
         V["auto_kirim"].set(bool(data.get("auto_kirim", True)))
+        # v6.0: bawaan AKTIF - profil lama yang belum punya kunci ini
+        # langsung menikmati nama file yang diketik persis di dialog
+        V["ketik_nama"].set(bool(data.get("ketik_nama", True)))
         arah = str(data.get("arah_scroll") or "Turun")
         V["arah_scroll"].set(arah if arah in ("Turun", "Naik") else "Turun")
         self._loading = False
@@ -8557,6 +8665,66 @@ def main():
             print("SELFTEST_HAPUS_OK")
             root.destroy()
         root.after(3600, _ok9)
+    if "--selftest-ketik" in sys.argv:
+        def _uji_ketik():
+            # v6.0: KETIK NAMA FILE - video yang diupload PASTI sama
+            # dengan nama yang dipakai di caption
+            print("KETIK_TEKS_OK",
+                  nama_file_dialog(["a b.mp4", "c.mp4"])
+                  == '"a b.mp4" "c.mp4"')
+            print("KETIK_KOSONG_OK", nama_file_dialog([]) == "")
+            print("KETIK_SPASI_OK",
+                  nama_file_dialog(["video 1.mp4"])
+                  == '"video 1.mp4"')
+            cut = app.tab_cut
+            print("KETIK_VAR_BAWAAN_OK",
+                  bool(cut.vars["ketik_nama"].get()) is True)
+            snap = cut._snapshot()
+            print("KETIK_SNAP_OK",
+                  snap.get("ketik_nama") is True)
+            print("KETIK_SIMPAN_OK",
+                  json.loads(json.dumps(
+                      cut._kumpulkan_data())).get("ketik_nama") is True)
+            # profil lama tanpa kunci ketik_nama -> default AKTIF
+            data = json.loads(json.dumps(cut._kumpulkan_data()))
+            data.pop("ketik_nama", None)
+            cut.vars["ketik_nama"].set(False)
+            cut._terapkan_data(data)
+            print("KETIK_MUAT_BAWAAN_OK",
+                  bool(cut.vars["ketik_nama"].get()) is True)
+            # kunci False tetap False (user bisa matikan)
+            data["ketik_nama"] = False
+            cut._terapkan_data(data)
+            print("KETIK_MUAT_FALSE_OK",
+                  bool(cut.vars["ketik_nama"].get()) is False)
+            # saat False, validasi kembali MENWAJIBKAN posisi H
+            cut.posisi["pos_video"] = None
+            snap2 = cut._snapshot()
+            wajib_h_matikan = (
+                not snap2.get("ketik_nama")
+                and "pos_video" in POS_WAJIB)
+            # saat True (bawaan), snapshot tidak menuntut posisi H
+            cut.posisi["pos_video"] = None
+            cut.vars["ketik_nama"].set(True)
+            snap3 = cut._snapshot()
+            print("KETIK_H_OPSIONAL_OK",
+                  wajib_h_matikan
+                  and snap3.get("ketik_nama") is True
+                  and snap3["posisi"]["pos_video"] is None)
+            # gabungan antrean -> caption sama persis
+            antri = ["lagu_a.mp4", "lagu_b.mp4"]
+            cap = [compose_caption("#dangdut", f) for f in antri]
+            print("KETIK_CAPTION_COCOK_OK",
+                  cap == ["#dangdut - lagu_a", "#dangdut - lagu_b"]
+                  and nama_file_dialog(antri)
+                  == '"lagu_a.mp4" "lagu_b.mp4"')
+            print("KETIK_DONE")
+        root.after(700, _uji_ketik)
+
+        def _ok10():
+            print("SELFTEST_KETIK_OK")
+            root.destroy()
+        root.after(3600, _ok10)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -8565,7 +8733,8 @@ def main():
             or ("--selftest-rekam-cut" in sys.argv) \
             or ("--selftest-multi" in sys.argv) \
             or ("--selftest-uid" in sys.argv) \
-            or ("--selftest-hapus" in sys.argv):
+            or ("--selftest-hapus" in sys.argv) \
+            or ("--selftest-ketik" in sys.argv):
         print("SELFTEST_DONE")
 
 

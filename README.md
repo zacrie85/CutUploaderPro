@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.9)
+# CutUploader Pro — Macro Studio Edition (v6.0)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.9: error "JUMLAH VIDEO dan WAKTU harus diisi angka" diperbaiki (validasi per kolom + koma diterima + kolom kosong pakai nilai standar) dan SEMUA langkah — termasuk bawaan A-J — bisa dihapus manual & dikembalikan lewat klik kanan**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v6.0: KETIK NAMA FILE di dialog pilih file — nama video yang diupload PASTI SAMA dengan yang dipakai di caption** (aplikasi mengetik `"nama1.mp4" "nama2.mp4" ...` persis sesuai daftarnya; tidak lagi bergantung urutan tampil dialog atau riwayat upload).
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.9**:
+Dari halaman [Releases](../../releases) rilis **v6.0**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.9.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.0.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -53,7 +53,7 @@ F6 (setelah login manual → Versi lama → Rilis karya)
 
 A  Klik "Jadwal rilis"          F  Klik "+ Tambah video"
 B  Klik dropdown NEGARA         G  Klik bebas 0-500x / scroll
-C  Pilih negara (gambar/Klik)   H  Klik video + SHIFT + ↓ (5-20)
+C  Pilih negara (gambar/Klik)   H  Ketik "nama1.mp4" "nama2.mp4"...
 D  Ketik tanggal-jam otomatis   H2 Klik bebas ("Buka")
 E  Klik "OKE"                   I  Edit → caption → Konfirmasi
                                   (ulang per video, baris bergeser)
@@ -61,6 +61,22 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v6.0: nama video yang diupload PASTI sama dengan caption
+
+**Keluhan**: video yang terupload dan nama yang masuk di caption **BEDA** — caption sudah benar, tapi video yang terupload tidak sesuai nama itu.
+
+**Penyebabnya**: dulu aplikasi hanya **mengklik video pertama** di dialog pilih file lalu menahan `SHIFT` + panah bawah. Urutan hasilnya tergantung tampilan dialog (bisa terurut **tanggal**, bukan nama) dan tergantung riwayat *"lewati yang sudah terupload"* (antrean = video yang belum terupload, tapi yang diklik justru video TERATAS dialog = yang sudah terupload) — sehingga video yang terpilih bisa BEDA dari daftar nama yang dipakai untuk caption.
+
+**Solusi — KETIK NAMA FILE (bawaan AKTIF)**, centang di kartu VIDEO & CAPTION:
+
+1. Saat dialog pilih file terbuka, aplikasi menekan `Alt+N` (fokus ke kotak *Nama file*), lalu **mengetik nama-nama file secara PERSIS**: `"lagu_a.mp4" "lagu_b.mp4" ...` — sesuai daftar caption, dalam urutan yang sama.
+2. Tombol *Buka* (langkah H2) tetap diklik seperti biasa; kalau H2 dihapus atau jumlah kliknya 0, aplikasi menekan **Enter** sendiri sebagai konfirmasi.
+3. Video yang terpilih = **PERSIS daftar caption** — tidak terpengaruh urutan tampil dialog (nama/tanggal/ukuran) maupun riwayat upload.
+4. Posisi langkah H (video pertama) **tidak perlu diatur lagi** saat mode ini aktif.
+5. Mau kembali ke cara lama (klik + Shift+panah)? Cukup hilangkan centangnya.
+
+> Catatan: pastikan dialog terbuka di FOLDER yang benar (sama seperti cara lama) dan jangan sentuh keyboard/mouse selama alur berjalan.
 
 ### Baru v5.9: error angka diperbaiki + semua langkah bisa dihapus
 
@@ -111,6 +127,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v6.0
+
+- **Akar masalah**: mesin tidak pernah mengetik nama file — langkah H hanya *klik video pertama + Shift+panah bawah*, sementara fase caption memakai daftar antrean urut nama A-Z. Mismatch muncul bila (1) dialog terurut tanggal/ukuran, atau (2) riwayat skip membuat antrean mulai dari video ke-N sementara klik memilih dari TERATAS dialog.
+- **Perbaikan**: opsi **KETIK NAMA FILE** (bawaan AKTIF, `V["ketik_nama"]`). Di langkah H mesin kini menekan `Alt+N` → `Ctrl+A` → mengetik `"file1.mp4" "file2.mp4" ...` (helper baru `nama_file_dialog()`) → Enter otomatis HANYA bila klik bebas 2 = 0 atau langkah H2 dihapus (selain itu H2 tetap yang mengklik tombol *Buka*).
+- **Validasi F6**: posisi H (video pertama) tidak lagi wajib bila mode ketik aktif; langkah H lama tetap tersedia bila centang dimatikan.
+- **Persistensi**: `ketik_nama` disimpan di profil/settings (`_kumpulkan_data`/`_terapkan_data`, bawaan True untuk profil lama); pesan selesai F6 kini menyebut cara pemilihan videonya.
+- Selftest baru **`--selftest-ketik`** (10 cek: teks dialog, kosong, spasi, var bawaan, snapshot, simpan, muat tanpa kunci → True, muat False → False, H jadi opsional, caption cocok dengan antrean).
 
 ## Perubahan v5.9
 
