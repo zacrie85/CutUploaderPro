@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.6 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.7 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -349,6 +349,48 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V5.7 - PILIH BANYAK LANGKAH + DESAIN MAKIN MODERN & ELEGAN:
+  1) PILIH BANYAK LANGKAH SEKALIGUS (di kedua tab):
+     - Tahan SHIFT lalu klik   = pilih RENTANG baris
+       (baris pertama sampai baris yang diklik).
+     - Tahan CTRL lalu klik    = TAMBAH / KURANG baris
+       satu per satu dari pilihan.
+     - Ctrl+A                  = pilih SEMUA baris.
+     - Klik biasa (tanpa Ctrl/Shift) = pilih ulang satu baris
+       (pilihan banyak hilang, kembali normal).
+     Baris terpilih tampak Warna BIRU. Saat lebih dari satu
+     baris terpilih, panel PROPERTI menampilkan panel aksi
+     massal "N LANGKAH DIPILIH".
+  2) AKSI MASSAL untuk semua baris terpilih:
+     - SALIN (Ctrl+C)  = salin SEMUA langkah terpilih
+       (urutan mengikuti urutan tampil di tabel).
+     - TEMPEL (Ctrl+V) = tempel semua salinan BERURUTAN
+       setelah baris acuan - langkah kedua dst dirantai
+       tepat di bawah hasil tempel sebelumnya. Campuran
+       langkah bawaan A-J + salinan + langkah Studio "S"
+       semuanya bisa ikut.
+     - HAPUS (Del)     = hapus SEMUA salinan/langkah Studio
+       terpilih sekaligus (cukup 1x konfirmasi). Langkah
+       bawaan A-J selamat otomatis (tidak bisa dihapus) -
+       di tab Studio semua langkah bisa dihapus.
+     - AKTIF/MATI (Studio) = menyalakan / mematikan SEMUA
+       langkah terpilih sekaligus.
+     - Klik kanan baris yang sudah ikut terpilih = menu
+       klik kanan TIDAK merusak pilihan banyak; judul
+       menunya menyesuaikan ("Salin 5 langkah terpilih").
+  3) DESAIN MAKIN MODERN & ELEGAN (di atas tema DARK GLASS):
+     - Semua tombol toolbar kini KAPSUL MEMBULAT dengan
+       kilau lembut, sorot terang saat kursor di atas,
+       efek tekan, dan bentuk nonaktif yang jelas.
+     - Semua panel (toolbar, tabel, properti, VIDEO &
+       CAPTION, WAKTU & UNGGAH) jadi KARTU BERSUDUT
+       MEMBULAT - sudutnya "tembus" ke latar seperti
+       aplikasi modern.
+     - HEADER GRADIEN baru di jendela paling atas: judul
+       aplikasi + chip versi + hint hotkey.
+     - Menu popup klik kanan ikut tema gelap.
+     - Statusbar lebih rapi dengan garis pemisah tipis.
 
 BARU DI V5.6 - TAMPILAN "DARK GLASS" + REKAM AKSI DI ALUR CUTMOTIONS:
   1) TAMPILAN BARU LEBIH MODERN & MENGIKAT:

@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.6)
+# CutUploader Pro — Macro Studio Edition (v5.7)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.6: tampilan modern "DARK GLASS" + tombol rapi maksimal 7 per baris**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.7: tombol kapsul membulat mengkilat + panel bersudut membulat + header gradien — makin modern & elegan**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.6**:
+Dari halaman [Releases](../../releases) rilis **v5.7**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.6.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.7.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -62,6 +62,12 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
 
+### Baru v5.7: pilih banyak langkah + desain makin modern & elegan
+
+1. **Pilih banyak langkah sekaligus** — tahan **`Shift`** lalu klik = pilih rentang baris; tahan **`Ctrl`** lalu klik = tambah/kurang baris satu per satu; **`Ctrl+A`** = pilih semua. Klik biasa kembali memilih satu baris seperti biasa.
+2. **Aksi massal** — dengan banyak baris terpilih (tampil biru), panel PROPERTI berubah jadi panel aksi massal: **SALIN (Ctrl+C)** menyalin semua langkah terpilih, **TEMPEL (Ctrl+V)** menempel semuanya **berurutan & berantai** setelah baris acuan (campuran slot A-J + salinan + langkah "S" bisa ikut), **HAPUS (Del)** menghapus semuanya cukup 1× konfirmasi (langkah bawaan A-J selamat otomatis; di tab Studio semua bisa dihapus), dan di Studio **AKTIF/MATI** menyalakan/mematikan semuanya sekaligus. Klik kanan pada baris yang sudah ikut terpilih tidak merusak pilihan banyak — judul menunya menyesuaikan ("Salin 5 langkah terpilih").
+3. **Desain makin modern & elegan** — semua tombol toolbar jadi **kapsul membulat dengan kilau lembut** (sorot terang saat kursor di atas, efek tekan, bentuk nonaktif jelas), semua panel jadi **kartu bersudut membulat** (toolbar, tabel, properti, VIDEO & CAPTION, WAKTU & UNGGAH), ada **header gradien** baru (judul + chip versi + hint hotkey), menu popup klik kanan ikut tema gelap, dan statusbar lebih rapi. Tata letak **maksimal 7 tombol per baris** tetap dipertahankan.
+
 ### Baru v5.6: tampilan "DARK GLASS" + REKAM AKSI di alur CutMotions
 
 1. **Tampilan modern & mengkilat** — tema gelap navy dengan aksen neon (biru elektrik, hijau, merah) dan panel bergaya kaca (bingkai tipis, permukaan lebih terang). Tabel, heading, scroll bar, kotak isian, kotak centang, dan tab atas semuanya ikut tema gelap dengan teks kontras tinggi.
@@ -96,6 +102,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.7
+
+- **Multi-pilih langkah (kedua tab)**: tabel kini `selectmode="extended"` — Shift+Klik (rentang), Ctrl+Klik (toggle), Ctrl+A (semua), Ctrl+C / Ctrl+V / Del berfungsi massal. Panel PROPERTI menampilkan panel aksi massal "N LANGKAH DIPILIH" saat >1 baris terpilih.
+- **Papan klip massal**: format baru `{"banyak": [item, ...]}` — urutan salin = urutan tampil di tabel; tempel massal **berantai** (anchor maju per langkah); format lama (1 langkah) tetap didukung penuh. Hapus massal menaut-ulang (re-chain) rantai `setelah` anak-anak langkah yang dihapus.
+- **Perangkat desain v5.7**: helper warna `_campur/_cerahkan/_gelapkan`, `kotak_bulat()` (poligon smooth), kelas **`TombolKapsul`** (tombol kapsul Canvas dengan gradien kilau + hover + tekan + disabled, API ala tk.Button: config state/text/bg/fg/command), **`TombolMenu`** (pengganti tk.Menubutton untuk "+ TAMBAH LANGKAH"), **`KartuBulat`** (panel bersudut membulat pengganti LabelFrame), **`HeaderKilau`** (header gradien + chip versi), dan `menu_gelap()` untuk popup menu.
+- Semua toolbar/panel di kedua tab dipindah ke kartu membulat; `_tb_btn` kini memakai TombolKapsul; panel properti multi = `render_properti_multi()`; selftest baru `--selftest-multi` (8 cek salin/tempel/hapus/aktif-mati massal di kedua tab).
+- Diuji: 36 unit test baru (helper warna, kotak membulat, TombolKapsul state/klik/width, KartuBulat, HeaderKilau, panel massal, selectmode extended), regresi v5.1–v5.6 tetap hijau (26+39+28+46+53+52), 7 selftest Xvfb, uji visual 11/11 + 3 screenshot.
 
 ## Perubahan v5.6
 

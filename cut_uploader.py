@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.6  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v5.7  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -48,6 +48,13 @@
      - v5.6: TAMPILAN MODERN "DARK GLASS" - tema navy pekat
        dengan aksen neon dan tombol yang dirapi: MAKSIMAL 7
        TOMBOL per baris, sisanya berurutan di baris bawahnya
+     - v5.7: PILIH BANYAK LANGKAH SEKALIGUS - tahan CTRL atau
+       SHIFT saat mengklik baris di tabel (Ctrl+Klik = pilih
+       tambah/kurang, Shift+Klik = pilih rentang, Ctrl+A = semua)
+       lalu SALIN / TEMPEL / HAPUS / AKTIF-MATI berlaku untuk
+       SEMUA langkah terpilih sekaligus. Desain makin modern:
+       tombol KAPSUL membulat mengkilat, panel bersudut
+       membulat, dan header gradien baru
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -84,6 +91,9 @@
        disunting di panel PROPERTI, dan ikut tersimpan di
        profil. Tampilan aplikasi juga kini pakai tema modern
        'DARK GLASS' dengan tombol rapi maksimal 7 per baris.
+     - v5.7: PILIH BANYAK LANGKAH (Ctrl/Shift+Klik, Ctrl+A)
+       untuk SALIN / TEMPEL / HAPUS massal; tombol kapsul
+       membulat + panel bersudut membulat + header gradien.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -105,6 +115,7 @@
 """
 
 import tkinter as tk
+import tkinter.font as tkfont
 from tkinter import ttk, messagebox, filedialog
 import threading
 import time
@@ -198,7 +209,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.6"
+APP_VERSION = "5.7"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -373,6 +384,344 @@ F_N     = ("Segoe UI", 10)
 F_S     = ("Segoe UI", 9)
 F_XS    = ("Segoe UI", 8)
 F_MONO  = ("Consolas", 9)
+
+# ------------------------------------------------------------
+# v5.7 - Perangkat desain MODERN & ELEGAN: sudut membulat,
+# tombol kapsul mengkilat, kartu kaca bersudut membulat,
+# header gradien. Semuanya digambar sendiri di Canvas supaya
+# tampil sama di Windows maupun Linux.
+# ------------------------------------------------------------
+def _campur(w1, w2, t):
+    """Campur dua warna #rrggbb (t=0 -> w1, t=1 -> w2)."""
+    try:
+        r1, g1, b1 = int(w1[1:3], 16), int(w1[3:5], 16), int(w1[5:7], 16)
+        r2, g2, b2 = int(w2[1:3], 16), int(w2[3:5], 16), int(w2[5:7], 16)
+        return "#{:02x}{:02x}{:02x}".format(
+            int(round(r1 + (r2 - r1) * t)),
+            int(round(g1 + (g2 - g1) * t)),
+            int(round(b1 + (b2 - b1) * t)))
+    except Exception:
+        return w1
+
+
+def _cerahkan(warna, f=1.2):
+    """Versi lebih terang (f=1.2 -> 20% menuju putih)."""
+    return _campur(warna, "#FFFFFF", min(max(f - 1.0, 0.0), 1.0))
+
+
+def _gelapkan(warna, f=0.25):
+    """Versi lebih gelap (f=0.25 -> 25% menuju hitam)."""
+    return _campur(warna, "#000000", min(max(f, 0.0), 1.0))
+
+
+def kotak_bulat(cv, x1, y1, x2, y2, r, **kw):
+    """Persegi bersudut MEMBULAT (poligon smooth) untuk Canvas."""
+    r = max(1, min(int(r), int(x2 - x1) // 2, int(y2 - y1) // 2))
+    titik = [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r,
+             x2, y2 - r, x2, y2, x2 - r, y2, x1 + r, y2,
+             x1, y2, x1, y2 - r, x1, y1 + r, x1, y1]
+    return cv.create_polygon(titik, smooth=True, **kw)
+
+
+def menu_gelap(m):
+    """v5.7: menu popup ikut tema gelap glass."""
+    try:
+        m.config(bg=C_PANEL2, fg=C_TEXT, activebackground=C_SELROW,
+                 activeforeground=C_TEXT, bd=1, relief="flat", font=F_N)
+    except Exception:
+        pass
+
+
+class TombolKapsul(tk.Canvas):
+    """v5.7: tombol KAPSUL MEMBULAT & MENGKILAT (digambar Canvas).
+
+    Pengganti modern tk.Button di toolbar: sudut membulat, kilau
+    gradien lembut di badan tombol, efek sorot saat kursor di
+    atas, efek tekan, dan keadaan nonaktif. API tk.Button yang
+    dipakai aplikasi tetap didukung: config(state=, text=, bg=,
+    fg=, command=, disabledforeground=, font=).
+    """
+
+    def __init__(self, parent, teks="", perintah=None, bg=None,
+                 fg=None, font=None, radius=11, padx=13, tinggi=32,
+                 garis=None, lebar_min=0):
+        try:
+            latar = parent.cget("bg")
+        except Exception:
+            latar = C_BG
+        self._font = font or ("Segoe UI", 9, "bold")
+        self._teks = teks
+        self._perintah = perintah
+        self._bg = bg or C_PANEL2
+        self._fg = fg or C_TEXT
+        self._dfg = None
+        self._garis = garis
+        self._radius = radius
+        self._padx = padx
+        self._lebar_min = lebar_min
+        self._state = "normal"
+        self._di_atas = False
+        self._tekan = False
+        super().__init__(parent, bg=latar, highlightthickness=0, bd=0,
+                         height=tinggi, cursor="hand2")
+        self.bind("<Configure>", lambda _e: self._gambar())
+        self.bind("<Enter>", self._masuk)
+        self.bind("<Leave>", self._keluar)
+        self.bind("<ButtonPress-1>", self._tekan_mulai)
+        self.bind("<ButtonRelease-1>", self._tekan_lepas)
+        self._atur_lebar()
+
+    # ---------- ukuran ----------
+    def _atur_lebar(self):
+        try:
+            f = tkfont.Font(font=self._font)
+            tw = max(f.measure(x) for x in
+                     (self._teks.split("\n") or [""]))
+        except Exception:
+            tw = len(self._teks) * 7
+        tk.Canvas.configure(self, width=max(self._lebar_min,
+                                            int(tw) + self._padx * 2))
+
+    # ---------- gambar ----------
+    def _gambar(self, _e=None):
+        self.delete("all")
+        w = int(self.winfo_width())
+        h = int(self.winfo_height())
+        if w < 6 or h < 6:
+            return
+        r = max(2, min(self._radius, h // 2 - 1))
+        if self._state == "disabled":
+            isi = _campur(self._bg, C_BG, 0.55)
+            teks = self._dfg or C_MUTED
+            garis = C_LINE
+            kilau = None
+        elif self._tekan:
+            isi = _gelapkan(self._bg, 0.18)
+            teks = self._fg
+            garis = _gelapkan(self._bg, 0.32)
+            kilau = None
+        elif self._di_atas:
+            isi = _cerahkan(self._bg, 1.10)
+            teks = self._fg
+            garis = _cerahkan(self._bg, 1.5)
+            kilau = _cerahkan(self._bg, 1.30)
+        else:
+            isi = self._bg
+            teks = self._fg
+            garis = self._garis or _gelapkan(self._bg, 0.30)
+            kilau = _cerahkan(self._bg, 1.22)
+        kotak_bulat(self, 1, 1, w - 2, h - 2, r, fill=isi, outline=garis)
+        if kilau:
+            # kilau: gradien vertikal halus mengikuti bentuk kapsul
+            for y in range(2, h - 2):
+                t = (y - 2) / float(max(1, h - 4))
+                warna = _campur(kilau, isi, min(1.0, t * 1.55))
+                dalam = 0
+                if y < 1 + r:
+                    dy = (1 + r) - y
+                    if 0 <= dy < r:
+                        dalam = r - int((r * r - dy * dy) ** 0.5)
+                elif y > h - 2 - r:
+                    dy = y - (h - 2 - r)
+                    if 0 <= dy < r:
+                        dalam = r - int((r * r - dy * dy) ** 0.5)
+                self.create_line(2 + dalam, y, w - 2 - dalam, y,
+                                 fill=warna)
+        self.create_text(w / 2.0, h / 2.0, text=self._teks, fill=teks,
+                         font=self._font)
+
+    # ---------- interaksi ----------
+    def _masuk(self, _e=None):
+        if self._state == "normal":
+            self._di_atas = True
+            self._gambar()
+
+    def _keluar(self, _e=None):
+        self._di_atas = False
+        self._tekan = False
+        self._gambar()
+
+    def _tekan_mulai(self, _e=None):
+        if self._state == "normal":
+            self._tekan = True
+            self._gambar()
+
+    def _tekan_lepas(self, e=None):
+        if self._state != "normal":
+            return
+        tekan = self._tekan
+        self._tekan = False
+        self._gambar()
+        if (tekan and e is not None
+                and 0 <= e.x <= int(self.winfo_width())
+                and 0 <= e.y <= int(self.winfo_height())
+                and self._perintah):
+            try:
+                self._perintah()
+            except Exception:
+                pass
+
+    # ---------- API ala tk.Button ----------
+    def config(self, **kw):
+        state = kw.pop("state", None)
+        if state is not None:
+            self._state = state
+            self._di_atas = False
+            tk.Canvas.configure(self, cursor="hand2"
+                                if state == "normal" else "arrow")
+        if "text" in kw:
+            self._teks = kw.pop("text")
+            self._atur_lebar()
+        if "bg" in kw:
+            self._bg = kw.pop("bg") or C_PANEL2
+        if "fg" in kw:
+            self._fg = kw.pop("fg") or C_TEXT
+        if "disabledforeground" in kw:
+            self._dfg = kw.pop("disabledforeground")
+        if "command" in kw:
+            self._perintah = kw.pop("command")
+        if "font" in kw:
+            self._font = kw.pop("font")
+            self._atur_lebar()
+        if kw:
+            tk.Canvas.configure(self, **kw)
+        self._gambar()
+
+    configure = config
+
+
+class TombolMenu(TombolKapsul):
+    """v5.7: tombol kapsul yang membuka MENU saat diklik
+    (pengganti modern tk.Menubutton)."""
+
+    def __init__(self, parent, teks, menu=None, **kw):
+        TombolKapsul.__init__(self, parent, teks=teks,
+                              perintah=self._buka_menu, **kw)
+        self._menu = menu
+
+    def _buka_menu(self):
+        m = self._menu
+        if not m:
+            return
+        try:
+            m.tk_popup(self.winfo_rootx(),
+                       self.winfo_rooty() + self.winfo_height())
+        finally:
+            try:
+                m.grab_release()
+            except Exception:
+                pass
+
+
+class KartuBulat(tk.Frame):
+    """v5.7: panel kaca bersudut MEMBULAT (bingkai digambar Canvas).
+
+    Pengganti modern tk.LabelFrame: judul kecil di dalam kartu dan
+    garis bingkai yang membulat di keempat sudutnya. Isi kartu
+    ditaruh di .badan (frame di dalam kartu).
+    """
+
+    def __init__(self, parent, judul=None, radius=13, bg=C_BG,
+                 garis=C_LINE, warna_judul=C_BLUE,
+                 padding=(12, 7, 12, 9)):
+        try:
+            latar = parent.cget("bg")
+        except Exception:
+            latar = C_BG
+        self._radius = radius
+        self._bg = bg
+        self._garis = garis
+        super().__init__(parent, bg=latar)
+        self.cv = tk.Canvas(self, bg=latar, highlightthickness=0, bd=0)
+        self.cv.place(relwidth=1.0, relheight=1.0)
+        # catatan: canvas dibuat lebih dulu dari judul/badan, jadi
+        # otomatis berada di bawahnya (tidak perlu .lower() - nama
+        # method itu milik item Canvas, bukan widget)
+        kiri, atas, kanan, bawah = padding
+        if judul:
+            tk.Label(self, text=judul, bg=bg, fg=warna_judul,
+                     font=F_H).pack(side="top", anchor="w",
+                                    padx=kiri + 2, pady=(atas, 1))
+            self.badan = tk.Frame(self, bg=bg)
+            self.badan.pack(side="top", fill="both", expand=True,
+                            padx=kiri, pady=(1, bawah))
+        else:
+            self.badan = tk.Frame(self, bg=bg)
+            self.badan.pack(side="top", fill="both", expand=True,
+                            padx=kiri, pady=(atas, bawah))
+        self.bind("<Configure>", self._gambar)
+
+    def _gambar(self, _e=None):
+        w = int(self.winfo_width())
+        h = int(self.winfo_height())
+        if w < 8 or h < 8:
+            return
+        self.cv.delete("all")
+        kotak_bulat(self.cv, 1, 1, w - 2, h - 2, self._radius,
+                    fill=self._bg, outline=self._garis)
+
+
+class HeaderKilau(tk.Canvas):
+    """v5.7: header gradien mengkilat di atas tab
+    (judul aplikasi + chip versi + hint hotkey)."""
+
+    def __init__(self, parent, tinggi=64):
+        super().__init__(parent, height=tinggi, bg=C_BG,
+                         highlightthickness=0, bd=0)
+        self.bind("<Configure>", lambda _e: self._gambar())
+
+    def _gambar(self, _e=None):
+        self.delete("all")
+        w = int(self.winfo_width())
+        h = int(self.winfo_height())
+        if w < 40 or h < 20:
+            return
+        atas = _cerahkan(C_BLUE_L, 1.35)
+        for y in range(h):
+            t = y / float(max(1, h - 1))
+            self.create_line(0, y, w, y, fill=_campur(atas, C_BG, t))
+        self.create_line(0, h - 1, w, h - 1, fill=C_LINE)
+        tengah = h / 2.0
+        self.create_oval(18, tengah - 5, 28, tengah + 5, fill=C_BLUE,
+                         outline="")
+        self.create_text(38, tengah - 10, text=APP_NAME, anchor="w",
+                         fill=C_TEXT, font=F_TITLE)
+        self.create_text(39, tengah + 13, text="MACRO STUDIO EDITION",
+                         anchor="w", fill=C_MUTED, font=F_XS)
+        teks_v = "v{}".format(APP_VERSION)
+        try:
+            vw = tkfont.Font(font=F_H).measure(teks_v)
+        except Exception:
+            vw = 30
+        kotak_bulat(self, w - vw - 34, tengah - 13, w - 16, tengah + 13,
+                    12, fill=C_BLUE_L, outline=C_BLUE)
+        self.create_text(w - 25 - vw / 2.0, tengah, text=teks_v,
+                         fill=C_BLUE_D, font=F_H)
+        self.create_text(w - vw - 48, tengah,
+                         text="F6 Mulai   |   F7 / ESC Berhenti",
+                         anchor="e", fill=C_MUTED, font=F_S)
+
+
+def render_properti_multi(tab, pilihan, catatan=""):
+    """v5.7: isi panel PROPERTI saat BANYAK baris terpilih."""
+    tab._loading_prop = True
+    for wdg in tab.prop_body.winfo_children():
+        wdg.destroy()
+    tab.lbl_ambil = None
+    kotak = tk.Frame(tab.prop_body, bg=C_BG)
+    kotak.pack(fill="both", expand=True)
+    tk.Label(kotak, text="{} LANGKAH DIPILIH".format(len(pilihan)),
+             bg=C_BG, fg=C_BLUE, font=F_TITLE).pack(pady=(4, 4))
+    pesan = ("Aksi massal untuk semua langkah terpilih:\n\n"
+             "  -  Ctrl+C / SALIN   = salin semua langkah terpilih\n"
+             "  -  Ctrl+V / TEMPEL  = tempel berurutan setelah acuan\n"
+             "  -  Del / HAPUS      = hapus semua langkah terpilih\n"
+             + catatan +
+             "\n  -  Klik SATU baris (tanpa Ctrl/Shift) untuk "
+             "menyunting propertinya di panel ini.")
+    tk.Label(kotak, text=pesan, bg=C_BG, fg=C_MUTED, font=F_N,
+             justify="left").pack()
+    tab._loading_prop = False
 
 # ------------------------------------------------------------
 # Definisi 13 slot posisi klik di situs CutMotions (urutan A-J)
@@ -2069,13 +2418,12 @@ class CutMotionsTab(PerekamAksiMixin):
                      text="v{}  |  F6 = Mulai   F7/ESC = Berhenti".format(
                          APP_VERSION)).pack(side="right", padx=6)
 
-        # ----- Strip WAKTU (di atas statusbar) -----
-        w = tk.LabelFrame(self.root, text=" WAKTU & UNGGAH (detik) ",
-                          bg=C_BG, fg=C_BLUE, font=F_H, bd=0,
-                          highlightbackground=C_LINE,
-                          highlightthickness=1,
-                          relief="flat")
-        w.pack(side="bottom", fill="x", padx=8, pady=(0, 4))
+        # ----- Strip WAKTU (kartu membulat, di atas statusbar) -----
+        kartu_w = KartuBulat(self.root,
+                             judul="WAKTU & UNGGAH (detik)",
+                             padding=(10, 6, 10, 8))
+        kartu_w.pack(side="bottom", fill="x", padx=8, pady=(0, 4))
+        w = kartu_w.badan
         row = tk.Frame(w, bg=C_BG)
         row.pack(fill="x", padx=8, pady=(4, 2))
         for kunci, label, lebar in [
@@ -2119,15 +2467,14 @@ class CutMotionsTab(PerekamAksiMixin):
                  bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
                  justify="left").pack(fill="x", padx=8, pady=(0, 4))
 
-        # ----- Toolbar v5.6 (kartu kaca, tombol rapi: MAKS 7
-        #      TOMBOL per baris, sisanya berurutan di baris bawah) -----
-        tb = tk.Frame(self.root, bg=C_BG, bd=0,
-                      highlightbackground=C_LINE, highlightthickness=1)
-        tb.pack(side="top", fill="x")
-        tb_r1 = tk.Frame(tb, bg=C_BG)
-        tb_r1.pack(side="top", fill="x", padx=4)
-        tb_r2 = tk.Frame(tb, bg=C_BG)
-        tb_r2.pack(side="top", fill="x", padx=4)
+        # ----- Toolbar v5.7 (kartu MEMBULAT + tombol kapsul
+        #      mengkilat; tetap MAKS 7 TOMBOL per baris) -----
+        tb = KartuBulat(self.root, radius=14, padding=(10, 7, 10, 8))
+        tb.pack(side="top", fill="x", padx=6, pady=(6, 2))
+        tb_r1 = tk.Frame(tb.badan, bg=C_BG)
+        tb_r1.pack(side="top", fill="x")
+        tb_r2 = tk.Frame(tb.badan, bg=C_BG)
+        tb_r2.pack(side="top", fill="x")
         self.btn_start = self._tb_btn(tb_r1, "JALANKAN  (F6)", self._start,
                                       bg=C_BLUE, fg="white",
                                       aktif=C_BLUE_D)
@@ -2142,21 +2489,13 @@ class CutMotionsTab(PerekamAksiMixin):
                                       aktif="#EF4444")
         self._tb_pemisah(tb_r1)
         # v5.5: SEMUA menu STUDIO MAKRO bisa dimasukkan ke alur A-J
-        self.mb_tambah = tk.Menubutton(
-            tb_r1, text="+ TAMBAH LANGKAH \u25be", bg=C_GREEN_D, fg="white",
-            font=("Segoe UI", 9, "bold"), relief="flat", bd=1,
-            padx=12, pady=5, cursor="hand2", direction="below",
-            activebackground=C_GREEN_D,
-            activeforeground="white")
-        m_tambah = tk.Menu(self.mb_tambah, tearoff=0)
+        m_tambah = tk.Menu(self.root, tearoff=0)
+        menu_gelap(m_tambah)
         self._isi_menu_tambah(m_tambah)
-        self.mb_tambah.config(menu=m_tambah)
+        self.mb_tambah = TombolMenu(tb_r1, "+ TAMBAH LANGKAH \u25be",
+                                    menu=m_tambah, bg=C_GREEN_D,
+                                    fg="white")
         self.mb_tambah.pack(side="left", padx=(2, 2), pady=2)
-        self.mb_tambah.bind("<Enter>",
-                            lambda e: self.mb_tambah.config(
-                                relief="raised"))
-        self.mb_tambah.bind("<Leave>",
-                            lambda e: self.mb_tambah.config(relief="flat"))
         self._tb_pemisah(tb_r1)
         self._tb_btn(tb_r1, "TES CARI GAMBAR", self._tes_cari)
         self._tb_btn(tb_r1, "POTONG GAMBAR REFERENSI", self._potong_gambar)
@@ -2167,13 +2506,11 @@ class CutMotionsTab(PerekamAksiMixin):
         self._tb_btn(tb_r2, "SIMPAN PROFIL", self._simpan_profil)
         self._tb_btn(tb_r2, "BUKA PROFIL", self._buka_profil)
 
-        # ----- Strip VIDEO & CAPTION -----
-        v = tk.LabelFrame(self.root, text=" VIDEO & CAPTION ",
-                          bg=C_BG, fg=C_BLUE, font=F_H, bd=0,
-                          highlightbackground=C_LINE,
-                          highlightthickness=1,
-                          relief="flat")
-        v.pack(side="top", fill="x", padx=8, pady=(6, 4))
+        # ----- Strip VIDEO & CAPTION (kartu membulat) -----
+        kartu_v = KartuBulat(self.root, judul="VIDEO & CAPTION",
+                             padding=(10, 6, 10, 8))
+        kartu_v.pack(side="top", fill="x", padx=8, pady=(6, 4))
+        v = kartu_v.badan
         r1 = tk.Frame(v, bg=C_BG)
         r1.pack(fill="x", padx=8, pady=(4, 2))
         tk.Label(r1, text="FOLDER VIDEO", bg=C_BG, fg=C_MUTED,
@@ -2214,12 +2551,13 @@ class CutMotionsTab(PerekamAksiMixin):
                                bg=C_LINE, bd=0)
         paned.pack(side="top", fill="both", expand=True, padx=8, pady=4)
 
-        # ---- tabel langkah makro ----
-        f_tb = tk.LabelFrame(paned, text=" LANGKAH MAKRO  (klik satu "
-                             "baris lalu sunting di panel PROPERTI di "
-                             "bawah) ", bg=C_BG, fg=C_BLUE, font=F_H,
-                             bd=0, highlightbackground=C_LINE,
-                             highlightthickness=1, relief="flat")
+        # ---- tabel langkah makro (v5.7: kartu membulat + MULTI-
+        #      PILIH: Ctrl+Klik / Shift+Klik / Ctrl+A) ----
+        f_tb = KartuBulat(
+            paned,
+            judul="LANGKAH MAKRO - klik pilih 1; tahan CTRL/SHIFT "
+                  "pilih banyak; Ctrl+C salin; Del hapus",
+            padding=(8, 5, 8, 6))
         paned.add(f_tb, minsize=300, height=380, stretch="always")
         gaya = ttk.Style()
         try:
@@ -2236,8 +2574,10 @@ class CutMotionsTab(PerekamAksiMixin):
                  background=[("selected", C_BLUE)],
                  foreground=[("selected", "white")])
         kolom = ("no", "nama", "detail", "jeda", "ulang")
-        self.tree = ttk.Treeview(f_tb, columns=kolom, show="headings",
-                                 style="Makro.Treeview", selectmode="browse")
+        self.tree = ttk.Treeview(f_tb.badan, columns=kolom,
+                                 show="headings",
+                                 style="Makro.Treeview",
+                                 selectmode="extended")
         for k, t, w_, a in [
             ("no", "#", 44, "center"),
             ("nama", "LANGKAH", 205, "w"),
@@ -2247,11 +2587,11 @@ class CutMotionsTab(PerekamAksiMixin):
         ]:
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w_, anchor=a, stretch=(k == "detail"))
-        vsb = ttk.Scrollbar(f_tb, orient="vertical", command=self.tree.yview)
+        vsb = ttk.Scrollbar(f_tb.badan, orient="vertical",
+                            command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
-        self.tree.pack(side="left", fill="both", expand=True,
-                       padx=(6, 0), pady=(2, 6))
-        vsb.pack(side="left", fill="y", pady=(2, 6), padx=(0, 6))
+        self.tree.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="left", fill="y")
         self.tree.tag_configure("genap", background=C_STRIPE)
         self.tree.tag_configure("ganjil", background=C_PANEL)
         self.tree.tag_configure("salinan", foreground=C_BLUE)
@@ -2260,30 +2600,30 @@ class CutMotionsTab(PerekamAksiMixin):
         self.tree.bind("<Control-c>", lambda _e: self._salin_langkah())
         self.tree.bind("<Control-v>", lambda _e: self._tempel_langkah())
         self.tree.bind("<Delete>", lambda _e: self._hapus_langkah())
+        self.tree.bind("<Control-a>", self._pilih_semua)
         self.tree.bind("<Button-3>", self._menu_klik_kanan)
 
-        # ---- panel properti ----
-        self.f_prop = tk.LabelFrame(paned, text=" PROPERTI LANGKAH ",
-                                    bg=C_BG, fg=C_BLUE, font=F_H, bd=0,
-                                    highlightbackground=C_LINE,
-                                    highlightthickness=1,
-                                    relief="flat")
+        # ---- panel properti (kartu membulat) ----
+        self.f_prop = KartuBulat(paned, judul="PROPERTI LANGKAH",
+                                 padding=(8, 5, 8, 6))
         paned.add(self.f_prop, minsize=230, height=280, stretch="always")
-        self.prop_body = tk.Frame(self.f_prop, bg=C_BG)
-        self.prop_body.pack(fill="both", expand=True, padx=8, pady=(2, 6))
+        self.prop_body = tk.Frame(self.f_prop.badan, bg=C_BG)
+        self.prop_body.pack(fill="both", expand=True)
 
     # ---------- pembantu tampilan ----------
     def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None):
-        b = tk.Button(parent, text=teks, command=cmd,
-                      bg=bg or C_PANEL2, fg=fg or C_TEXT,
-                      font=("Segoe UI", 9, "bold"), relief="flat", bd=1,
-                      padx=12, pady=5, cursor="hand2",
-                      activebackground=aktif or C_SELROW,
-                      activeforeground=fg or C_TEXT)
-        b.pack(side="left", padx=(2, 2), pady=2)
-        b.bind("<Enter>", lambda e: b.config(relief="raised"))
-        b.bind("<Leave>", lambda e: b.config(relief="flat"))
+        # v5.7: tombol kapsul membulat menggantikan tk.Button datar
+        b = TombolKapsul(parent, teks=teks, perintah=cmd,
+                         bg=bg or C_PANEL2, fg=fg or C_TEXT)
+        b.pack(side="left", padx=3, pady=2)
         return b
+
+    def _pilih_semua(self, _ev=None):
+        """v5.7: Ctrl+A - pilih semua baris di tabel."""
+        semua = self.tree.get_children()
+        if semua:
+            self.tree.selection_set(semua)
+        return "break"
 
     def _tb_pemisah(self, parent):
         tk.Frame(parent, bg=C_LINE, width=2).pack(side="left", fill="y",
@@ -2513,6 +2853,13 @@ class CutMotionsTab(PerekamAksiMixin):
         self._loading_prop = True
         for wdg in self.prop_body.winfo_children():
             wdg.destroy()
+        # v5.7: BANYAK baris terpilih -> panel aksi massal
+        pilihan = self.tree.selection()
+        if len(pilihan) > 1:
+            render_properti_multi(
+                self, pilihan,
+                "\n  -  (langkah bawaan A-J tidak bisa dihapus)\n")
+            return
         iid = self.sel
         ek = None
         if iid not in POS_KUNCI:
@@ -3497,19 +3844,32 @@ class CutMotionsTab(PerekamAksiMixin):
     # ================== v4.2: SALIN / TEMPEL / HAPUS LANGKAH ==========
     def _menu_klik_kanan(self, ev):
         iid = self.tree.identify_row(ev.y)
-        if iid:
+        # v5.7: klik kanan pada baris yang SUDAH terpilih bersama
+        # tidak boleh merusak pilihan banyak
+        if iid and iid not in self.tree.selection():
             self.tree.selection_set(iid)
+        n = len(self.tree.selection())
         m = tk.Menu(self.root, tearoff=0)
+        menu_gelap(m)
+        m.add_command(label="Tahan CTRL / SHIFT saat klik = pilih "
+                            "banyak langkah",
+                      state="disabled")
+        m.add_separator()
         sub_st = tk.Menu(m, tearoff=0)
+        menu_gelap(sub_st)
         self._isi_menu_tambah(sub_st)
         m.add_cascade(label="Tambah langkah STUDIO di sini",
                       menu=sub_st)
         m.add_separator()
-        m.add_command(label="Salin langkah ini  (Ctrl+C)",
+        m.add_command(label="Salin {}  (Ctrl+C)".format(
+                          "{} langkah terpilih".format(n) if n > 1
+                          else "langkah ini"),
                       command=self._salin_langkah)
         m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
                       command=self._tempel_langkah)
-        m.add_command(label="Hapus salinan ini  (Del)",
+        m.add_command(label="Hapus {}  (Del)".format(
+                          "langkah terpilih" if n > 1
+                          else "salinan ini"),
                       command=self._hapus_langkah)
         try:
             m.tk_popup(ev.x_root, ev.y_root)
@@ -3517,147 +3877,194 @@ class CutMotionsTab(PerekamAksiMixin):
             m.grab_release()
 
     def _salin_langkah(self):
-        """Simpan salinan langkah terpilih ke papan klip internal."""
-        iid = self.sel
-        ek_now = self._iid_ekstra(iid) if (iid and iid not in POS_KUNCI) \
-            else None
-        if ek_now and ek_now.get("jenis") in JENIS_STUDIO:
-            # v5.5: langkah gaya Studio disalin utuh (semua parameternya)
-            self.papan_klip = {"jenis_step": json.loads(
-                json.dumps(ek_now))}
-            self._set_status(
-                "Langkah '{}' disalin. Klik baris acuan lalu TEMPEL "
-                "LANGKAH (Ctrl+V).".format(ek_now.get("label") or iid),
-                C_GREEN)
-            return
-        if iid in POS_KUNCI:
-            sumber = iid
-            params = self._params_dari_global(iid)
-            posisi = (list(self.posisi.get(iid))
-                      if self.posisi.get(iid) else None)
-            cfg_g = dict(self.gambar_langkah.get(iid)
-                         or gambar_langkah_default())
-            jeda = self.jeda_per.get(iid, 1.0)
-            jk = self.jeda_klik_per.get(iid, 0.3)
-        else:
-            ek = self._iid_ekstra(iid) if iid else None
+        """v5.7: salin SEMUA langkah terpilih ke papan klip.
+
+        Pilihan banyak didapat dengan menahan CTRL / SHIFT saat
+        mengklik baris (atau Ctrl+A untuk semua). Urutan salinan
+        mengikuti urutan tampil di tabel.
+        """
+        pilih = list(self.tree.selection())
+        if not pilih and self.sel:
+            pilih = [self.sel]
+        urut = self._urutan_lengkap()
+        pilih = [i for i in urut if i in pilih] + \
+            [i for i in pilih if i not in urut]
+        klip = []
+        for iid in pilih:
+            if iid in POS_KUNCI:
+                klip.append({
+                    "sumber": iid,
+                    "params": dict(self._params_dari_global(iid)),
+                    "posisi": (list(self.posisi.get(iid))
+                               if self.posisi.get(iid) else None),
+                    "gambar": dict(self.gambar_langkah.get(iid)
+                                   or gambar_langkah_default()),
+                    "jeda": self.jeda_per.get(iid, 1.0),
+                    "jeda_klik": self.jeda_klik_per.get(iid, 0.3),
+                })
+                continue
+            ek = self._iid_ekstra(iid)
             if not ek:
-                messagebox.showinfo(
-                    APP_NAME,
-                    "Klik dulu satu baris langkah di tabel yang mau "
-                    "disalin.")
-                return
-            sumber = ek.get("sumber")
-            params = dict(ek.get("params") or {})
-            posisi = (list(ek["posisi"]) if ek.get("posisi") else None)
-            cfg_g = dict(ek.get("gambar") or gambar_langkah_default())
-            jeda = float(ek.get("jeda", 1.0))
-            jk = float(ek.get("jeda_klik", 0.3))
-        self.papan_klip = {"sumber": sumber, "params": params,
-                           "posisi": posisi, "gambar": cfg_g,
-                           "jeda": jeda, "jeda_klik": jk}
+                continue
+            if str(ek.get("jenis") or "") in JENIS_STUDIO:
+                # v5.5: langkah gaya Studio disalin utuh
+                klip.append({"jenis_step": json.loads(
+                    json.dumps(ek))})
+            else:
+                klip.append({
+                    "sumber": ek.get("sumber"),
+                    "params": dict(ek.get("params") or {}),
+                    "posisi": (list(ek["posisi"])
+                               if ek.get("posisi") else None),
+                    "gambar": dict(ek.get("gambar")
+                                   or gambar_langkah_default()),
+                    "jeda": float(ek.get("jeda", 1.0)),
+                    "jeda_klik": float(ek.get("jeda_klik", 0.3)),
+                })
+        if not klip:
+            messagebox.showinfo(
+                APP_NAME,
+                "Klik dulu satu baris langkah di tabel yang mau "
+                "disalin.\n\nTahan CTRL atau SHIFT saat mengklik untuk "
+                "memilih BANYAK langkah sekaligus (Ctrl+A = semua).")
+            return
+        self.papan_klip = {"banyak": klip}
         self._set_status(
-            "Langkah {} disalin. Klik baris acuan lalu TEMPEL LANGKAH "
-            "(Ctrl+V).".format(SLOT_KODE.get(sumber, sumber)), C_GREEN)
+            "{} langkah disalin. Klik baris acuan lalu TEMPEL "
+            "LANGKAH (Ctrl+V).".format(len(klip)), C_GREEN)
 
     def _tempel_langkah(self):
-        """Tambahkan salinan langkah sebagai titik klik tambahan."""
-        if self.papan_klip and self.papan_klip.get("jenis_step"):
-            # v5.5: menempel langkah gaya Studio (utuh, parameter ikut)
-            anchor = self.sel if (
-                self.sel and (self.sel in POS_KUNCI
-                              or self._iid_ekstra(self.sel))) \
-                else POS_KUNCI[-1]
-            self._extra_counter += 1
-            self._studio_counter = getattr(self, "_studio_counter", 0) + 1
-            baru = json.loads(
-                json.dumps(self.papan_klip["jenis_step"]))
-            baru["uid"] = "x{}".format(self._extra_counter)
-            baru["setelah"] = anchor
-            baru["label"] = "{} #{}".format(
-                LABEL_JENIS.get(baru.get("jenis"), "LANGKAH STUDIO"),
-                self._studio_counter)
-            self.langkah_extra.append(baru)
-            self._refresh_tabel()
-            self.sel = baru["uid"]
-            try:
-                self.tree.selection_set(baru["uid"])
-                self.tree.see(baru["uid"])
-            except Exception:
-                pass
-            self._render_properti()
-            self._save_settings()
-            self._set_status(
-                "Langkah Studio ditempel setelah {} - semua parameternya "
-                "ikut tersalin, silakan disunting.".format(
-                    LABEL_POSISI.get(anchor, anchor)
-                    if anchor in POS_KUNCI else "langkah terpilih"),
-                C_GREEN)
-            return
-        if not self.papan_klip:
+        """v5.7: tempel 1 ATAU BANYAK salinan berurutan setelah acuan.
+
+        Urutan tempel = urutan saat disalin; langkah kedua dst
+        dirantai setelah hasil tempel sebelumnya.
+        """
+        klip = self.papan_klip
+        if not klip:
             messagebox.showinfo(
                 APP_NAME,
                 "Belum ada langkah yang disalin.\n\nKlik satu baris di "
-                "tabel, lalu klik SALIN LANGKAH dulu.")
+                "tabel, lalu klik SALIN LANGKAH dulu.\n(Tahan CTRL/SHIFT "
+                "saat mengklik untuk menyalin banyak sekaligus.)")
             return
+        items = klip.get("banyak") or [klip]
         anchor = self.sel if (
             self.sel and (self.sel in POS_KUNCI
                           or self._iid_ekstra(self.sel))) else POS_KUNCI[-1]
-        self._extra_counter += 1
-        uid = "x{}".format(self._extra_counter)
-        kode = SLOT_KODE.get(self.papan_klip["sumber"], "?")
-        nama_acuan = (LABEL_POSISI.get(anchor, anchor)
-                      if anchor in POS_KUNCI
-                      else ((self._iid_ekstra(anchor) or {}).get("label")
-                            or "langkah terpilih"))
-        ek = {"uid": uid, "sumber": self.papan_klip["sumber"],
-              "setelah": anchor,
-              "label": "{} - salinan {}".format(kode, self._extra_counter),
-              "posisi": (list(self.papan_klip["posisi"])
-                         if self.papan_klip["posisi"] else None),
-              "jeda": float(self.papan_klip["jeda"]),
-              "jeda_klik": float(self.papan_klip["jeda_klik"]),
-              "params": dict(self.papan_klip["params"]),
-              "gambar": dict(self.papan_klip["gambar"])}
-        self.langkah_extra.append(ek)
+        dipaste = []
+        for it in items:
+            if it.get("jenis_step"):
+                # v5.5: langkah gaya Studio (utuh, parameter ikut)
+                self._extra_counter += 1
+                self._studio_counter = getattr(self, "_studio_counter",
+                                               0) + 1
+                baru = json.loads(json.dumps(it["jenis_step"]))
+                baru["uid"] = "x{}".format(self._extra_counter)
+                baru["setelah"] = anchor
+                baru["label"] = "{} #{}".format(
+                    LABEL_JENIS.get(baru.get("jenis"), "LANGKAH STUDIO"),
+                    self._studio_counter)
+                self.langkah_extra.append(baru)
+                anchor = baru["uid"]
+                dipaste.append(baru["uid"])
+            elif it.get("sumber"):
+                self._extra_counter += 1
+                uid = "x{}".format(self._extra_counter)
+                kode = SLOT_KODE.get(it["sumber"], "?")
+                ek = {"uid": uid, "sumber": it["sumber"],
+                      "setelah": anchor,
+                      "label": "{} - salinan {}".format(
+                          kode, self._extra_counter),
+                      "posisi": (list(it["posisi"]) if it.get("posisi")
+                                 else None),
+                      "jeda": float(it.get("jeda", 1.0)),
+                      "jeda_klik": float(it.get("jeda_klik", 0.3)),
+                      "params": dict(it.get("params") or {}),
+                      "gambar": dict(it.get("gambar")
+                                     or gambar_langkah_default())}
+                self.langkah_extra.append(ek)
+                anchor = uid
+                dipaste.append(uid)
+        if not dipaste:
+            messagebox.showinfo(APP_NAME,
+                                "Papan klip kosong / isinya tidak "
+                                "dikenal. Salin ulang langkahnya.")
+            return
         self._refresh_tabel()
-        self.sel = uid
+        self.sel = dipaste[-1]
         try:
-            self.tree.selection_set(uid)
-            self.tree.see(uid)
+            self.tree.selection_set(*dipaste)
+            self.tree.see(self.sel)
         except Exception:
             pass
         self._render_properti()
         self._save_settings()
         self._set_status(
-            "Salinan {} ditambahkan setelah {}. Atur posisinya (AMBIL), "
-            "lalu jalankan F6.".format(kode, nama_acuan), C_GREEN)
+            "{} langkah ditempel berurutan setelah acuan - atur "
+            "posisinya (AMBIL) bila perlu, lalu jalankan F6.".format(
+                len(dipaste)), C_GREEN)
 
     def _hapus_langkah(self):
-        """Hapus salinan langkah terpilih (langkah bawaan A-J tetap)."""
-        iid = self.sel
-        ek = self._iid_ekstra(iid) if iid else None
-        if not ek:
+        """v5.7: hapus SEMUA salinan/langkah Studio terpilih sekaligus.
+
+        Langkah bawaan A-J tetap tidak bisa dihapus - bila ikut
+        terpilih, dia dilewati otomatis (diberitahu di dialog).
+        """
+        pilih = list(self.tree.selection())
+        if not pilih and self.sel:
+            pilih = [self.sel]
+        urut = self._urutan_lengkap()
+        pilih = [i for i in urut if i in pilih] + \
+            [i for i in pilih if i not in urut]
+        terhapus = []
+        for iid in pilih:
+            if iid in POS_KUNCI:
+                continue
+            ek = self._iid_ekstra(iid)
+            if ek:
+                terhapus.append(ek)
+        if not terhapus:
             messagebox.showinfo(
                 APP_NAME,
                 "Pilih dulu baris SALINAN yang mau dihapus.\n\nLangkah "
                 "bawaan A-J tidak bisa dihapus - matikan centangnya "
-                "dengan mengatur posisi/jeda saja.")
+                "dengan mengatur posisi/jeda saja.\n\nTahan CTRL/SHIFT "
+                "saat mengklik untuk menghapus banyak salinan "
+                "sekaligus.")
             return
-        if not messagebox.askyesno(
-                APP_NAME, "Hapus salinan '{}'?".format(
-                    ek.get("label") or iid)):
+        n_slot = sum(1 for i in pilih if i in POS_KUNCI)
+        if len(terhapus) == 1:
+            pesan = "Hapus salinan '{}'?".format(
+                terhapus[0].get("label") or terhapus[0]["uid"])
+        else:
+            pesan = ("Hapus {} salinan/langkah terpilih "
+                     "sekaligus?".format(len(terhapus)))
+            if n_slot:
+                pesan += ("\n\n({} langkah bawaan A-J dilewati - tidak "
+                          "bisa dihapus)".format(n_slot))
+        if not messagebox.askyesno(APP_NAME, pesan):
             return
-        for lain in self.langkah_extra:
-            if lain.get("setelah") == iid:
-                lain["setelah"] = ek.get("setelah") or "pos_jadwal"
-        self.langkah_extra.remove(ek)
-        self.sel = ek.get("setelah") if ek.get("setelah") in POS_KUNCI \
-            else "pos_jadwal"
+        for ek in terhapus:
+            iid = ek["uid"]
+            # rantai anak-anaknya naik ke acuan si penghapus
+            for lain in self.langkah_extra:
+                if lain.get("setelah") == iid:
+                    lain["setelah"] = ek.get("setelah") or "pos_jadwal"
+            self.langkah_extra.remove(ek)
+        anchor = terhapus[0].get("setelah") or "pos_jadwal"
+        if anchor not in POS_KUNCI and not self._iid_ekstra(anchor):
+            anchor = "pos_jadwal"
+        self.sel = anchor
         self._refresh_tabel()
+        try:
+            if self.tree.exists(self.sel):
+                self.tree.selection_set(self.sel)
+        except Exception:
+            pass
         self._render_properti()
         self._save_settings()
-        self._set_status("Salinan dihapus.", C_ORANGE)
+        self._set_status("{} salinan dihapus.".format(len(terhapus)),
+                         C_ORANGE)
 
     # ================== v5.5: LANGKAH STUDIO DI ALUR A-J ==================
     # ================== v5.6: HOOK REKAM AKSI (mixin) ==================
@@ -5484,15 +5891,14 @@ class StudioMakroTab(PerekamAksiMixin):
 
     # ================== PEMBANGUNAN TAMPILAN ==================
     def _build_ui(self):
-        # ----- Toolbar 1 v5.6 (kartu kaca, tombol rapi: MAKS 7
-        #      TOMBOL per baris, sisanya berurutan di baris bawah) -----
-        tb1 = tk.Frame(self.wadah, bg=C_BG, bd=0,
-                       highlightbackground=C_LINE, highlightthickness=1)
-        tb1.pack(side="top", fill="x")
-        tb1_r1 = tk.Frame(tb1, bg=C_BG)
-        tb1_r1.pack(side="top", fill="x", padx=4)
-        tb1_r2 = tk.Frame(tb1, bg=C_BG)
-        tb1_r2.pack(side="top", fill="x", padx=4)
+        # ----- Toolbar 1 v5.7 (kartu MEMBULAT + tombol kapsul
+        #      mengkilat; tetap MAKS 7 TOMBOL per baris) -----
+        tb1 = KartuBulat(self.wadah, radius=14, padding=(10, 7, 10, 8))
+        tb1.pack(side="top", fill="x", padx=6, pady=(6, 2))
+        tb1_r1 = tk.Frame(tb1.badan, bg=C_BG)
+        tb1_r1.pack(side="top", fill="x")
+        tb1_r2 = tk.Frame(tb1.badan, bg=C_BG)
+        tb1_r2.pack(side="top", fill="x")
         self.btn_start = self._tb_btn(tb1_r1, "JALANKAN  (F6)",
                                       self._start,
                                       bg=C_BLUE, fg="white",
@@ -5521,14 +5927,13 @@ class StudioMakroTab(PerekamAksiMixin):
         self._tb_btn(tb1_r2, "+ ULANGI AKHIR",
                      lambda: self._tambah("LOOP_AKHIR"))
 
-        # ----- Toolbar 2: sunting + file + alat gambar -----
-        tb2 = tk.Frame(self.wadah, bg=C_BG, bd=0,
-                       highlightbackground=C_LINE, highlightthickness=1)
-        tb2.pack(side="top", fill="x")
-        tb2_r1 = tk.Frame(tb2, bg=C_BG)
-        tb2_r1.pack(side="top", fill="x", padx=4)
-        tb2_r2 = tk.Frame(tb2, bg=C_BG)
-        tb2_r2.pack(side="top", fill="x", padx=4)
+        # ----- Toolbar 2: sunting + file + alat gambar (kartu) -----
+        tb2 = KartuBulat(self.wadah, radius=14, padding=(10, 7, 10, 8))
+        tb2.pack(side="top", fill="x", padx=6, pady=(2, 2))
+        tb2_r1 = tk.Frame(tb2.badan, bg=C_BG)
+        tb2_r1.pack(side="top", fill="x")
+        tb2_r2 = tk.Frame(tb2.badan, bg=C_BG)
+        tb2_r2.pack(side="top", fill="x")
         self._tb_btn(tb2_r1, "SALIN", self._salin)
         self._tb_btn(tb2_r1, "TEMPEL", self._tempel)
         self._tb_btn(tb2_r1, "HAPUS", self._hapus)
@@ -5538,7 +5943,8 @@ class StudioMakroTab(PerekamAksiMixin):
         self._tb_btn(tb2_r1, "SIMPAN MAKRO", self._simpan_makro)
         self._tb_btn(tb2_r2, "BUKA MAKRO", self._buka_makro)
         self._tb_btn(tb2_r2, "MAKRO BARU", self._makro_baru)
-        self._tb_btn(tb2_r2, "TEMPLATE CUTMOTIONS", self._template_cutmotions)
+        self._tb_btn(tb2_r2, "TEMPLATE CUTMOTIONS",
+                     self._template_cutmotions)
         self._tb_pemisah(tb2_r2)
         self._tb_btn(tb2_r2, "POTONG GAMBAR", self._potong_dari_menu)
         self._tb_btn(tb2_r2, "TES CARI", self._tes_cari)
@@ -5555,9 +5961,12 @@ class StudioMakroTab(PerekamAksiMixin):
                                             ipady=2)
         tk.Label(strip, text="Jeda setiap langkah diatur lewat kolom JEDA "
                              "/ panel PROPERTI.  Klik kanan baris = "
-                             "salin/tempel/hapus/urutkan.  "
+                             "salin/tempel/hapus/urutkan.  Tahan "
+                             "CTRL/SHIFT saat klik = PILIH BANYAK "
+                             "langkah (Ctrl+A = semua).  "
                              "● REKAM AKSI = klik/ketikan/scrollmu "
-                             "direkam otomatis jadi langkah (F8 = berhenti).",
+                             "direkam otomatis jadi langkah (F8 = "
+                             "berhenti).",
                  bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
 
         # ----- Area tengah: tabel alur kerja + panel properti -----
@@ -5565,17 +5974,19 @@ class StudioMakroTab(PerekamAksiMixin):
                                sashwidth=5, bg=C_LINE, bd=0)
         paned.pack(side="top", fill="both", expand=True, padx=8, pady=4)
 
-        f_tb = tk.LabelFrame(paned, text=" ALUR KERJA MAKRO  (mulai "
-                             "dari kosong - pilih tombol + di atas untuk "
-                             "menambah langkah satu per satu) ",
-                             bg=C_BG, fg=C_BLUE, font=F_H, bd=0,
-                             highlightbackground=C_LINE,
-                             highlightthickness=1, relief="flat")
+        # ---- tabel alur kerja (v5.7: kartu membulat + MULTI-PILIH:
+        #      Ctrl+Klik / Shift+Klik / Ctrl+A) ----
+        f_tb = KartuBulat(
+            paned,
+            judul="ALUR KERJA MAKRO - tahan CTRL/SHIFT saat klik "
+                  "untuk PILIH BANYAK langkah sekaligus",
+            padding=(8, 5, 8, 6))
         paned.add(f_tb, minsize=260, height=340, stretch="always")
         kolom = ("no", "nama", "detail", "jeda", "ulang")
-        self.tree = ttk.Treeview(f_tb, columns=kolom, show="headings",
+        self.tree = ttk.Treeview(f_tb.badan, columns=kolom,
+                                 show="headings",
                                  style="Makro.Treeview",
-                                 selectmode="browse")
+                                 selectmode="extended")
         for k, t, w_, a in [
             ("no", "#", 44, "center"),
             ("nama", "LANGKAH", 215, "w"),
@@ -5586,12 +5997,10 @@ class StudioMakroTab(PerekamAksiMixin):
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w_, anchor=a,
                              stretch=(k == "detail"))
-        vsb = ttk.Scrollbar(f_tb, orient="vertical",
+        vsb = ttk.Scrollbar(f_tb.badan, orient="vertical",
                             command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
-        self.tree.pack(side="left", fill="both", expand=True,
-                       padx=(6, 0), pady=(2, 6))
-        vsb.pack(side="left", fill="y", pady=(2, 6), padx=(0, 6))
+        self.tree.pack(side="left", fill="both", expand=True)
         # warna per jenis langkah
         self.tree.tag_configure("genap", background=C_STRIPE)
         self.tree.tag_configure("ganjil", background=C_PANEL)
@@ -5608,29 +6017,29 @@ class StudioMakroTab(PerekamAksiMixin):
         self.tree.bind("<Control-c>", lambda _e: self._salin())
         self.tree.bind("<Control-v>", lambda _e: self._tempel())
         self.tree.bind("<Delete>", lambda _e: self._hapus())
+        self.tree.bind("<Control-a>", self._pilih_semua)
         self.tree.bind("<Button-3>", self._menu_klik_kanan)
 
-        self.f_prop = tk.LabelFrame(paned, text=" PROPERTI LANGKAH ",
-                                    bg=C_BG, fg=C_BLUE, font=F_H, bd=0,
-                                    highlightbackground=C_LINE,
-                                    highlightthickness=1,
-                                    relief="flat")
+        self.f_prop = KartuBulat(paned, judul="PROPERTI LANGKAH",
+                                 padding=(8, 5, 8, 6))
         paned.add(self.f_prop, minsize=220, height=250, stretch="always")
-        self.prop_body = tk.Frame(self.f_prop, bg=C_BG)
-        self.prop_body.pack(fill="both", expand=True, padx=8, pady=(2, 6))
+        self.prop_body = tk.Frame(self.f_prop.badan, bg=C_BG)
+        self.prop_body.pack(fill="both", expand=True)
 
     # ---------- pembantu tampilan ----------
     def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None):
-        b = tk.Button(parent, text=teks, command=cmd,
-                      bg=bg or C_PANEL2, fg=fg or C_TEXT,
-                      font=("Segoe UI", 9, "bold"), relief="flat", bd=1,
-                      padx=8, pady=4, cursor="hand2",
-                      activebackground=aktif or C_SELROW,
-                      activeforeground=fg or C_TEXT)
-        b.pack(side="left", padx=(2, 2), pady=2)
-        b.bind("<Enter>", lambda e: b.config(relief="raised"))
-        b.bind("<Leave>", lambda e: b.config(relief="flat"))
+        # v5.7: tombol kapsul membulat menggantikan tk.Button datar
+        b = TombolKapsul(parent, teks=teks, perintah=cmd,
+                         bg=bg or C_PANEL2, fg=fg or C_TEXT)
+        b.pack(side="left", padx=3, pady=2)
         return b
+
+    def _pilih_semua(self, _ev=None):
+        """v5.7: Ctrl+A - pilih semua baris di tabel."""
+        semua = self.tree.get_children()
+        if semua:
+            self.tree.selection_set(semua)
+        return "break"
 
     def _tb_pemisah(self, parent):
         tk.Frame(parent, bg=C_LINE, width=2).pack(side="left", fill="y",
@@ -5777,61 +6186,93 @@ class StudioMakroTab(PerekamAksiMixin):
                              LABEL_JENIS[jenis]), C_GREEN)
 
     def _salin(self):
-        l = self._get(self.sel)
-        if not l:
-            messagebox.showinfo(APP_NAME, "Klik dulu satu baris langkah "
-                                          "yang mau disalin.")
+        """v5.7: salin SEMUA langkah terpilih (urut tampil)."""
+        pilih = [self._get(u) for u in self.tree.selection()]
+        pilih = [l for l in pilih if l]
+        if not pilih:
+            l = self._get(self.sel)
+            pilih = [l] if l else []
+        if not pilih:
+            messagebox.showinfo(
+                APP_NAME,
+                "Klik dulu satu baris langkah yang mau disalin.\n\n"
+                "Tahan CTRL atau SHIFT saat mengklik untuk memilih "
+                "BANYAK langkah sekaligus (Ctrl+A = semua).")
             return
-        self.papan_klip = json.loads(json.dumps(l))
-        self._set_status("Langkah '{}' disalin - klik baris tujuan lalu "
-                         "TEMPEL (Ctrl+V).".format(
-                             l.get("nama") or LABEL_JENIS[l["jenis"]]),
-                         C_GREEN)
+        self.papan_klip = {"banyak": [json.loads(json.dumps(l))
+                                      for l in pilih]}
+        self._set_status("{} langkah disalin - klik baris tujuan lalu "
+                         "TEMPEL (Ctrl+V).".format(len(pilih)), C_GREEN)
 
     def _tempel(self):
-        if not self.papan_klip:
+        """v5.7: tempel 1 ATAU BANYAK salinan berurutan setelah acuan."""
+        klip = self.papan_klip
+        if not klip:
             messagebox.showinfo(APP_NAME, "Belum ada langkah yang "
                                           "disalin.\n\nKlik satu baris "
                                           "lalu SALIN (Ctrl+C) dulu.")
             return
-        baru = json.loads(json.dumps(self.papan_klip))
-        baru["uid"] = "s{}".format(self._uid_baru())
+        items = klip.get("banyak") or [klip]
         i = self._idx_of(self.sel)
-        if i is None:
-            self.langkah.append(baru)
-        else:
-            self.langkah.insert(i + 1, baru)
-        self.sel = baru["uid"]
+        dipaste = []
+        for it in items:
+            baru = json.loads(json.dumps(it))
+            baru["uid"] = "s{}".format(self._uid_baru())
+            if i is None:
+                self.langkah.append(baru)
+            else:
+                self.langkah.insert(i + 1, baru)
+                i += 1
+            dipaste.append(baru["uid"])
+        self.sel = dipaste[-1]
         self._refresh_tabel()
         try:
-            self.tree.selection_set(baru["uid"])
-            self.tree.see(baru["uid"])
+            self.tree.selection_set(*dipaste)
+            self.tree.see(self.sel)
         except Exception:
             pass
         self._render_properti()
-        self._set_status("Langkah ditempel - semua parameternya ikut "
-                         "tersalin, silakan disunting.", C_GREEN)
+        self._set_status("{} langkah ditempel berurutan - semua "
+                         "parameternya ikut tersalin, silakan "
+                         "disunting.".format(len(dipaste)), C_GREEN)
 
     def _hapus(self):
-        l = self._get(self.sel)
-        if not l:
-            messagebox.showinfo(APP_NAME, "Pilih dulu baris langkah yang "
-                                          "mau dihapus.")
+        """v5.7: hapus SEMUA langkah terpilih sekaligus."""
+        pilih = [self._get(u) for u in self.tree.selection()]
+        pilih = [l for l in pilih if l]
+        if not pilih:
+            l = self._get(self.sel)
+            pilih = [l] if l else []
+        if not pilih:
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu baris langkah yang mau dihapus.\n\n"
+                "Tahan CTRL/SHIFT saat mengklik untuk menghapus "
+                "BANYAK langkah sekaligus.")
             return
-        if not messagebox.askyesno(
-                APP_NAME, "Hapus langkah '{}'?".format(
-                    l.get("nama") or LABEL_JENIS[l["jenis"]])):
+        if len(pilih) == 1:
+            pesan = "Hapus langkah '{}'?".format(
+                pilih[0].get("nama") or LABEL_JENIS[pilih[0]["jenis"]])
+        else:
+            pesan = ("Hapus {} langkah terpilih sekaligus?".format(
+                len(pilih)))
+        if not messagebox.askyesno(APP_NAME, pesan):
             return
-        i = self._idx_of(l["uid"])
-        self.langkah.remove(l)
+        i0 = self._idx_of(pilih[0]["uid"])
+        for l in pilih:
+            try:
+                self.langkah.remove(l)
+            except ValueError:
+                pass
         self.sel = None
-        if i is not None and 0 <= i < len(self.langkah):
-            self.sel = self.langkah[i]["uid"]
+        if i0 is not None and 0 <= i0 < len(self.langkah):
+            self.sel = self.langkah[i0]["uid"]
         elif self.langkah:
             self.sel = self.langkah[-1]["uid"]
         self._refresh_tabel()
         self._render_properti()
-        self._set_status("Langkah dihapus.", C_ORANGE)
+        self._set_status("{} langkah dihapus.".format(len(pilih)),
+                         C_ORANGE)
 
     def _geser_langkah(self, delta):
         i = self._idx_of(self.sel)
@@ -5856,32 +6297,52 @@ class StudioMakroTab(PerekamAksiMixin):
         self._geser_langkah(1)
 
     def _toggle_aktif(self):
-        l = self._get(self.sel)
-        if not l:
+        """v5.7: nyalakan/matikan SEMUA langkah terpilih sekaligus."""
+        pilih = [self._get(u) for u in self.tree.selection()]
+        pilih = [l for l in pilih if l]
+        if not pilih:
+            l = self._get(self.sel)
+            pilih = [l] if l else []
+        if not pilih:
             return
-        l["aktif"] = not bool(l.get("aktif", True))
+        target = not bool(pilih[0].get("aktif", True))
+        for l in pilih:
+            l["aktif"] = target
         self._refresh_tabel()
-        self._set_status("Langkah {}.".format(
-            "DINYALAKAN" if l["aktif"] else "DIMATIKAN (dilewati saat "
-                                            "jalan)"),
-            C_GREEN if l["aktif"] else C_ORANGE)
+        self._set_status("{} langkah {}.".format(
+            len(pilih),
+            "DINYALAKAN" if target else "DIMATIKAN (dilewati saat "
+                                        "jalan)"),
+            C_GREEN if target else C_ORANGE)
 
     def _menu_klik_kanan(self, ev):
         iid = self.tree.identify_row(ev.y)
-        if iid:
+        # v5.7: klik kanan pada baris yang SUDAH terpilih bersama
+        # tidak boleh merusak pilihan banyak
+        if iid and iid not in self.tree.selection():
             self.tree.selection_set(iid)
+        n = len(self.tree.selection())
         m = tk.Menu(self.wadah, tearoff=0)
-        m.add_command(label="Salin langkah ini  (Ctrl+C)",
+        menu_gelap(m)
+        m.add_command(label="Tahan CTRL / SHIFT saat klik = pilih "
+                            "banyak langkah",
+                      state="disabled")
+        m.add_separator()
+        m.add_command(label="Salin {}  (Ctrl+C)".format(
+                          "{} langkah terpilih".format(n) if n > 1
+                          else "langkah ini"),
                       command=self._salin)
         m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
                       command=self._tempel)
         m.add_separator()
         m.add_command(label="Naikkan", command=self._naik)
         m.add_command(label="Turunkan", command=self._turun)
-        m.add_command(label="Nyalakan / Matikan",
+        m.add_command(label="Nyalakan / Matikan (semua yang terpilih)",
                       command=self._toggle_aktif)
         m.add_separator()
-        m.add_command(label="Hapus langkah ini  (Del)",
+        m.add_command(label="Hapus {}  (Del)".format(
+                          "langkah terpilih" if n > 1
+                          else "langkah ini"),
                       command=self._hapus)
         try:
             m.tk_popup(ev.x_root, ev.y_root)
@@ -5890,6 +6351,14 @@ class StudioMakroTab(PerekamAksiMixin):
 
     # ================== PANEL PROPERTI ==================
     def _render_properti(self):
+        # v5.7: BANYAK baris terpilih -> panel aksi massal
+        pilihan = self.tree.selection()
+        if len(pilihan) > 1:
+            render_properti_multi(
+                self, pilihan,
+                "\n  -  AKTIF/MATI menyalakan / mematikan semua yang "
+                "terpilih\n")
+            return
         self._loading_prop = True
         for wdg in self.prop_body.winfo_children():
             wdg.destroy()
@@ -7336,18 +7805,23 @@ class ShellApp:
             self.kb = None
             self.mouse = None
 
+        # ----- header gradien mengkilat (v5.7) -----
+        HeaderKilau(root).pack(side="top", fill="x")
+
         # ----- statusbar bersama (paling bawah) -----
-        status = tk.Frame(root, bg=C_BG, bd=1, relief="sunken")
+        status = tk.Frame(root, bg=C_PANEL, bd=0,
+                          highlightthickness=1,
+                          highlightbackground=C_LINE)
         status.pack(side="bottom", fill="x")
         self.lbl_status = tk.Label(
-            status, anchor="w", bg=C_BG, fg=C_GREEN, font=F_S,
-            text="STUDIO MAKRO: pilih tombol + di atas untuk menambah "
-                 "langkah pertama  |  ALUR CUTMOTIONS: login manual dulu "
-                 "di situs, atau pakai '+ TAMBAH LANGKAH' / '● REKAM "
-                 "AKSI', lalu tekan F6")
+            status, anchor="w", bg=C_PANEL, fg=C_GREEN, font=F_S,
+            text="Tahan CTRL/SHIFT saat klik baris di tabel = PILIH "
+                 "BANYAK langkah sekaligus (Ctrl+A = semua)  |  "
+                 "STUDIO MAKRO: susun alur bebas  |  ALUR CUTMOTIONS: "
+                 "login manual dulu di situs, lalu tekan F6")
         self.lbl_status.pack(side="left", fill="x", expand=True,
                              padx=6, pady=3)
-        tk.Label(status, anchor="e", bg=C_BG, fg=C_MUTED, font=F_XS,
+        tk.Label(status, anchor="e", bg=C_PANEL, fg=C_MUTED, font=F_XS,
                  text="v{}  |  F6 = Mulai   F7/ESC = Berhenti".format(
                      APP_VERSION)).pack(side="right", padx=6)
 
@@ -7546,6 +8020,12 @@ class ShellApp:
             "berurutan di baris bawah. REKAM AKSI kini juga ada di\n"
             "tab ALUR CUTMOTIONS (A-J): hasil rekaman langsung masuk\n"
             "alur A-J tepat setelah langkah yang kamu pilih.\n\n"
+            "v5.7: PILIH BANYAK LANGKAH SEKALIGUS - tahan CTRL atau\n"
+            "SHIFT saat mengklik baris di tabel (Shift+Klik = rentang,\n"
+            "Ctrl+Klik = tambah/kurang, Ctrl+A = semua), lalu SALIN /\n"
+            "TEMPEL / HAPUS / AKTIF-MATI berlaku untuk semuanya.\n"
+            "Desain makin modern & elegan: tombol kapsul membulat\n"
+            "mengkilat, panel bersudut membulat, dan header gradien.\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
@@ -7716,12 +8196,70 @@ def main():
             print("SELFTEST_REKAMCUT_OK")
             root.destroy()
         root.after(2500, _ok6)
+    if "--selftest-multi" in sys.argv:
+        def _uji_multi():
+            # v5.7: pilih banyak -> salin / tempel / hapus massal
+            asli_ask = messagebox.askyesno
+            messagebox.askyesno = lambda *a, **k: True
+            try:
+                # ---- tab STUDIO ----
+                st = app.tab_studio
+                for j in ("KLIK", "JEDA", "KETIK", "TOMBOL"):
+                    st._tambah(j)
+                uids = [l["uid"] for l in st.langkah]
+                st.tree.selection_set(uids[0], uids[1], uids[2])
+                st._salin()
+                print("MULTI_SALIN_OK",
+                      len(st.papan_klip.get("banyak", ())) == 3)
+                st.sel = uids[-1]
+                st.tree.selection_set(uids[-1])
+                st._tempel()
+                print("MULTI_TEMPEL_OK", len(st.langkah) == 7)
+                st.tree.selection_set(*[l["uid"] for l in st.langkah[2:5]])
+                st._hapus()
+                print("MULTI_HAPUS_OK", len(st.langkah) == 4)
+                st.tree.selection_set(*[l["uid"] for l in st.langkah])
+                st._toggle_aktif()
+                print("MULTI_AKTIF_OK",
+                      all(not l.get("aktif", True) for l in st.langkah))
+                # ---- tab CUTMOTIONS ----
+                cut = app.tab_cut
+                cut.tree.selection_set("pos_oke")
+                cut.tree.event_generate("<<TreeviewSelect>>")
+                cut._tambah_studio("KLIK")
+                cut._tambah_studio("JEDA")
+                n_awal = len(cut.langkah_extra)
+                dua = [e["uid"] for e in cut.langkah_extra[-2:]]
+                cut.tree.selection_set("pos_tanggal", *dua)
+                cut._salin_langkah()
+                print("CUT_MULTI_SALIN_OK",
+                      len(cut.papan_klip.get("banyak", ())) == 3)
+                cut.sel = "pos_oke"
+                cut.tree.selection_set("pos_oke")
+                cut._tempel_langkah()
+                print("CUT_MULTI_TEMPEL_OK",
+                      len(cut.langkah_extra) == n_awal + 3)
+                tiga = [e["uid"] for e in cut.langkah_extra[-3:]]
+                cut.tree.selection_set(*tiga)
+                cut._hapus_langkah()
+                print("CUT_MULTI_HAPUS_OK",
+                      len(cut.langkah_extra) == n_awal)
+            finally:
+                messagebox.askyesno = asli_ask
+            print("MULTI_DONE")
+        root.after(700, _uji_multi)
+
+        def _ok7():
+            print("SELFTEST_MULTI_OK")
+            root.destroy()
+        root.after(3200, _ok7)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
             or ("--selftest-rekam" in sys.argv) \
             or ("--selftest-cutstudio" in sys.argv) \
-            or ("--selftest-rekam-cut" in sys.argv):
+            or ("--selftest-rekam-cut" in sys.argv) \
+            or ("--selftest-multi" in sys.argv):
         print("SELFTEST_DONE")
 
 
