@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v6.1  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v6.2  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -80,6 +80,18 @@
        Karena nama yang diketik di dialog kini PATH LENGKAP,
        dialog boleh terbuka di folder mana pun - urutan
        pilih = urutan upload = urutan caption.
+     - v6.2: KARTU VIDEO & CAPTION di STUDIO MAKRO - tab alur
+       bebas kini punya kartunya sendiri (sama seperti punya
+       alur CutMotions): PILIH VIDEO / TAMBAH VIDEO / HAPUS
+       TERPILIH / KOSONGKAN + daftar nama bernomor, JUMLAH
+       VIDEO otomatis, CAPTION DASAR + pratinjau, dan kolom
+       TANGGAL & JAM RILIS. Langkah ISI TANGGAL-JAM & ISI
+       VIDEO & CAPTION bisa mengambil nilainya dari kartu
+       Studio ini (pilihan baru "Studio Makro (tab ini)")
+       ATAU dari tab CutMotions ATAU tetap - lewat pilihan
+       AMBIL DATA DARI: Otomatis / Studio / CutMotions.
+       Data kartu ikut tersimpan di makro (auto-save +
+       SIMPAN/BUKA MAKRO).
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -142,6 +154,11 @@
        baris, dan OTOMATIS DIHAPUS dari daftar begitu alur
        selesai (data tidak menumpuk). JUMLAH VIDEO ikut
        terisi sendiri sesuai banyaknya video dipilih.
+     - v6.2: tab STUDIO MAKRO punya KARTU VIDEO & CAPTION
+       sendiri (lihat daftar v6.2 di atas) - langkah tambahan
+       ISI TANGGAL-JAM di alur ini bisa memilih sumber
+       "Studio Makro (tab ini)" sehingga tanggal-jam bisa
+       diatur terpisah dari kolom D tab ini.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -258,7 +275,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.1"
+APP_VERSION = "6.2"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -875,7 +892,16 @@ LABEL_JENIS = {
 }
 
 # v5.2: sumber nilai langkah ISI TANGGAL-JAM
-SUMBER_TANGGAL_OPSI = ("Tab CutMotions", "Tetap (isi sendiri)")
+# v6.2: tambah "Studio Makro (tab ini)" - dari kartu VIDEO &
+#       CAPTION di tab STUDIO MAKRO
+SUMBER_TANGGAL_OPSI = ("Tab CutMotions", "Studio Makro (tab ini)",
+                       "Tetap (isi sendiri)")
+
+# v6.2: sumber data kartu VIDEO & CAPTION tab STUDIO MAKRO
+# (menentukan asal videos/caption/tanggal saat F6 di Studio)
+SUMBER_DATA_OPSI = ("Otomatis (Studio dulu, CutMotions kalau kosong)",
+                    "Studio Makro (tab ini)",
+                    "Tab CutMotions")
 
 # v5.2: pilihan isi langkah ISI VIDEO & CAPTION
 ISI_VIDEO_OPSI = ("Jumlah video",
@@ -973,7 +999,7 @@ def studio_langkah_baru(jenis, uid, **isi):
         # CATATAN
         "catatan": "",
         # TANGGAL_JAM (v5.2)
-        "sumber": "Tab CutMotions",
+        "sumber": "Tab CutMotions",  # v6.2: Studio lewat _tambah tab Studio
         # VIDEO_CAPTION (v5.2)
         "isi": "Caption dasar + nama video",
         # LOOP_MULAI
@@ -1341,7 +1367,10 @@ def studio_detail_teks(l):
             if len(val) > 22:
                 val = val[:22] + "..."
             return "{} | tetap: {}".format(pos_t, val)
-        return "{} | dari setelan tab CutMotions".format(pos_t)
+        if sumber == "Studio Makro (tab ini)":
+            return "{} | dari kartu VIDEO & CAPTION Studio".format(pos_t)
+        return "{} | dari kartu VIDEO & CAPTION tab CutMotions".format(
+            pos_t)
     if jenis == "VIDEO_CAPTION":
         isi = str(l.get("isi") or "Caption dasar + nama video")
         if isi == "Teks sendiri + placeholder":
@@ -1508,7 +1537,8 @@ def studio_gambar_cari(mesin, l):
 
 
 def studio_jalankan_langkah(mesin, l, idx=0, videos=None, caption="",
-                            jumlah=None, tanggal="", geser_baris=0):
+                            jumlah=None, tanggal="", geser_baris=0,
+                            tanggal_studio=None):
     """Jalankan SATU langkah Studio (semua jenis kecuali blok ULANGI).
 
     mesin       : objek dengan mouse, kb, stop_event, _sleep,
@@ -1517,9 +1547,12 @@ def studio_jalankan_langkah(mesin, l, idx=0, videos=None, caption="",
     videos      : daftar nama file video (untuk placeholder).
     caption     : caption dasar.
     jumlah      : jumlah video total (bila None: panjang videos).
-    tanggal     : tanggal-jam rilis dari tab CutMotions.
+    tanggal     : tanggal-jam rilis sumber "Tab CutMotions".
     geser_baris : geser Y tambahan (px) - posisi baris video pada
                   fase caption alur CutMotions (i x JARAK ANTAR BARIS).
+    tanggal_studio : v6.2 tanggal-jam rilis dari kartu VIDEO &
+                  CAPTION tab STUDIO MAKRO (sumber "Studio Makro
+                  (tab ini)").
 
     Kembalikan "stop" bila alur harus dihentikan, selain itu None.
     """
@@ -1582,13 +1615,16 @@ def studio_jalankan_langkah(mesin, l, idx=0, videos=None, caption="",
         sumber = str(l.get("sumber") or "Tab CutMotions")
         if sumber == "Tetap (isi sendiri)":
             teks = str(l.get("teks") or "").strip()
+        elif sumber == "Studio Makro (tab ini)":
+            teks = str(tanggal_studio or "").strip()
         else:
             teks = str(tanggal or "").strip()
         if not teks:
             mesin._set_status(
                 "Tanggal-jam masih KOSONG - langkah dilewati. Isi kolom "
-                "TANGGAL & JAM RILIS, atau ganti sumber nilai di "
-                "properti langkah.", C_ORANGE)
+                "TANGGAL & JAM RILIS di kartu VIDEO & CAPTION (tab "
+                "Studio atau tab CutMotions), atau ganti sumber nilai / "
+                "isi tetap di properti langkah.", C_ORANGE)
             return None
         rapikan = parse_tanggal(teks)
         if rapikan:
@@ -3446,7 +3482,10 @@ class CutMotionsTab(PerekamAksiMixin):
             tk.Label(self.prop_body,
                      text="'Tab CutMotions' = pakai kolom TANGGAL & JAM "
                           "RILIS di atas (ubah sekali, semua ikut).  "
-                          "'Tetap' = pakai nilai di bawah ini.",
+                          "'Studio Makro (tab ini)' = pakai kolom "
+                          "TANGGAL & JAM RILIS di kartu VIDEO & CAPTION "
+                          "tab Studio.  'Tetap' = pakai nilai di bawah "
+                          "ini.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             r = self._baris_prop("TANGGAL & JAM RILIS")
@@ -4807,6 +4846,10 @@ class CutMotionsTab(PerekamAksiMixin):
             "otomatis, dipakai di caption, lalu daftarnya hilang\n"
             "sendiri setelah selesai) > Jadwal (A-E) > Tambah video\n"
             "(F-H2) > Caption per baris (I) > Submit (J).\n\n"
+            "v6.2: tab STUDIO MAKRO kini punya kartu VIDEO & CAPTION\n"
+            "sendiri (pilih video, caption dasar, tanggal-jam rilis)\n"
+            "sebagai sumber langkah ISI TANGGAL-JAM & ISI VIDEO &\n"
+            "CAPTION - pilih sumbernya: Otomatis / Studio / CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
             .format(APP_NAME, APP_VERSION, MAX_BATCH))
@@ -5463,11 +5506,17 @@ class CutMotionsTab(PerekamAksiMixin):
             return
         idx = loop_stack[-1]["idx"] if loop_stack \
             else int(ctx.get("idx_caption") or 0)
+        # v6.2: langkah ISI TANGGAL-JAM dengan sumber 'Studio Makro
+        # (tab ini)' mengambil nilai dari kartu VIDEO & CAPTION Studio
+        st = self.shell.tab_studio if self.shell is not self else None
+        tanggal_studio = st.vars["tanggal"].get().strip() \
+            if st is not None else ""
         hasil = studio_jalankan_langkah(
             self, l, idx, ctx.get("videos") or [],
             ctx.get("caption") or "", ctx.get("jumlah") or 0,
             ctx.get("tanggal") or "",
-            geser_baris=int(ctx.get("geser") or 0))
+            geser_baris=int(ctx.get("geser") or 0),
+            tanggal_studio=tanggal_studio)
         if hasil == "stop":
             # pastikan alur utama ikut berhenti (CARI GAMBAR gagal)
             self.stop_event.set()
@@ -6386,10 +6435,22 @@ class StudioMakroTab(PerekamAksiMixin):
         self.pv = {}
         self._loading_prop = False
         self.lbl_ambil = None
+        # v6.2: kartu VIDEO & CAPTION milik tab Studio sendiri
+        # (mirip kartu di tab CutMotions) - sumber data langkah
+        # ISI TANGGAL-JAM & ISI VIDEO & CAPTION
+        self.video_terpilih = []   # daftar path lengkap (urut pilih)
+        self.video_dir_ingat = None
         # v5.6: state REKAM AKSI (mesin bersama, lihat PerekamAksiMixin)
         self.perekam_init_state()
 
-        self.vars = {"mundur": tk.StringVar(value="5")}
+        self.vars = {
+            "mundur": tk.StringVar(value="5"),
+            # v6.2: kartu VIDEO & CAPTION
+            "jumlah": tk.StringVar(value=""),
+            "caption": tk.StringVar(value=""),
+            "tanggal": tk.StringVar(value=""),
+            "sumber_data": tk.StringVar(value=SUMBER_DATA_OPSI[0]),
+        }
 
         if PYNPUT_OK:
             self.kb = shell.kb
@@ -6480,6 +6541,111 @@ class StudioMakroTab(PerekamAksiMixin):
                              "direkam otomatis jadi langkah (F8 = "
                              "berhenti).",
                  bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
+
+        # ----- v6.2: kartu VIDEO & CAPTION (sumber data langkah
+        #      ISI TANGGAL-JAM & ISI VIDEO & CAPTION) -----
+        kartu_v = KartuBulat(self.wadah,
+                             judul="VIDEO & CAPTION STUDIO - sumber data "
+                                   "langkah ISI TANGGAL-JAM & ISI VIDEO "
+                                   "& CAPTION",
+                             padding=(10, 6, 10, 8))
+        kartu_v.pack(side="top", fill="x", padx=6, pady=(4, 2))
+        v = kartu_v.badan
+        r1 = tk.Frame(v, bg=C_BG)
+        r1.pack(fill="x", padx=8, pady=(4, 2))
+        tk.Label(r1, text="VIDEO TERPILIH", bg=C_BG, fg=C_MUTED,
+                 font=F_XS, anchor="w").pack(side="left")
+        self.lbl_video_status = tk.Label(
+            r1, text="Belum ada video - klik PILIH VIDEO... (kosong = "
+                     "data diambil dari tab CutMotions bila ada)",
+            bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w")
+        self.lbl_video_status.pack(side="left", fill="x", expand=True,
+                                   padx=6)
+        tk.Button(r1, text="PILIH VIDEO...", command=self._pilih_video,
+                  bg=C_BLUE, fg="white", font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_BLUE_D).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Button(r1, text="TAMBAH VIDEO...", command=self._tambah_video,
+                  bg=C_BLUE_L, fg=C_BLUE_D, font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_SELROW).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Button(r1, text="HAPUS TERPILIH",
+                  command=self._hapus_video_pilihan,
+                  bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_SELROW).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Button(r1, text="KOSONGKAN", command=self._kosongkan_video,
+                  bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_SELROW).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        f_daftar = tk.Frame(v, bg=C_BG)
+        f_daftar.pack(fill="x", padx=8, pady=(0, 2))
+        self.lb_video = tk.Listbox(
+            f_daftar, bg=C_PANEL, fg=C_TEXT, font=F_MONO,
+            relief="solid", bd=1, height=3, exportselection=False,
+            selectmode="extended", activestyle="none")
+        self.lb_video.pack(side="left", fill="both", expand=True)
+        vsb_v = ttk.Scrollbar(f_daftar, orient="vertical",
+                              command=self.lb_video.yview)
+        self.lb_video.configure(yscrollcommand=vsb_v.set)
+        vsb_v.pack(side="left", fill="y")
+        # ---- baris tanggal-jam rilis (sumber ISI TANGGAL-JAM) ----
+        r_t = tk.Frame(v, bg=C_BG)
+        r_t.pack(fill="x", padx=8, pady=(0, 2))
+        tk.Label(r_t, text="TANGGAL & JAM RILIS:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        tk.Entry(r_t, textvariable=self.vars["tanggal"], width=22,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 highlightthickness=0).pack(side="left", padx=(4, 6),
+                                            ipady=3)
+        tk.Label(r_t, text="format 2026-09-10 02:05:01 (detik boleh "
+                           "dilewat) - dipakai langkah ISI TANGGAL-JAM "
+                           "yang sumbernya 'Studio Makro (tab ini)'",
+                 bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
+        # ---- baris jumlah + caption ----
+        r2 = tk.Frame(v, bg=C_BG)
+        r2.pack(fill="x", padx=8, pady=(0, 2))
+        tk.Label(r2, text="JUMLAH VIDEO (maks {}):".format(MAX_BATCH),
+                 bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
+        tk.Entry(r2, textvariable=self.vars["jumlah"], width=5,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 justify="center",
+                 highlightthickness=0).pack(side="left", padx=(4, 12),
+                                            ipady=3)
+        tk.Label(r2, text="CAPTION DASAR:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        tk.Entry(r2, textvariable=self.vars["caption"], width=28,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 highlightthickness=0).pack(side="left", padx=(4, 12),
+                                            ipady=3)
+        self.lbl_count = tk.Label(r2, text="-", bg=C_BG, fg=C_BLUE,
+                                  font=F_XS, anchor="w")
+        self.lbl_count.pack(side="left", fill="x", expand=True)
+        self.lbl_preview = tk.Label(v, text="-", bg=C_BG, fg=C_GREEN,
+                                    font=F_MONO, anchor="w")
+        self.lbl_preview.pack(fill="x", padx=8, pady=(0, 4))
+        # ---- pilihan sumber data saat F6 ----
+        r_s = tk.Frame(v, bg=C_BG)
+        r_s.pack(fill="x", padx=8, pady=(0, 2))
+        tk.Label(r_s, text="AMBIL DATA DARI:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        om = tk.OptionMenu(r_s, self.vars["sumber_data"],
+                           *SUMBER_DATA_OPSI)
+        om.configure(bg=C_PANEL2, fg=C_TEXT, font=F_XS,
+                     activebackground=C_SELROW, relief="raised", bd=1,
+                     highlightthickness=0)
+        om.pack(side="left", padx=(6, 10))
+        tk.Label(r_s, text="Otomatis = kartu Studio yang dipakai lebih "
+                           "dulu; kolom yang kosong diambil dari tab "
+                           "CutMotions (cara lama tetap jalan).",
+                 bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w").pack(
+                     side="left", fill="x", expand=True)
+        self.vars["caption"].trace_add("write", self._update_preview)
+        self.vars["jumlah"].trace_add("write", self._update_count)
 
         # ----- Area tengah: tabel alur kerja + panel properti -----
         paned = tk.PanedWindow(self.wadah, orient="vertical",
@@ -6680,6 +6846,10 @@ class StudioMakroTab(PerekamAksiMixin):
     # ================== TAMBAH / SUNTING LANGKAH ==================
     def _tambah(self, jenis):
         l = studio_langkah_baru(jenis, self._uid_baru())
+        # v6.2: langkah ISI TANGGAL-JAM yang dibuat di tab Studio
+        # bawaan mengambil nilai dari kartu VIDEO & CAPTION tab ini
+        if jenis == "TANGGAL_JAM":
+            l["sumber"] = "Studio Makro (tab ini)"
         i = self._idx_of(self.sel)
         if i is None:
             self.langkah.append(l)
@@ -6696,6 +6866,177 @@ class StudioMakroTab(PerekamAksiMixin):
         self._set_status("Langkah {} ditambahkan - atur di panel "
                          "PROPERTI LANGKAH di bawah.".format(
                              LABEL_JENIS[jenis]), C_GREEN)
+
+    # ================== v6.2: KARTU VIDEO & CAPTION ==================
+    def _pilih_video(self):
+        """Pilih video untuk kartu Studio (ganti daftar lama)."""
+        filetypes = [("File video", " ".join("*" + e for e in VIDEO_EXTS)),
+                     ("Semua file", "*.*")]
+        awal = self.video_dir_ingat or os.path.expanduser("~")
+        paths = filedialog.askopenfilenames(
+            title="Pilih video untuk makro Studio",
+            initialdir=awal if os.path.isdir(awal) else None,
+            filetypes=filetypes)
+        if not paths:
+            return
+        self._set_video_list([os.path.normpath(p) for p in paths])
+
+    def _tambah_video(self):
+        """TAMBAH video ke daftar kartu Studio (anti-duplikat)."""
+        filetypes = [("File video", " ".join("*" + e for e in VIDEO_EXTS)),
+                     ("Semua file", "*.*")]
+        awal = self.video_dir_ingat or os.path.expanduser("~")
+        paths = filedialog.askopenfilenames(
+            title="Tambah video ke daftar Studio",
+            initialdir=awal if os.path.isdir(awal) else None,
+            filetypes=filetypes)
+        if not paths:
+            return
+        baru = list(self.video_terpilih)
+        n_ditambah = 0
+        for p in (os.path.normpath(x) for x in paths):
+            if p not in baru:
+                baru.append(p)
+                n_ditambah += 1
+        if n_ditambah:
+            self._set_video_list(baru)
+            self._set_status("{} video ditambahkan ke daftar Studio."
+                             .format(n_ditambah), C_GREEN)
+        else:
+            self._set_status("Tidak ada video baru (semua sudah di "
+                             "daftar).", C_ORANGE)
+
+    def _hapus_video_pilihan(self):
+        """Hapus baris-baris yang disorot di daftar kartu Studio."""
+        if not hasattr(self, "lb_video"):
+            return
+        idxs = list(self.lb_video.curselection())
+        if not idxs:
+            messagebox.showinfo(
+                APP_NAME, "Sorot dulu video di daftar yang mau dihapus, "
+                          "lalu klik HAPUS TERPILIH.")
+            return
+        sisa = [p for i, p in enumerate(self.video_terpilih)
+                if i not in set(idxs)]
+        self._set_video_list(sisa)
+        self._set_status("{} video dibuang dari daftar Studio.".format(
+            len(idxs)), C_ORANGE)
+
+    def _kosongkan_video(self):
+        """Kosongkan seluruh daftar video kartu Studio."""
+        if not self.video_terpilih:
+            return
+        if messagebox.askyesno(
+                APP_NAME,
+                "Kosongkan daftar {} video di kartu VIDEO & CAPTION "
+                "Studio?".format(len(self.video_terpilih))):
+            self._set_video_list([])
+            self._set_status("Daftar video Studio dikosongkan.", C_ORANGE)
+
+    def _set_video_list(self, paths):
+        """Pasang daftar video kartu Studio + rapikan UI & jumlah."""
+        self.video_terpilih = list(paths or [])
+        for p in reversed(self.video_terpilih):
+            d = os.path.dirname(p)
+            if os.path.isdir(d):
+                self.video_dir_ingat = d
+                break
+        # jumlah ikut terisi otomatis sesuai banyaknya pilihan
+        if self.video_terpilih:
+            self.vars["jumlah"].set(str(len(self.video_terpilih)))
+        self._refresh_video_list()
+        self._update_count()
+        self._update_preview()
+        self._simpan_auto()
+
+    def _refresh_video_list(self):
+        """Tampilkan ulang daftar nama video di kartu Studio."""
+        if not hasattr(self, "lb_video"):
+            return
+        self.lb_video.delete(0, "end")
+        for i, p in enumerate(self.video_terpilih, 1):
+            self.lb_video.insert("end", "{}. {}".format(
+                i, os.path.basename(p)))
+        if hasattr(self, "lbl_video_status"):
+            if not self.video_terpilih:
+                self.lbl_video_status.config(
+                    text="Belum ada video - klik PILIH VIDEO... (kosong = "
+                         "data diambil dari tab CutMotions bila ada)",
+                    fg=C_ORANGE)
+            else:
+                self.lbl_video_status.config(
+                    text="{} video tersimpan di Studio (urutan pilihan)"
+                         .format(len(self.video_terpilih)), fg=C_GREEN)
+
+    def _nama_video_studio(self):
+        """Daftar NAMA video kartu Studio (urutan pilihan)."""
+        return [os.path.basename(p) for p in self.video_terpilih]
+
+    def _update_count(self, *_):
+        if not hasattr(self, "lbl_count"):
+            return
+        n = len(self.video_terpilih)
+        if n:
+            self.lbl_count.config(
+                text="{} video terpilih (urutan pilihan).".format(n),
+                fg=C_BLUE)
+        else:
+            self.lbl_count.config(
+                text="Kartu Studio masih kosong.", fg=C_MUTED)
+
+    def _update_preview(self, *_):
+        if not hasattr(self, "lbl_preview"):
+            return
+        if self.video_terpilih:
+            contoh = os.path.basename(self.video_terpilih[0])
+        else:
+            contoh = "melati"
+        teks = compose_caption(self.vars["caption"].get(), contoh)
+        n = len(teks)
+        self.lbl_preview.config(
+            text="Pratinjau caption Studio:  {}   ({}{}/{} kar)".format(
+                teks, n, "!" if n > JUDUL_MAX else "", JUDUL_MAX),
+            fg=C_RED if n > JUDUL_MAX else C_GREEN)
+
+    def _data_sumber(self):
+        """v6.2: kumpulkan data videos/caption/tanggal/jumlah sesuai
+        pilihan AMBIL DATA DARI di kartu VIDEO & CAPTION Studio.
+
+        Kembalikan dict {videos, caption, tanggal, jumlah, sumber}.
+        Dipisah dari _start supaya bisa diuji lewat selftest.
+        """
+        cut = self.shell.tab_cut if self.shell is not self else None
+        pilihan = self.vars["sumber_data"].get()
+        if pilihan not in SUMBER_DATA_OPSI:
+            pilihan = SUMBER_DATA_OPSI[0]
+        s_videos = self._nama_video_studio()
+        s_caption = self.vars["caption"].get().strip()
+        s_tanggal = self.vars["tanggal"].get().strip()
+        try:
+            s_jumlah = int(_angka(self.vars["jumlah"].get(), 0, 0,
+                                  MAX_BATCH))
+        except Exception:
+            s_jumlah = 0
+        c_videos = cut.antrian_video_studio() if cut is not None else []
+        c_caption = cut.vars["caption"].get() if cut is not None else ""
+        c_tanggal = cut.vars["tanggal"].get().strip() \
+            if cut is not None else ""
+        c_jumlah = int(_angka(cut.vars["jumlah"].get(), 0, 0, MAX_BATCH)) \
+            if cut is not None else 0
+        if pilihan == "Studio Makro (tab ini)":
+            videos, caption, tanggal, jumlah = (
+                s_videos, s_caption, s_tanggal, s_jumlah)
+        elif pilihan == "Tab CutMotions":
+            videos, caption, tanggal, jumlah = (
+                c_videos, c_caption, c_tanggal, c_jumlah)
+        else:  # Otomatis: Studio dulu, CutMotions untuk yang kosong
+            videos = s_videos or c_videos
+            caption = s_caption or c_caption
+            tanggal = s_tanggal or c_tanggal
+            jumlah = s_jumlah or c_jumlah
+        return {"videos": list(videos), "caption": caption,
+                "tanggal": tanggal, "jumlah": jumlah,
+                "sumber": pilihan}
 
     def _salin(self):
         """v5.7: salin SEMUA langkah terpilih (urut tampil)."""
@@ -7094,9 +7435,12 @@ class StudioMakroTab(PerekamAksiMixin):
             tk.OptionMenu(r, self.pv["sumber"],
                           *SUMBER_TANGGAL_OPSI).pack(side="left")
             tk.Label(self.prop_body,
-                     text="'Tab CutMotions' = pakai isi kolom TANGGAL & JAM "
-                          "RILIS di tab Alur CutMotions (ubah sekali, semua "
-                          "makro ikut).  'Tetap' = pakai nilai di bawah ini.",
+                     text="'Studio Makro (tab ini)' = pakai kolom TANGGAL "
+                          "& JAM RILIS di kartu VIDEO & CAPTION STUDIO di "
+                          "atas (ubah sekali, semua makro ikut).  "
+                          "'Tab CutMotions' = pakai kolom di tab Alur "
+                          "CutMotions.  'Tetap' = pakai nilai di bawah "
+                          "ini.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             r = self._baris_prop("TANGGAL & JAM RILIS")
@@ -7131,11 +7475,13 @@ class StudioMakroTab(PerekamAksiMixin):
             tk.OptionMenu(r, self.pv["isi"],
                           *ISI_VIDEO_OPSI).pack(side="left")
             tk.Label(self.prop_body,
-                     text="Jumlah video = angka di kolom JUMLAH VIDEO tab "
-                          "CutMotions.  Caption dasar + nama video = mis. "
-                          "'#dangdut - melati' (nama video ke-i kalau di "
-                          "dalam blok ULANGI).  Nama video saja = mis. "
-                          "'melati'.",
+                     text="Data diambil sesuai pilihan AMBIL DATA DARI di "
+                          "kartu VIDEO & CAPTION STUDIO di atas (Studio / "
+                          "CutMotions / Otomatis).  Jumlah video = angka "
+                          "di kolom JUMLAH VIDEO sumbernya.  Caption dasar "
+                          "+ nama video = mis. '#dangdut - melati' (nama "
+                          "video ke-i kalau di dalam blok ULANGI).  Nama "
+                          "video saja = mis. 'melati'.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             r = self._baris_prop("TEKS SENDIRI + PLACEHOLDER")
@@ -7707,10 +8053,41 @@ class StudioMakroTab(PerekamAksiMixin):
         try:
             with open(self.makro_path, "w", encoding="utf-8") as f:
                 json.dump({"app": APP_NAME, "versi": APP_VERSION,
-                           "jenis": "studio", "langkah": self.langkah},
+                           "jenis": "studio", "langkah": self.langkah,
+                           # v6.2: kartu VIDEO & CAPTION ikut tersimpan
+                           "kartu": self._kartu_data()},
                           f, indent=2, ensure_ascii=False)
         except Exception:
             pass
+
+    def _kartu_data(self):
+        """v6.2: isi kartu VIDEO & CAPTION Studio sbg dict JSON."""
+        return {"videos": list(self.video_terpilih),
+                "jumlah": self.vars["jumlah"].get(),
+                "caption": self.vars["caption"].get(),
+                "tanggal": self.vars["tanggal"].get(),
+                "sumber_data": self.vars["sumber_data"].get()}
+
+    def _pasang_kartu(self, kartu):
+        """v6.2: pulihkan isi kartu VIDEO & CAPTION dari dict JSON."""
+        if not isinstance(kartu, dict):
+            return
+        videos = kartu.get("videos")
+        if isinstance(videos, list):
+            self.video_terpilih = [os.path.normpath(str(p))
+                                   for p in videos if str(p).strip()]
+        for kunci, var in (("jumlah", "jumlah"), ("caption", "caption"),
+                           ("tanggal", "tanggal"),
+                           ("sumber_data", "sumber_data")):
+            val = kartu.get(kunci)
+            if val is not None:
+                if kunci == "sumber_data" and \
+                        str(val) not in SUMBER_DATA_OPSI:
+                    continue
+                self.vars[var].set(str(val))
+        self._refresh_video_list()
+        self._update_count()
+        self._update_preview()
 
     def _muat_otomatis(self):
         if not os.path.exists(self.makro_path):
@@ -7718,6 +8095,9 @@ class StudioMakroTab(PerekamAksiMixin):
         try:
             with open(self.makro_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+            # v6.2: kartu VIDEO & CAPTION dipulihkan WALAU langkah
+            # kosong (dulu return cepat membuat kartu hilang)
+            self._pasang_kartu(data.get("kartu"))
             ls = studio_bersihkan(data.get("langkah"))
             if not ls:
                 return
@@ -7760,7 +8140,9 @@ class StudioMakroTab(PerekamAksiMixin):
         try:
             with open(f, "w", encoding="utf-8") as d:
                 json.dump({"app": APP_NAME, "versi": APP_VERSION,
-                           "jenis": "studio", "langkah": self.langkah},
+                           "jenis": "studio", "langkah": self.langkah,
+                           # v6.2: kartu VIDEO & CAPTION ikut file makro
+                           "kartu": self._kartu_data()},
                           d, indent=2, ensure_ascii=False)
             self._set_status("Makro tersimpan: {}".format(f), C_GREEN)
         except Exception as e:
@@ -7797,6 +8179,9 @@ class StudioMakroTab(PerekamAksiMixin):
         self.sel = ls[0]["uid"]
         self._refresh_tabel()
         self._render_properti()
+        # v6.2: kartu VIDEO & CAPTION ikut dimuat (file lama tanpa
+        # kartu -> isi kartu sekarang dipertahankan)
+        self._pasang_kartu(data.get("kartu"))
         self._set_status("Makro dimuat: {} langkah dari {}".format(
             len(ls), f), C_GREEN)
 
@@ -7914,15 +8299,14 @@ class StudioMakroTab(PerekamAksiMixin):
                     "GAMBAR akan DILEWATI (yang lain tetap jalan).\n\n"
                     "Lanjut?"):
                 return
-        cut = self.shell.tab_cut if self.shell is not self else None
-        videos = cut.antrian_video_studio() if cut is not None else []
-        caption = cut.vars["caption"].get() if cut is not None else ""
-        # v5.2: nilai utk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION
-        tanggal = cut.vars["tanggal"].get().strip() \
-            if cut is not None else ""
-        jumlah_set = int(_angka(cut.vars["jumlah"].get(), 0, 0,
-                                MAX_BATCH)) if cut is not None else 0
-        jumlah_total = len(videos) or jumlah_set
+        # v6.2: sumber data sesuai pilihan AMBIL DATA DARI di kartu
+        # VIDEO & CAPTION Studio (Otomatis / Studio / CutMotions)
+        d = self._data_sumber()
+        videos = d["videos"]
+        caption = d["caption"]
+        tanggal = d["tanggal"]
+        jumlah_total = len(videos) or d["jumlah"]
+        sumber_data = d["sumber"]
         try:
             mundur = int(_angka(self.vars["mundur"].get(), 5, 0, 60))
         except Exception:
@@ -7934,6 +8318,10 @@ class StudioMakroTab(PerekamAksiMixin):
             "caption": caption,
             "tanggal": tanggal,
             "jumlah": jumlah_total,
+            # v6.2: nilai kartu Studio utk langkah dengan sumber
+            # 'Studio Makro (tab ini)'
+            "tanggal_studio": self.vars["tanggal"].get().strip(),
+            "sumber_data": sumber_data,
         }
         self._simpan_auto()
         self.stop_event.clear()
@@ -8033,7 +8421,9 @@ class StudioMakroTab(PerekamAksiMixin):
                             self, l, idx, videos, caption,
                             len(videos) or int(_angka(
                                 snap.get("jumlah"), 0, 0, 100000)),
-                            str(snap.get("tanggal") or "")) == "stop":
+                            str(snap.get("tanggal") or ""),
+                            tanggal_studio=str(
+                                snap.get("tanggal_studio") or "")) == "stop":
                         return
                 i += 1
             self._finish("Makro selesai! {} langkah sudah dijalankan."
@@ -9035,6 +9425,153 @@ def main():
             print("SELFTEST_PILIH_OK")
             root.destroy()
         root.after(3600, _ok11)
+    if "--selftest-kartu" in sys.argv:
+        def _uji_kartu():
+            # v6.2: kartu VIDEO & CAPTION di tab STUDIO MAKRO -
+            # sumber data langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION
+            st = app.tab_studio
+            cut = app.tab_cut
+            d = os.path.join(tempfile.gettempdir(), "cutup_selftest_kartu")
+            try:
+                os.makedirs(d, exist_ok=True)
+                for n in ("studio Satu.mp4", "studio Dua.mp4"):
+                    open(os.path.join(d, n), "wb").close()
+                p1 = os.path.join(d, "studio Satu.mp4")
+                p2 = os.path.join(d, "studio Dua.mp4")
+                # 1) daftar video kartu Studio + jumlah otomatis
+                st._set_video_list([p1, p2])
+                print("KARTU_LIST_OK",
+                      st.video_terpilih == [p1, p2]
+                      and st.vars["jumlah"].get() == "2")
+                print("KARTU_STATUS_OK",
+                      "2 video tersimpan di Studio"
+                      in str(st.lbl_video_status.cget("text"))
+                      and st.lb_video.get(0) == "1. studio Satu.mp4")
+                # 2) caption + tanggal kartu Studio
+                st.vars["caption"].set("#studio")
+                st.vars["tanggal"].set("2026-09-10 02:05:01")
+                print("KARTU_PREVIEW_OK",
+                      "#studio - studio Satu" in
+                      str(st.lbl_preview.cget("text")))
+                # 3) mode OTOMATIS: kartu Studio menang
+                dts = st._data_sumber()
+                print("KARTU_OTOMATIS_STUDIO_OK",
+                      dts["videos"] == ["studio Satu.mp4",
+                                        "studio Dua.mp4"]
+                      and dts["caption"] == "#studio"
+                      and dts["tanggal"] == "2026-09-10 02:05:01")
+                # 4) mode OTOMATIS: kartu kosong -> ambil dari CutMotions
+                st._set_video_list([])
+                st.vars["caption"].set("")
+                st.vars["tanggal"].set("")
+                cp1 = os.path.join(d, "cut Satu.mp4")
+                open(cp1, "wb").close()
+                cut._set_video_list([cp1])
+                cut.vars["caption"].set("#cutmos")
+                cut.vars["tanggal"].set("2026-01-01 00:00:00")
+                dts = st._data_sumber()
+                print("KARTU_OTOMATIS_CUT_OK",
+                      dts["videos"] == ["cut Satu.mp4"]
+                      and dts["caption"] == "#cutmos"
+                      and dts["tanggal"] == "2026-01-01 00:00:00")
+                # 5) mode STUDIO saja: tetap pakai kartu Studio (kosong)
+                st.vars["sumber_data"].set("Studio Makro (tab ini)")
+                dts = st._data_sumber()
+                print("KARTU_MODE_STUDIO_OK",
+                      dts["videos"] == [] and dts["caption"] == ""
+                      and dts["tanggal"] == "")
+                # 6) mode CUTMOTIONS: kartu Studio diabaikan
+                st._set_video_list([p1])
+                st.vars["caption"].set("#studio")
+                st.vars["tanggal"].set("2026-09-10 02:05:01")
+                st.vars["sumber_data"].set("Tab CutMotions")
+                dts = st._data_sumber()
+                print("KARTU_MODE_CUT_OK",
+                      dts["videos"] == ["cut Satu.mp4"]
+                      and dts["tanggal"] == "2026-01-01 00:00:00")
+                # 7) langkah TANGGAL-JAM baru di Studio -> sumber Studio
+                st._tambah("TANGGAL_JAM")
+                l_baru = st.langkah[-1]
+                print("KARTU_LANGKAH_STUDIO_OK",
+                      l_baru["sumber"] == "Studio Makro (tab ini)")
+                # langkah di tab CutMotions tetap sumber CutMotions
+                cut._tambah_studio("TANGGAL_JAM")
+                l_cut = [l for l in cut.langkah_extra
+                         if l.get("jenis") == "TANGGAL_JAM"][-1]
+                print("KARTU_LANGKAH_CUT_OK",
+                      l_cut.get("sumber") == "Tab CutMotions")
+                # 8) detail teks menyebut kartu
+                print("KARTU_DETAIL_OK",
+                      "kartu VIDEO & CAPTION Studio"
+                      in studio_detail_teks(l_baru))
+                # 9) mesin: sumber Studio pakai tanggal kartu Studio
+                class MesinKartu:
+                    stop_event = threading.Event()
+
+                    def __init__(self):
+                        self.semua_pesan = []
+
+                    def _sleep(self, _s):
+                        pass
+
+                    def _set_status(self, msg, _w=None):
+                        self.semua_pesan.append(str(msg))
+
+                    def gabung(self):
+                        return " | ".join(self.semua_pesan)
+                m = MesinKartu()
+                studio_jalankan_langkah(
+                    m, dict(l_baru, posisi=None), 0, [], "", 0,
+                    "2026-01-01 00:00:00",
+                    tanggal_studio="2026-09-10 02:05:01")
+                print("KARTU_MESIN_STUDIO_OK",
+                      "2026-09-10 02:05:01" in m.gabung()
+                      and "2026-01-01" not in m.gabung())
+                m2 = MesinKartu()
+                l_cms = dict(l_cut, sumber="Tab CutMotions", posisi=None)
+                studio_jalankan_langkah(
+                    m2, l_cms, 0, [], "", 0, "2026-01-01 00:00:00",
+                    tanggal_studio="2026-09-10 02:05:01")
+                print("KARTU_MESIN_CUT_OK",
+                      "2026-01-01 00:00:00" in m2.gabung()
+                      and "2026-09-10" not in m2.gabung())
+                # 10) kartu ikut tersimpan & dipulihkan
+                kartu = json.loads(json.dumps(st._kartu_data()))
+                print("KARTU_SIMPAN_OK",
+                  kartu["videos"] == [p1]
+                  and kartu["tanggal"] == "2026-09-10 02:05:01"
+                  and kartu["sumber_data"] == "Tab CutMotions")
+                st._set_video_list([])
+                st.vars["tanggal"].set("")
+                st.vars["sumber_data"].set(SUMBER_DATA_OPSI[0])
+                st._pasang_kartu(kartu)
+                print("KARTU_MUAT_OK",
+                  st.video_terpilih == [p1]
+                  and st.vars["tanggal"].get() == "2026-09-10 02:05:01"
+                  and st.vars["sumber_data"].get() == "Tab CutMotions")
+                # 11) makro auto-save membawa kartu
+                st._simpan_auto()
+                with open(st.makro_path, "r", encoding="utf-8") as f:
+                    isi = json.load(f)
+                print("KARTU_AUTO_OK",
+                      isi.get("kartu", {}).get("videos") == [p1])
+                # bersih-bersih state untuk selftest lain
+                st._set_video_list([])
+                st.vars["caption"].set("")
+                st.vars["tanggal"].set("")
+                st.vars["sumber_data"].set(SUMBER_DATA_OPSI[0])
+                cut._set_video_list([])
+                cut.vars["caption"].set("")
+                cut.vars["tanggal"].set("")
+                print("KARTU_DONE")
+            finally:
+                shutil.rmtree(d, ignore_errors=True)
+        root.after(700, _uji_kartu)
+
+        def _ok12():
+            print("SELFTEST_KARTU_OK")
+            root.destroy()
+        root.after(3600, _ok12)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -9045,7 +9582,8 @@ def main():
             or ("--selftest-uid" in sys.argv) \
             or ("--selftest-hapus" in sys.argv) \
             or ("--selftest-ketik" in sys.argv) \
-            or ("--selftest-pilih" in sys.argv):
+            or ("--selftest-pilih" in sys.argv) \
+            or ("--selftest-kartu" in sys.argv):
         print("SELFTEST_DONE")
 
 

@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.1 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.2 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -359,6 +359,42 @@ potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
 
+BARU DI V6.2 - KARTU VIDEO & CAPTION di STUDIO MAKRO (ALUR BEBAS):
+  Permintaan: fitur ISI TANGGAL-JAM, ISI VIDEO CAPTION, dan BOX
+  VIDEO & CAPTION seperti yang ada di alur CutMotions (a-j) -
+  kini ADA juga di tab STUDIO MAKRO:
+  1. Di tab STUDIO MAKRO ada kartu baru "VIDEO & CAPTION
+     STUDIO" berisi:
+     - VIDEO TERPILIH + tombol PILIH VIDEO... / TAMBAH
+       VIDEO... / HAPUS TERPILIH / KOSONGKAN + daftar nama
+       video bernomor (urutan pilihan).
+     - TANGGAL & JAM RILIS (format 2026-09-10 02:05:01).
+     - JUMLAH VIDEO (terisi otomatis sesuai banyak pilihan)
+       + CAPTION DASAR + pratinjau caption.
+     - AMBIL DATA DARI: Otomatis / Studio Makro (tab ini) /
+       Tab CutMotions.
+  2. Langkah ISI TANGGAL-JAM di Studio kini punya 3 pilihan
+     sumber nilai:
+     - "Studio Makro (tab ini)" = pakai kolom TANGGAL & JAM
+       RILIS di kartu Studio (BAWAAN LANGKAH BARU di Studio).
+     - "Tab CutMotions" = pakai kolom di tab Alur CutMotions.
+     - "Tetap (isi sendiri)" = nilai tetap milik langkah itu.
+  3. Langkah ISI VIDEO & CAPTION di Studio otomatis memakai
+     daftar video + caption sesuai pilihan AMBIL DATA DARI.
+  4. AMBIL DATA DARI (berlaku saat F6 di tab Studio):
+     - Otomatis (bawaan): kartu Studio yang dipakai lebih
+       dulu; kolom yang KOSONG diambil dari tab CutMotions -
+       makro lama tetap jalan seperti biasa.
+     - Studio Makro (tab ini): SEMUA data dari kartu Studio.
+     - Tab CutMotions: SEMUA data dari tab CutMotions (cara
+       lama v6.1).
+  5. Isi kartu ikut tersimpan di makro (auto-save + SIMPAN
+     MAKRO / BUKA MAKRO) - dibuka ulang pun masih ada.
+  Catatan: beda dengan tab CutMotions, daftar video di kartu
+  Studio TIDAK dihapus otomatis setelah makro jalan - makro
+  memang biasanya dijalankan berulang-ulang; hapus manual
+  lewat HAPUS TERPILIH / KOSONGKAN kalau sudah tidak perlu.
+
 BARU DI V6.1 - TANPA PILIH FOLDER: CUKUP PILIH VIDEO, NAMA
 TERSIMPAN OTOMATIS, HILANG SENDIRI SETELAH SELESAI:
   Keluhan: sebelumnya aplikasi menuntut MEMILIH FOLDER video
@@ -665,6 +701,9 @@ BARU DI V5.2 - ISI TANGGAL-JAM & ISI VIDEO & CAPTION:
   dan jumlah video / caption":
   - + TANGGAL-JAM  : satu langkah untuk mengisi kolom
     tanggal-jam rilis di situs. AMBIL NILAI DARI:
+    * "Studio Makro (tab ini)" (v6.2) - mengikuti kolom
+      TANGGAL & JAM RILIS di kartu VIDEO & CAPTION STUDIO
+      (bawaan langkah baru yang dibuat di tab Studio).
     * "Tab CutMotions" - mengikuti kolom TANGGAL & JAM RILIS
       di tab Alur CutMotions (ubah sekali, semua makro ikut).
     * "Tetap (isi sendiri)" - nilai tetap yang Anda ketik di
@@ -674,8 +713,9 @@ BARU DI V5.2 - ISI TANGGAL-JAM & ISI VIDEO & CAPTION:
     Ctrl+A otomatis ditekan dulu supaya isi lama tertimpa.
   - + VIDEO+CAPTION: satu langkah untuk mengisi data video.
     YANG DIKETIK OTOMATIS:
-    * "Jumlah video" - angka JUMLAH VIDEO di tab Alur
-      CutMotions (mis. 5).
+    * "Jumlah video" - angka JUMLAH VIDEO sesuai sumber data
+      (v6.2: kartu Studio / tab CutMotions - lihat AMBIL DATA
+      DARI; mis. 5).
     * "Caption dasar + nama video" - mis. "#dangdut -
       melati"; kalau ada di dalam blok ULANGI, nama video
       berganti otomatis tiap putaran (melati, rikma, dst).

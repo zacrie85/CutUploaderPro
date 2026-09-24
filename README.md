@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.1)
+# CutUploader Pro — Macro Studio Edition (v6.2)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.0: KETIK NAMA FILE di dialog pilih file — nama video yang diupload PASTI SAMA dengan yang dipakai di caption**, dan **baru v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO (bisa banyak, boleh campur folder); nama setiap video LANGSUNG TERSIMPAN, dipakai PERSIS untuk caption, lalu daftarnya OTOMATIS HILANG setelah alur selesai**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.1**:
+Dari halaman [Releases](../../releases) rilis **v6.2**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.1.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.2.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,18 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v6.2: kartu VIDEO & CAPTION kini juga ada di tab STUDIO MAKRO (alur bebas)
+
+**Permintaan**: fitur **ISI TANGGAL-JAM**, **ISI VIDEO CAPTION**, dan **BOX VIDEO & CAPTION** seperti yang ada di alur CutMotions (a-j) — ingin ada juga di tab **STUDIO MAKRO**. Sekarang sudah ada:
+
+1. **Kartu "VIDEO & CAPTION STUDIO"** di tab Studio: **PILIH VIDEO... / TAMBAH VIDEO... / HAPUS TERPILIH / KOSONGKAN** + daftar nama video bernomor (urutan pilihan), **TANGGAL & JAM RILIS** (format `2026-09-10 02:05:01`), **JUMLAH VIDEO** terisi otomatis, **CAPTION DASAR** + pratinjau caption.
+2. **Langkah ISI TANGGAL-JAM kini punya 3 sumber nilai**: *"Studio Makro (tab ini)"* (= kolom tanggal di kartu Studio — **bawaan langkah baru di Studio**), *"Tab CutMotions"*, atau *"Tetap (isi sendiri)"*. Langkah tambahan ISI TANGGAL-JAM di alur CutMotions juga bisa memilih sumber kartu Studio.
+3. **Langkah ISI VIDEO & CAPTION** memakai daftar video + caption sesuai pilihan **AMBIL DATA DARI** di kartu Studio.
+4. **AMBIL DATA DARI** (berlaku saat F6 di tab Studio): **Otomatis** (bawaan — kartu Studio dipakai lebih dulu, kolom kosong diambil dari tab CutMotions sehingga makro lama tetap jalan), **Studio Makro (tab ini)**, atau **Tab CutMotions** (cara lama).
+5. **Isi kartu ikut tersimpan** di makro (auto-save + SIMPAN/BUKA MAKRO). Catatan: daftar video kartu Studio **tidak dihapus otomatis** setelah makro jalan (makro memang untuk dijalankan berulang) — pakai HAPUS TERPILIH / KOSONGKAN.
+
+Selftest baru **`--selftest-kartu`** (15 cek: daftar & jumlah otomatis, status, pratinjau, mode Otomatis-Studio, mode Otomatis-CutMotions, mode Studio saja, mode CutMotions saja, langkah baru default sumber Studio/CutMotions, teks detail, mesin tanggal kedua sumber, simpan-muat kartu, auto-save).
 
 ### Baru v6.1: TANPA pilih folder — pilih videonya langsung, namanya tersimpan otomatis, hilang sendiri setelah selesai
 
@@ -143,6 +155,15 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v6.2
+
+- **Kartu VIDEO & CAPTION STUDIO** baru di tab Studio Makro (`StudioMakroTab`): UI sama seperti kartu CutMotions — PILIH/TAMBAH/HAPUS TERPILIH/KOSONGKAN, listbox bernomor, TANGGAL & JAM RILIS, JUMLAH VIDEO otomatis, CAPTION DASAR + pratinjau, dan pilihan **AMBIL DATA DARI** (`SUMBER_DATA_OPSI`: Otomatis / Studio Makro (tab ini) / Tab CutMotions, bawaan Otomatis).
+- **State & persistensi baru**: `video_terpilih`, `video_dir_ingat`, vars `jumlah/caption/tanggal/sumber_data`; `_kartu_data()`/`_pasang_kartu()`; ikut dalam **auto-save makro** (`makro_terakhir.json` kunci `"kartu"` — dipulihkan walau daftar langkah kosong), **SIMPAN MAKRO**, dan **BUKA MAKRO** (file lama tanpa kartu aman).
+- **Sumber data F6 Studio**: helper baru `_data_sumber()` — mode Otomatis memilih nilai Studio dulu lalu CutMotions per kolom; mode Studio/CutMotions memakai satu sumber penuh. `_start`/`_worker` kini mengirim `tanggal_studio` ke mesin.
+- **Mesin langkah bersama**: `studio_jalankan_langkah()` menerima parameter `tanggal_studio` — langkah ISI TANGGAL-JAM dengan sumber *"Studio Makro (tab ini)"* mengetik tanggal dari kartu Studio (`SUMBER_TANGGAL_OPSI` kini 3 pilihan); alur CutMotions (`_eksekusi_studio`) juga meneruskannya. `_tambah("TANGGAL_JAM")` di tab Studio bawaan ke sumber Studio; di tab CutMotions tetap "Tab CutMotions".
+- **Teks & bantuan**: detail langkah TANGGAL-JAM menyebut kartu sumbernya; penjelasan panel PROPERTI (kedua tab), pesan tanggal kosong, dan TENTANG diperbarui.
+- Selftest baru **`--selftest-kartu`** (15 cek, semua True) + regresi penuh 12 selftest hijau.
 
 ## Perubahan v6.1
 
