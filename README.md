@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v5.7)
+# CutUploader Pro — Macro Studio Edition (v5.8)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.7: tombol kapsul membulat mengkilat + panel bersudut membulat + header gradien — makin modern & elegan**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), dan **baru v5.8: CARI GAMBAR di alur CutMotions (A-J) bisa ditambahkan BERAPAPUN kalinya** (perbaikan langkah hilang setelah hapus + buka ulang aplikasi; profil lama otomatis diperbaiki).
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v5.7**:
+Dari halaman [Releases](../../releases) rilis **v5.8**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v5.7.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v5.8.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -62,6 +62,10 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
 
+### Baru v5.8: CARI GAMBAR bebas ditambah di alur CutMotions (A-J)
+
+CARI GAMBAR (dan semua langkah tambahan lain) di tab **ALUR CUTMOTIONS (A-J)** kini bisa **ditambahkan BERAPAPUN kalinya** — tidak ada lagi batas "mentok 2x". Penyebabnya bukan batas fitur, melainkan kutu kecil: setelah menghapus langkah (apalagi hapus massal v5.7) lalu aplikasi dibuka ulang, nomor internal langkah baru bisa **menabrak** nomor langkah lama sehingga langkah baru tidak muncul di tabel — kelihatan seperti tidak bisa ditambah lagi. Kini nomor yang sudah dipakai selalu dilewati, dan **profil lama yang sudah terlanjur rusak otomatis DIPERBAIKI** saat dibuka di v5.8 (tanpa perlu mengatur ulang apa pun). Berlaku juga untuk hasil TEMPEL (Ctrl+V) dan hasil REKAM AKSI di tab CutMotions. Diuji dengan selftest baru `--selftest-uid` (7 cek: unik, jumlah, langkah lama utuh, tampil di tabel, penyembuhan profil, nomor lanjut benar, tambah setelah muat tetap unik).
+
 ### Baru v5.7: pilih banyak langkah + desain makin modern & elegan
 
 1. **Pilih banyak langkah sekaligus** — tahan **`Shift`** lalu klik = pilih rentang baris; tahan **`Ctrl`** lalu klik = tambah/kurang baris satu per satu; **`Ctrl+A`** = pilih semua. Klik biasa kembali memilih satu baris seperti biasa.
@@ -102,6 +106,13 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+
+## Perubahan v5.8
+
+- **Akar masalah**: saat memuat profil, `_extra_counter` diisi JUMLAH langkah tambahan (bukan nomor terbesar). Setelah langkah dihapus (uid jadi renggang, mis. tinggal x5 & x9) lalu aplikasi dibuka ulang, langkah baru mendapat nomor yang SUDAH DIPAKAI → baris baru tidak muncul di tabel (iid dobel) dan panel PROPERTI menampilkan langkah lama — terasa seperti "CARI GAMBAR hanya bisa ditambah 2x".
+- **Perbaikan**: penentu uid baru `_uid_ekstra_baru()` selalu MELEWATI nomor yang sudah dipakai (anti-bentrok), dipakai di semua jalur pembuat langkah tambahan: `+ TAMBAH LANGKAH` / klik kanan (`_tambah_studio`), TEMPEL (`_tempel_langkah`), dan REKAM AKSI (`perekam_sisipkan`).
+- **Pemuatan profil diperkuat** (`_terapkan_data`): nomor lanjut diambil dari uid TERBESAR; langkah ber-uid DOBEL (profil korban kutu lama) otomatis diberi nomor baru saat dimuat — penyembuhan tanpa manual.
+- Selftest baru **`--selftest-uid`** (replika profil rusak deterministik + 10 tambahan CARI GAMBAR + paksa uid dobel lalu muat ulang).
 
 ## Perubahan v5.7
 

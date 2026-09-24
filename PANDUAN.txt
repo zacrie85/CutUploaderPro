@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v5.7 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v5.8 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -349,6 +349,23 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V5.8 - CARI GAMBAR BEBAS DI ALUR CUTMOTIONS (A-J):
+  - CARI GAMBAR (dan semua langkah tambahan lain: KLIK TITIK,
+    JEDA, KETIK, dll) di tab ALUR CUTMOTIONS (A-J) kini bisa
+    DITAMBAHKAN BERAPAPUN KALINYA - tidak ada batas jumlahnya.
+    Dulu sempat terasa "mentok 2x": itu BUKAN batas, melainkan
+    kutu kecil - setelah menghapus langkah lalu aplikasi
+    dibuka ulang, nomor internal langkah baru bisa MENABRAK
+    nomor langkah lama sehingga langkah baru tidak muncul di
+    tabel (kelihatan seperti tidak bisa ditambah lagi).
+  - Sudah pernah kena? Tidak usah hapus-hapus setelan:
+    begitu aplikasi v5.8 dibuka, profil lamamu OTOMATIS
+    DIPERBAIKI (langkah yang tadinya dobel/tersembunyi
+    diberi nomor baru) dan menambah langkah langsung
+    normal lagi.
+  - Berlaku juga untuk hasil TEMPEL (Ctrl+V) dan hasil
+    REKAM AKSI di tab CutMotions.
 
 BARU DI V5.7 - PILIH BANYAK LANGKAH + DESAIN MAKIN MODERN & ELEGAN:
   1) PILIH BANYAK LANGKAH SEKALIGUS (di kedua tab):

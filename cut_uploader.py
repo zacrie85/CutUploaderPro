@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v5.7  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v5.8  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -55,6 +55,11 @@
        SEMUA langkah terpilih sekaligus. Desain makin modern:
        tombol KAPSUL membulat mengkilat, panel bersudut
        membulat, dan header gradien baru
+     - v5.8: CARI GAMBAR BEBAS di ALUR CUTMOTIONS (A-J) - bisa
+       ditambahkan BERAPAPUN kalinya (dulu sempat terasa
+       "mentok 2x" karena nomor internal langkah menabrak
+       setelah hapus langkah lalu aplikasi dibuka ulang;
+       profil lama yang sudah rusak otomatis DISEMBUHKAN)
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -94,6 +99,9 @@
      - v5.7: PILIH BANYAK LANGKAH (Ctrl/Shift+Klik, Ctrl+A)
        untuk SALIN / TEMPEL / HAPUS massal; tombol kapsul
        membulat + panel bersudut membulat + header gradien.
+     - v5.8: CARI GAMBAR bisa ditambah BERAPAPUN kalinya di
+       alur ini (perbaikan langkah hilang setelah hapus +
+       buka ulang aplikasi; profil lama otomatis disembuhkan).
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -209,7 +217,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "5.7"
+APP_VERSION = "5.8"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -2718,6 +2726,23 @@ class CutMotionsTab(PerekamAksiMixin):
                 return e
         return None
 
+    def _uid_ekstra_baru(self):
+        """v5.8: uid unik 'x{n}' anti-bentrok untuk langkah tambahan.
+
+        Dulu nomor lanjut dari _extra_counter yang saat memuat profil
+        diisi JUMLAH langkah. Setelah menghapus langkah (apalagi hapus
+        massal v5.7) lalu aplikasi dibuka ulang, nomor bisa MENABRAK
+        uid lama - langkah baru (mis. CARI GAMBAR ke-3) tidak muncul
+        di tabel seakan-akan 'hanya bisa ditambah 2x'. Kini nomor yang
+        sudah dipakai selalu dilewati, jadi CARI GAMBAR bisa
+        ditambahkan BERAPAPUN kalinya.
+        """
+        while True:
+            self._extra_counter += 1
+            uid = "x{}".format(self._extra_counter)
+            if not self._iid_ekstra(uid):
+                return uid
+
     def _params_dari_global(self, sumber):
         """Nilai awal parameter salinan diambil dari setelan global."""
         V = self.vars
@@ -3955,11 +3980,10 @@ class CutMotionsTab(PerekamAksiMixin):
         for it in items:
             if it.get("jenis_step"):
                 # v5.5: langkah gaya Studio (utuh, parameter ikut)
-                self._extra_counter += 1
                 self._studio_counter = getattr(self, "_studio_counter",
                                                0) + 1
                 baru = json.loads(json.dumps(it["jenis_step"]))
-                baru["uid"] = "x{}".format(self._extra_counter)
+                baru["uid"] = self._uid_ekstra_baru()  # v5.8: anti-bentrok
                 baru["setelah"] = anchor
                 baru["label"] = "{} #{}".format(
                     LABEL_JENIS.get(baru.get("jenis"), "LANGKAH STUDIO"),
@@ -3968,13 +3992,12 @@ class CutMotionsTab(PerekamAksiMixin):
                 anchor = baru["uid"]
                 dipaste.append(baru["uid"])
             elif it.get("sumber"):
-                self._extra_counter += 1
-                uid = "x{}".format(self._extra_counter)
+                uid = self._uid_ekstra_baru()      # v5.8: anti-bentrok
                 kode = SLOT_KODE.get(it["sumber"], "?")
                 ek = {"uid": uid, "sumber": it["sumber"],
                       "setelah": anchor,
                       "label": "{} - salinan {}".format(
-                          kode, self._extra_counter),
+                          kode, uid[1:]),
                       "posisi": (list(it["posisi"]) if it.get("posisi")
                                  else None),
                       "jeda": float(it.get("jeda", 1.0)),
@@ -4083,9 +4106,8 @@ class CutMotionsTab(PerekamAksiMixin):
             self.sel and (self.sel in POS_KUNCI
                           or self._iid_ekstra(self.sel))) else POS_KUNCI[-1]
         for l in baru:
-            self._extra_counter += 1
             self._studio_counter = getattr(self, "_studio_counter", 0) + 1
-            l["uid"] = "x{}".format(self._extra_counter)
+            l["uid"] = self._uid_ekstra_baru()     # v5.8: anti-bentrok
             l["setelah"] = anchor
             l["label"] = "{} #{}".format(
                 LABEL_JENIS.get(l.get("jenis"), "LANGKAH STUDIO"),
@@ -4143,10 +4165,9 @@ class CutMotionsTab(PerekamAksiMixin):
         anchor = self.sel if (
             self.sel and (self.sel in POS_KUNCI
                           or self._iid_ekstra(self.sel))) else POS_KUNCI[-1]
-        self._extra_counter += 1
         self._studio_counter = getattr(self, "_studio_counter", 0) + 1
         l = studio_langkah_baru(jenis, 0)
-        l["uid"] = "x{}".format(self._extra_counter)
+        l["uid"] = self._uid_ekstra_baru()      # v5.8: anti-bentrok
         l["setelah"] = anchor
         l["label"] = "{} #{}".format(LABEL_JENIS[jenis],
                                      self._studio_counter)
@@ -5681,7 +5702,30 @@ class CutMotionsTab(PerekamAksiMixin):
                 "gambar": gambar_e,
             })
         self.langkah_extra = ekstra_baru
-        self._extra_counter = len(ekstra_baru)
+        # v5.8: sembuhkan profil lama ber-uid DOBEL lalu lanjutkan
+        # nomor dari uid TERBESAR. Dulu: _extra_counter = jumlah
+        # langkah - setelah hapus langkah (apalagi hapus massal v5.7)
+        # lalu buka ulang aplikasi, nomor langkah baru bisa MENABRAK
+        # uid lama sehingga CARI GAMBAR / langkah tambahan baru tidak
+        # muncul di tabel (kelihatannya "hanya bisa ditambah 2x").
+        terlihat = set()
+        for x in ekstra_baru:
+            u = str(x.get("uid") or "")
+            if not u or u in terlihat:
+                while True:
+                    self._extra_counter += 1
+                    u = "x{}".format(self._extra_counter)
+                    if not any(str(y.get("uid")) == u
+                               for y in ekstra_baru):
+                        break
+                x["uid"] = u
+            terlihat.add(u)
+        maks_x = len(ekstra_baru)
+        for x in ekstra_baru:
+            u = str(x.get("uid") or "")
+            if u[:1] == "x" and u[1:].isdigit():
+                maks_x = max(maks_x, int(u[1:]))
+        self._extra_counter = maks_x
         self._studio_counter = sum(
             1 for x in ekstra_baru if x.get("jenis") in JENIS_STUDIO)
         self._loading = True
@@ -8253,13 +8297,66 @@ def main():
             print("SELFTEST_MULTI_OK")
             root.destroy()
         root.after(3200, _ok7)
+    if "--selftest-uid" in sys.argv:
+        def _uji_uid():
+            # v5.8: CARI GAMBAR bisa ditambah BERAPAPUN kalinya -
+            # uid langkah baru tidak boleh MENABRAK uid langkah lama
+            # (bug lama: setelah hapus langkah + buka ulang aplikasi,
+            # nomor lanjut dari JUMLAH langkah lalu menabrak uid lama
+            # sehingga langkah baru tak muncul di tabel)
+            cut = app.tab_cut
+            cut.tree.selection_set("pos_oke")
+            cut.tree.event_generate("<<TreeviewSelect>>")
+            # ---- replika profil "rusak" deterministik: langkah lama
+            #      ber-uid x5 & x9, nomor lanjut = jumlah (kode lama)
+            cut.langkah_extra = []
+            cut._extra_counter = 0
+            lama = []
+            for u, nm in (("x5", "LAMA-1"), ("x9", "LAMA-2")):
+                e = studio_langkah_baru("GAMBAR", 0)
+                e["uid"] = u
+                e["setelah"] = "pos_oke" if not lama else lama[-1]["uid"]
+                e["label"] = "CARI GAMBAR {}".format(nm)
+                lama.append(e)
+            cut.langkah_extra.extend(lama)
+            cut._extra_counter = len(cut.langkah_extra)  # kode lama
+            # ---- tambah 10x CARI GAMBAR: semua harus muncul unik
+            for _ in range(10):
+                cut._tambah_studio("GAMBAR")
+            uids = [e["uid"] for e in cut.langkah_extra]
+            print("UID_UNIK_OK", len(uids) == len(set(uids)))
+            print("UID_TAMBAH_OK", len(uids) == 12)
+            print("UID_LAMA_UTUH_OK",
+                  lama[0]["uid"] == "x5" and lama[1]["uid"] == "x9")
+            tampil = set(cut._urutan_lengkap())
+            print("UID_TAMPIL_OK", all(u in tampil for u in uids))
+            # ---- muat ulang profil: uid dobel dipaksa lalu sembuh
+            data = json.loads(json.dumps(cut._kumpulkan_data()))
+            data["langkah_extra"][-1]["uid"] = \
+                data["langkah_extra"][-2]["uid"]
+            cut._terapkan_data(data)
+            uids2 = [e["uid"] for e in cut.langkah_extra]
+            print("UID_SEMBUH_OK", len(uids2) == len(set(uids2)))
+            print("UID_LANJUT_OK", cut._extra_counter >= max(
+                int(u[1:]) for u in uids2 if u[1:].isdigit()))
+            cut._tambah_studio("GAMBAR")
+            print("UID_STLH_MUAT_OK",
+                  cut.langkah_extra[-1]["uid"] not in uids2)
+            print("UID_DONE")
+        root.after(700, _uji_uid)
+
+        def _ok8():
+            print("SELFTEST_UID_OK")
+            root.destroy()
+        root.after(3600, _ok8)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
             or ("--selftest-rekam" in sys.argv) \
             or ("--selftest-cutstudio" in sys.argv) \
             or ("--selftest-rekam-cut" in sys.argv) \
-            or ("--selftest-multi" in sys.argv):
+            or ("--selftest-multi" in sys.argv) \
+            or ("--selftest-uid" in sys.argv):
         print("SELFTEST_DONE")
 
 
