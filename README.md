@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.2)
+# CutUploader Pro — Macro Studio Edition (v6.3)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.2**:
+Dari halaman [Releases](../../releases) rilis **v6.3**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.2.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.3.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,24 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — caption SELALU sama dengan video yang diupload
+
+**Keluhan**: pakai fitur **VIDEO+CAPTION**, nama yang masuk ke caption **TIDAK SAMA** dengan video yang diupload — mis. video `#nontondisnack -Kls INTERNASIONAL-(22)` yang diupload justru dapat caption `...(1)`. Penyebabnya: saat menselek **banyak video sekaligus**, urutan video yang tampil/terupload di situs bisa **beda** dengan urutan daftar pilihanmu.
+
+**Solusi (usulanmu — pakai AI!)**: aplikasi kini bisa **MEMBACA sendiri tulisan nama video yang tertera di layar** (OCR + koreksi AI), lalu mengetik caption dari nama yang **TERBACA** itu — urutan upload tidak berpengaruh apa pun lagi. Baris (22) pasti dapat caption (22).
+
+Cara pakai:
+
+1. Centang **BACA NAMA VIDEO DI LAYAR** di kartu VIDEO & CAPTION (tab CutMotions), **atau** pilih **ASAL NAMA VIDEO = "Baca nama di layar (OCR)"** pada langkah ISI VIDEO & CAPTION (Studio, termasuk sisipan gaya Studio di alur A-J).
+2. Klik **PILIH AREA NAMA** → layar dibekukan → **seret kotak** persis di atas tulisan nama video pada **baris pertama** halaman edit caption. Kotak ini **otomatis bergeser turun** ke baris ke-2, ke-3, dst. (mengikuti JARAK ANTAR BARIS).
+3. Klik **TES BACA NAMA** untuk uji: hasil baca + nama daftar yang dicocokkan tampil di statusbar — tanpa perlu menjalankan alur.
+4. Jalankan F6 seperti biasa. Sebelum mengetik caption tiap baris, aplikasi membaca nama baris itu dari layar, **mencocokkannya ke daftar videomu (koreksi AI — salah baca sedikit otomatis diluruskan)**, lalu mengetik caption dari nama itu.
+
+Catatan:
+
+- **EXE/Setup rilis v6.3 sudah memuat mesin OCR** (RapidOCR). Pengguna Python: `pip install rapidocr-onnxruntime` (sekali saja; alternatif Tesseract). Bila mesin OCR tidak ada, alur **tetap jalan** dengan cara urutan daftar seperti biasa — tidak gagal.
+- Pengaturan (centang + area) **tersimpan di profil**; tombol TES BACA NAMA membuat uji area gampang dilakukan kapan saja.
 
 ### Baru v6.2: kartu VIDEO & CAPTION kini juga ada di tab STUDIO MAKRO (alur bebas)
 
@@ -154,7 +172,16 @@ build_exe.bat         :: bangun dist\CutUploaderPro.exe (OpenCV ikut dibungkus)
 BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 6)
 ```
 
-`requirements.txt`: `pynput`, `pillow`, `opencv-python`, `pyinstaller` (dev).
+`requirements.txt`: `pynput`, `pillow`, `opencv-python`, `rapidocr-onnxruntime`, `pyinstaller` (dev).
+
+## Perubahan v6.3
+
+- **Modul OCR baru** (`cut_uploader.py`): mesin **RapidOCR** (`rapidocr-onnxruntime`) dengan fallback **Tesseract**; helper `baca_teks_area()` (ImageGrab + upscale 2x), `kemiripan_teks()` (Levenshtein), `cocokkan_nama_terdekat()` — hasil baca yang salah sedikit **otomatis dikoreksi** ke nama video di daftar (ambang kemiripan 0.6; di bawah ambang → fallback urutan daftar), dan `rapikan_nama_terbaca()` (rapikan spasi/huruf).
+- **Langkah ISI VIDEO & CAPTION** (tab Studio & sisipan gaya Studio di alur A-J): opsi baru **ASAL NAMA VIDEO** — *Urutan daftar* (cara lama) atau *Baca nama di layar (OCR)*; properti **AREA NAMA DI LAYAR** (PILIH — seret kotak / KOSONGKAN) + tombol **TES BACA NAMA**; mode OCR menimpa urutan daftar per langkah, gagal baca → fallback otomatis.
+- **Kartu VIDEO & CAPTION tab CutMotions**: checkbox **BACA NAMA VIDEO DI LAYAR** + **AREA NAMA BARIS 1** (seret kotak, ikut bergeser per baris sesuai JARAK ANTAR BARIS) + **TES BACA NAMA**; **FASE 3** kini membaca nama tiap baris dari layar lalu menyusun caption dari nama terbaca.
+- **Persistensi & validasi**: centang + area tersimpan di profil (snapshot/simpan/muat); validasi F6 menuntut area bila OCR aktif, dan menawarkan lanjut (cara lama) bila mesin OCR tidak terpasang.
+- **Build**: EXE & Setup kini **memuat RapidOCR** — `build_exe.bat`, `JALANKAN.bat` (auto-install), `requirements.txt`, dan workflow GitHub Actions ditambah `rapidocr-onnxruntime` + `--collect-all rapidocr_onnxruntime --collect-all onnxruntime`.
+- Selftest baru **`--selftest-ocr`** (13 cek, semua True) + regresi 12 selftest lain hijau.
 
 ## Perubahan v6.2
 

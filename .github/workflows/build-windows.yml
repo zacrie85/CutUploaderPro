@@ -24,10 +24,10 @@ jobs:
       - name: Pasang dependensi
         run: |
           python -m pip install --upgrade pip
-          pip install pynput pillow opencv-python pyinstaller
+          pip install pynput pillow opencv-python rapidocr-onnxruntime pyinstaller
 
       - name: Bangun EXE portabel (PyInstaller)
-        run: pyinstaller --onefile --windowed --name CutUploaderPro --icon icon.ico cut_uploader.py
+        run: pyinstaller --onefile --windowed --name CutUploaderPro --icon icon.ico --collect-all cv2 --collect-all rapidocr_onnxruntime --collect-all onnxruntime --hidden-import pynput.keyboard --hidden-import pynput.mouse cut_uploader.py
 
       - name: Pasang Inno Setup 6
         run: choco install innosetup -y --no-progress

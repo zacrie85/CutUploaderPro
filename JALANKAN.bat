@@ -55,6 +55,21 @@ if errorlevel 1 (
     )
 )
 
+echo Memeriksa mesin OCR rapidocr (untuk fitur BACA NAMA VIDEO DI LAYAR, v6.3)...
+python -c "import rapidocr_onnxruntime" >nul 2>nul
+if errorlevel 1 (
+    echo Ini butuh unduhan cukup besar, mohon tunggu...
+    python -m pip install --quiet rapidocr-onnxruntime
+    if errorlevel 1 (
+        echo.
+        echo [PERINGATAN] rapidocr-onnxruntime gagal dipasang.
+        echo Fitur "BACA NAMA VIDEO DI LAYAR (OCR)" tidak bisa dipakai -
+        echo aplikasi tetap jalan dengan cara urutan daftar seperti biasa.
+        echo Coba manual di CMD:  pip install rapidocr-onnxruntime
+        echo.
+    )
+)
+
 echo Memeriksa library pyinstaller (untuk build EXE, opsional)...
 python -c "import PyInstaller" >nul 2>nul
 if errorlevel 1 (

@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.2 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.3 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -27,6 +27,11 @@ CARA C - PAKAI PYTHON (untuk yang sudah paham Python):
   2. Double-click JALANKAN.bat  (library dipasang otomatis)
   File EXE/Setup SUDAH menyatukan semua library, jadi cara A/B
   tidak butuh apa-apa lagi.
+  CATATAN v6.3: fitur BACA NAMA VIDEO DI LAYAR (OCR) butuh
+  mesin OCR tambahan - cukup sekali: buka CMD lalu jalankan
+  pip install rapidocr-onnxruntime
+  (EXE rilis v6.3 ke atas sudah memuatnya; tanpa mesin OCR
+  alur tetap jalan dengan cara urutan daftar seperti biasa).
 
 ------------------------------------------------------------
 2. DUA MODE DALAM SATU APLIKASI (BARU DI V5.0)
@@ -142,6 +147,9 @@ PANEL PROPERTI LANGKAH (menyesuaikan jenis langkah):
                DIKETIK OTOMATIS (Jumlah video / Caption dasar
                + nama video / Nama video saja / Teks sendiri
                + placeholder), Ctrl+A dulu, Enter setelahnya.
+               v6.3: ASAL NAMA VIDEO - "Urutan daftar" (cara
+               lama) atau "Baca nama di layar (OCR)" + AREA
+               NAMA DI LAYAR (PILIH/KOSONGKAN/TES BACA NAMA).
   - TOMBOL   : pilih tombol dari daftar atau ketik 1 huruf,
                JUMLAH TEKAN, JEDA ANTAR TEKAN.
   - SCROLL   : ARAH (Turun/Naik), JUMLAH GULUNGAN.
@@ -226,7 +234,9 @@ pernah diminta atau disimpan). Lakukan sendiri di browser:
   - VIDEO & CAPTION     : PILIH VIDEO... langsung tanpa pilih
     folder (v6.1 - nama setiap video tersimpan otomatis di
     daftar, bisa campur folder, jumlah video terisi sendiri),
-    caption dasar, pratinjau caption.
+    caption dasar, pratinjau caption. v6.3: centang BACA
+    NAMA VIDEO DI LAYAR + AREA NAMA BARIS 1 (seret kotak di
+    layar) + tombol TES BACA NAMA - lihat blok BARU DI V6.3.
   - LANGKAH MAKRO       : tabel berisi langkah A-J + salinan
     (baris biru bertanda "+") + langkah STUDIO (baris ungu
     bertanda "S", v5.5). KLIK SATU BARIS lalu sunting
@@ -358,6 +368,51 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.3 - BACA NAMA VIDEO DI LAYAR (OCR) - CAPTION SELALU
+  SAMA DENGAN VIDEO YANG SEDANG DIUPLOAD:
+  Keluhan: pakai fitur VIDEO+CAPTION, nama video yang masuk ke
+  caption TIDAK SAMA dengan video yang diupload - mis. video
+  "#nontondisnack -Kls INTERNASIONAL-(22)" yang diupload justru
+  dapat caption "...(1)". Penyebabnya: saat menselek banyak
+  video sekaligus, urutan video yang tampil/terupload di situs
+  bisa BEDA dengan urutan daftar pilihanmu.
+  Solusi baru: aplikasi kini bisa MEMBACA sendiri tulisan nama
+  video yang tertera di layar (AI/OCR), lalu mengetik caption
+  dari nama yang TERBACA itu - jadi urutan upload tidak
+  berpengaruh apa pun lagi. Baris (22) pasti dapat caption
+  (22), berapapun posisinya.
+  CARA PAKAI:
+  1. Centang "BACA NAMA VIDEO DI LAYAR" di kartu VIDEO &
+     CAPTION (tab Alur CutMotions), ATAU pilih ASAL NAMA
+     VIDEO = "Baca nama di layar (OCR)" pada langkah ISI
+     VIDEO & CAPTION (di Studio, maupun langkah sisipan gaya
+     Studio di alur A-J).
+  2. Klik "PILIH AREA NAMA" - layar dibekukan - seret kotak
+     persis di atas tulisan NAMA VIDEO pada BARIS PERTAMA
+     di halaman edit caption CutMotions (kotak ini otomatis
+     bergeser turun ke baris ke-2, ke-3, dst. mengikuti
+     JARAK ANTAR BARIS).
+  3. Klik "TES BACA NAMA" untuk mencoba: hasil baca + nama
+     daftar yang dicocokkan tampil di statusbar tanpa perlu
+     menjalankan alur.
+  4. Jalankan F6 seperti biasa. Sebelum mengetik caption di
+     tiap baris, aplikasi membaca nama video baris itu dari
+     layar, mencocokkannya (koreksi AI - salah baca sedikit
+     otomatis diluruskan ke nama di daftar video), lalu
+     mengetik caption dari nama itu.
+  CATATAN PENTING:
+  - Butuh mesin OCR: pip install rapidocr-onnxruntime
+    (sekali saja; EXE rilis v6.3 ke atas sudah memuatnya).
+    Alternatif: Tesseract. Bila tidak ada, aplikasi otomatis
+    memakai cara urutan daftar seperti biasa (alur tidak
+    gagal).
+  - Pastikan nama video di layar TIDAK tertutup kursor dan
+    area yang diseret cukup lebar memuat nama lengkapnya.
+  - Hasil baca disimpan di profil - tak perlu diatur lagi
+    besok (kecuali tata letak halaman berubah).
+  - Tombol TES BACA NAMA = sahabatmu: kalau hasil tes sudah
+    benar, alur pasti benar.
 
 BARU DI V6.2 - KARTU VIDEO & CAPTION di STUDIO MAKRO (ALUR BEBAS):
   Permintaan: fitur ISI TANGGAL-JAM, ISI VIDEO CAPTION, dan BOX
@@ -868,6 +923,13 @@ bisa diurut ulang (NAIK/TURUN), dihapus, dan ditambah bebas.
 - TES CARI gagal     : potong ulang gambar dengan POTONG
                        GAMBAR, perbesar radius, turunkan
                        kemiripan ke 0.70.
+- TES BACA NAMA kosong/salah (v6.3): perlebar area seretan
+                       sampai memuat nama lengkap, pastikan
+                       tak ada kursor di atas nama, dan
+                       pasang mesin OCR (pip install
+                       rapidocr-onnxruntime). Kalau mesin
+                       belum ada, aplikasi lanjut cara
+                       urutan daftar.
 - Klik pertama jalan, dialog file tidak terbuka: naikkan
   JEDA BUKA DIALOG/EDITOR menjadi 3-4 detik.
 - Upload berhenti di tengah: naikkan TUNGGU UPLOAD PER VIDEO.

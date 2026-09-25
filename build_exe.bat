@@ -16,9 +16,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo Memasang / memperbarui pyinstaller + pynput + pillow + opencv...
-echo (opencv-python ukurannya besar, tunggu sebentar)
-python -m pip install --upgrade pyinstaller pynput pillow opencv-python
+echo Memasang / memperbarui pyinstaller + pynput + pillow + opencv + rapidocr...
+echo (opencv-python + rapidocr ukurannya besar, tunggu sebentar)
+python -m pip install --upgrade pyinstaller pynput pillow opencv-python rapidocr-onnxruntime
 if errorlevel 1 (
     echo [ERROR] Gagal memasang library.
     pause
@@ -27,11 +27,14 @@ if errorlevel 1 (
 
 echo.
 echo Mulai membangun EXE (tunggu 3-8 menit)...
-echo PENTING: pillow + opencv IKUT dibungkus supaya fitur
-echo "Pencarian Gambar" (langkah C) jalan di dalam EXE.
+echo PENTING: pillow + opencv + rapidocr IKUT dibungkus supaya
+echo fitur "Pencarian Gambar" (langkah C) dan "BACA NAMA VIDEO
+echo DI LAYAR / OCR" (v6.3) jalan di dalam EXE.
 python -m PyInstaller --onefile --windowed --name CutUploaderPro ^
     --icon icon.ico ^
     --collect-all cv2 ^
+    --collect-all rapidocr_onnxruntime ^
+    --collect-all onnxruntime ^
     --hidden-import pynput.keyboard --hidden-import pynput.mouse ^
     cut_uploader.py
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v6.2  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v6.3  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -92,6 +92,19 @@
        AMBIL DATA DARI: Otomatis / Studio / CutMotions.
        Data kartu ikut tersimpan di makro (auto-save +
        SIMPAN/BUKA MAKRO).
+     - v6.3: BACA NAMA VIDEO DI LAYAR (OCR) - SOLUSI caption
+       tidak sama dengan video: langkah ISI VIDEO & CAPTION
+       bisa pilih ASAL NAMA VIDEO = 'Baca nama di layar (OCR)'.
+       Aplikasi MEMBACA tulisan nama video baris yang sedang
+       diedit langsung dari layar (user memilih areanya sekali
+       dengan menyeret kotak; otomatis bergeser mengikuti
+       baris), lalu caption diketik dari nama yang terbaca -
+       URUTAN UPLOAD TIDAK BERPENGARUH lagi. Hasil baca yang
+       salah sedikit otomatis dicocokkan ke nama video di
+       daftar (koreksi AI). Ada tombol TES BACA NAMA untuk
+       uji area tanpa jalan. Mesin OCR: RapidOCR (pip install
+       rapidocr-onnxruntime) atau Tesseract; bila tidak ada,
+       alur tetap jalan dengan cara urutan daftar.
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -159,6 +172,16 @@
        ISI TANGGAL-JAM di alur ini bisa memilih sumber
        "Studio Makro (tab ini)" sehingga tanggal-jam bisa
        diatur terpisah dari kolom D tab ini.
+     - v6.3: BACA NAMA VIDEO DI LAYAR (OCR) di fase caption
+       (kartu VIDEO & CAPTION dan langkah ISI VIDEO & CAPTION
+       gaya Studio) - sebelum mengetik caption tiap baris,
+       aplikasi MEMBACA tulisan nama videonya di layar (AI/OCR)
+       lalu mengetik caption dari nama itu. Baris (22) yang
+       tadi kebagian caption (1) sekarang SELALU dapat caption
+       nama dirinya sendiri, berapapun urutan uploadnya.
+       TERSIMPAN di profil: centang BACA NAMA VIDEO DI LAYAR,
+       AREA NAMA BARIS 1 (seret kotak di layar), tombol TES
+       BACA NAMA untuk uji coba baca tanpa menjalankan alur.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -275,7 +298,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.2"
+APP_VERSION = "6.3"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -909,6 +932,14 @@ ISI_VIDEO_OPSI = ("Jumlah video",
                   "Nama video saja",
                   "Teks sendiri + placeholder")
 
+# v6.3: asal NAMA VIDEO utk langkah ISI VIDEO & CAPTION.
+# "Daftar video (urutan)" = cara lama: baris ke-i pakai video ke-i
+# daftar (terpengaruh urutan upload). "Baca nama di layar (OCR)" =
+# aplikasi MEMBACA nama video di layar tiap baris, jadi urutan
+# upload tidak berpengaruh (caption selalu ikut nama sebenarnya).
+SUMBER_NAMA_OPSI = ("Daftar video (urutan)",
+                    "Baca nama di layar (OCR)")
+
 MOUSE_OPSI = ("Klik kiri", "Klik kanan", "Klik dobel")
 
 # label pendek khusus tombol toolbar (menyesuaikan lebar jendela)
@@ -1002,6 +1033,9 @@ def studio_langkah_baru(jenis, uid, **isi):
         "sumber": "Tab CutMotions",  # v6.2: Studio lewat _tambah tab Studio
         # VIDEO_CAPTION (v5.2)
         "isi": "Caption dasar + nama video",
+        # v6.3: asal nama video + area layar utk mode OCR
+        "sumber_nama": SUMBER_NAMA_OPSI[0],
+        "ocr_area": None,      # [x1,y1,x2,y2] area nama di layar
         # LOOP_MULAI
         "jumlah_loop": 2,
         "ikut_video": False,   # ikut jumlah video tab CutMotions
@@ -1098,6 +1132,21 @@ def studio_bersihkan(daftar):
                 v = str(e.get(k) or "")
                 l[k] = (v if v in ISI_VIDEO_OPSI
                         else "Caption dasar + nama video")
+            elif k == "sumber_nama":   # v6.3
+                v = str(e.get(k) or "")
+                l[k] = (v if v in SUMBER_NAMA_OPSI
+                        else SUMBER_NAMA_OPSI[0])
+            elif k == "ocr_area":      # v6.3: area nama di layar
+                a = e.get(k)
+                if isinstance(a, (list, tuple)) and len(a) == 4:
+                    try:
+                        ax = [int(float(v)) for v in a]
+                        l[k] = [min(ax[0], ax[2]), min(ax[1], ax[3]),
+                                max(ax[0], ax[2]), max(ax[1], ax[3])]
+                    except (ValueError, TypeError):
+                        l[k] = None
+                else:
+                    l[k] = None
             elif k in ("teks", "catatan", "tombol_kb", "nama"):
                 l[k] = str(e.get(k) if e.get(k) is not None else l[k])
         hasil.append(l)
@@ -1377,8 +1426,16 @@ def studio_detail_teks(l):
             t = str(l.get("teks") or "")
             if len(t) > 26:
                 t = t[:26] + "..."
-            return "{} | teks: {}".format(pos_t, t or "(kosong)")
-        return "{} | {}".format(pos_t, isi.lower())
+            teks = "{} | teks: {}".format(pos_t, t or "(kosong)")
+        else:
+            teks = "{} | {}".format(pos_t, isi.lower())
+        # v6.3: tanda mode OCR
+        if str(l.get("sumber_nama") or "") == "Baca nama di layar (OCR)":
+            a = l.get("ocr_area")
+            arah_t = ("({},{})-({},{})".format(*a) if a
+                      else "area belum dipilih")
+            teks += " | BACA LAYAR {}".format(arah_t)
+        return teks
     if jenis == "TOMBOL":
         return "tekan {} x{}".format(
             l.get("tombol_kb"),
@@ -1644,17 +1701,34 @@ def studio_jalankan_langkah(mesin, l, idx=0, videos=None, caption="",
         return None
     if jenis == "VIDEO_CAPTION":
         isi = str(l.get("isi") or "Caption dasar + nama video")
+        # v6.3: mode BACA NAMA DI LAYAR - nama video dibaca (OCR)
+        # dari layar, bukan dari urutan daftar. Bila OCR gagal,
+        # otomatis jatuh ke urutan daftar supaya alur tetap jalan.
+        nama_layar = None
+        if str(l.get("sumber_nama") or "") == "Baca nama di layar (OCR)":
+            nama_layar, _pesan_ocr = baca_nama_video_layar(mesin, l,
+                                                           videos)
         if isi == "Jumlah video":
             teks = str(jumlah_total)
         elif isi == "Nama video saja":
-            teks = isi_placeholder("{video}", idx, caption, videos,
-                                   jumlah_total)
+            teks = nama_layar if nama_layar else isi_placeholder(
+                "{video}", idx, caption, videos, jumlah_total)
         elif isi == "Teks sendiri + placeholder":
-            teks = isi_placeholder(str(l.get("teks") or ""), idx, caption,
-                                   videos, jumlah_total)
+            if nama_layar:
+                teks = str(l.get("teks") or "")
+                if "{" in teks:
+                    cap_val = compose_caption(caption, nama_layar)
+                    teks = teks.replace("{caption}", cap_val)
+                    teks = teks.replace("{video}", nama_layar)
+                    teks = teks.replace("{no}", str(idx + 1))
+                    teks = teks.replace("{jumlah}", str(jumlah_total))
+            else:
+                teks = isi_placeholder(str(l.get("teks") or ""), idx,
+                                       caption, videos, jumlah_total)
         else:
-            teks = isi_placeholder("{caption}", idx, caption, videos,
-                                   jumlah_total)
+            teks = (compose_caption(caption, nama_layar)
+                    if nama_layar else isi_placeholder(
+                        "{caption}", idx, caption, videos, jumlah_total))
         if not teks:
             mesin._set_status(
                 "Tidak ada teks untuk diketik (daftar video / jumlah "
@@ -1883,6 +1957,227 @@ def nama_file_dialog(daftar):
     urutan upload = urutan caption).
     """
     return " ".join('"{}"'.format(str(f)) for f in (daftar or []))
+
+
+# ------------------------------------------------------------
+# v6.3: BACA NAMA VIDEO DI LAYAR (OCR)
+# Masalah: urutan video di halaman situs bisa BEDA dari urutan
+# daftar video (tergantung urutan upload / tampilan situs),
+# sehingga caption baris ke-i bisa salah nama. Solusi: aplikasi
+# memotong area tulisan nama video di layar, MEMBACANYA (OCR),
+# lalu caption mengikuti nama yang benar-benar tertera.
+# Mesin OCR dipilih otomatis:
+#   1. RapidOCR (pip install rapidocr-onnxruntime - paling mudah,
+#      tanpa program tambahan, murni Python)
+#   2. Tesseract (pytesseract + program Tesseract-OCR)
+# Bila tidak ada yang terpasang, alur tetap jalan memakai cara
+# lama (urutan daftar video) + peringatan.
+# ------------------------------------------------------------
+_OCR_OBJ = None      # instance RapidOCR (model lambat dimuat -> cache)
+_OCR_JENIS = None    # "rapidocr" | "tesseract" | None
+_OCR_CEK = False     # sudah pernah mendeteksi?
+
+
+def ocr_engine_aktif():
+    """Deteksi mesin OCR yang tersedia (cek sekali, hasil di-cache).
+
+    Kembalikan "rapidocr" / "tesseract", atau None bila tidak ada.
+    """
+    global _OCR_JENIS, _OCR_CEK
+    if _OCR_CEK:
+        return _OCR_JENIS
+    _OCR_CEK = True
+    try:
+        import rapidocr_onnxruntime  # noqa: F401
+        _OCR_JENIS = "rapidocr"
+        return _OCR_JENIS
+    except Exception:
+        pass
+    try:
+        import pytesseract
+        pytesseract.get_tesseract_version()
+        _OCR_JENIS = "tesseract"
+    except Exception:
+        _OCR_JENIS = None
+    return _OCR_JENIS
+
+
+def kemiripan_teks(a, b):
+    """Rasio kemiripan dua teks 0..1 (1 = identik) Levenshtein."""
+    a, b = str(a or ""), str(b or "")
+    if a == b:
+        return 1.0
+    la, lb = len(a), len(b)
+    if la == 0 or lb == 0:
+        return 0.0
+    prev = list(range(lb + 1))
+    for i in range(1, la + 1):
+        cur = [i] + [0] * lb
+        ca = a[i - 1]
+        for j in range(1, lb + 1):
+            biaya = 0 if ca == b[j - 1] else 1
+            cur[j] = min(prev[j] + 1, cur[j - 1] + 1,
+                         prev[j - 1] + biaya)
+        prev = cur
+    return 1.0 - prev[lb] / max(la, lb)
+
+
+def rapikan_nama_terbaca(teks):
+    """Bersihkan hasil OCR jadi nama video yang layak.
+
+    - gabungkan spasi/baris baru berlebih
+    - buang ekstensi file bila OCR sempat membacanya (.mp4 dll)
+    """
+    t = " ".join(str(teks or "").split())
+    if "." in t:
+        kaki = t.rsplit(".", 1)[1].strip().lower()
+        if ("." + kaki) in VIDEO_EXTS or kaki in ("jpg", "png", "jpeg"):
+            t = t.rsplit(".", 1)[0].rstrip(" .-,;")
+    return t.strip()
+
+
+def cocokkan_nama_terdekat(teks, kandidat, ambang=0.60):
+    """Cari nama video ASLI yang paling mirip dengan hasil OCR.
+
+    OCR sering salah baca 1-2 karakter (mis. '(22)' terbaca '(2)'),
+    padahal daftar video kita tahu persis - jadi hasil bacaan
+    DICOCCOKKAN ke nama asli terdekat (huruf besar-kecil, spasi,
+    dan tanda baca diabaikan). Kembalikan (nama_asli, skor), atau
+    (None, skor) bila tidak ada yang melewati ambang.
+    """
+    def norm(s):
+        return "".join(ch for ch in str(s).lower() if ch.isalnum())
+
+    target = norm(teks)
+    if not target:
+        return None, 0.0
+    terbaik, skor_b = None, 0.0
+    for k in (kandidat or []):
+        nk = norm(os.path.splitext(os.path.basename(k))[0])
+        if not nk:
+            continue
+        skor = kemiripan_teks(target, nk)
+        if skor > skor_b:
+            terbaik, skor_b = k, skor
+    if terbaik is not None and skor_b >= ambang:
+        return terbaik, skor_b
+    return None, skor_b
+
+
+def baca_teks_area(x1, y1, x2, y2, percobaan=2):
+    """Potong area layar lalu BACA TULISANNYA di situ (OCR).
+
+    Kembalikan (teks, "") saat berhasil membaca sesuatu,
+    atau ("", pesan_penjelasan) saat gagal.
+    """
+    if not PIL_OK or ImageGrab is None:
+        return "", "Pillow belum terpasang (pip install pillow)"
+    mesin = ocr_engine_aktif()
+    if not mesin:
+        return "", ("mesin OCR belum terpasang. Install sekali saja "
+                    "lewat CMD:  pip install rapidocr-onnxruntime")
+    try:
+        x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+    except (ValueError, TypeError):
+        return "", "koordinat area OCR tidak valid"
+    if x2 < x1:
+        x1, x2 = x2, x1
+    if y2 < y1:
+        y1, y2 = y2, y1
+    if (x2 - x1) < 8 or (y2 - y1) < 6:
+        return "", "area OCR terlalu kecil (minimal 8x6 px)"
+    bbox = (max(0, x1), max(0, y1), x2, y2)
+    pesan = ""
+    global _OCR_OBJ
+    for _c in range(max(1, percobaan)):
+        try:
+            img = ImageGrab.grab(bbox=bbox).convert("L")
+            w, h = img.size
+            if w and h:
+                # perbesar 2x supaya tulisan kecil tetap terbaca
+                img = img.resize((min(w * 2, 4000), min(h * 2, 4000)))
+            teks = ""
+            if mesin == "rapidocr":
+                if _OCR_OBJ is None:
+                    from rapidocr_onnxruntime import RapidOCR
+                    _OCR_OBJ = RapidOCR()
+                import numpy as _np
+                rgb = Image.merge("RGB", (img, img, img))
+                arr = _np.array(rgb)[:, :, ::-1].copy()   # RGB -> BGR
+                hasil, _el = _OCR_OBJ(arr)
+                if hasil:
+                    teks = " ".join(
+                        str(r[1]).strip()
+                        for r in hasil if len(r) >= 2 and r[1])
+            else:
+                import pytesseract
+                teks = pytesseract.image_to_string(img, config="--psm 6")
+            teks = " ".join(str(teks or "").split())
+            if teks:
+                return teks, ""
+            pesan = "tidak ada tulisan terbaca di area itu"
+        except Exception as e:
+            pesan = str(e)
+        time.sleep(0.4)
+    return "", pesan
+
+
+def baca_nama_video_layar(mesin, l, kandidat=None):
+    """v6.3: baca NAMA VIDEO baris aktif langsung dari layar (OCR).
+
+    Dipakai langkah ISI VIDEO & CAPTION mode "Baca nama di layar".
+    Area bacaan = l["ocr_area"] [x1,y1,x2,y2] pilihan user; bila
+    kosong, dipakai area kira-kira di KIRI titik klik langkah
+    (lebar 676 px, tinggi 60 px - sebaiknya diatur manual lewat
+    tombol PILIH AREA NAMA supaya tepat).
+
+    Kembalikan (nama_tanpa_ekstensi, "") saat berhasil; nama dari
+    daftar ASLI bila cocok (koreksi salah baca OCR), atau nama
+    mentah hasil OCR bila tidak ada padanannya. Kembalikan
+    (None, pesan) saat gagal - pemanggil jatuh ke urutan daftar.
+    """
+    area = l.get("ocr_area")
+    if isinstance(area, (list, tuple)) and len(area) == 4:
+        sumber = "area pilihan"
+    else:
+        area = None
+    if area is None and l.get("posisi"):
+        try:
+            px, py = int(l["posisi"][0]), int(l["posisi"][1])
+            area = [max(0, px - 700), max(0, py - 30),
+                    max(0, px - 24), py + 30]
+            sumber = "area perkiraan di kiri titik klik"
+        except (ValueError, TypeError, IndexError):
+            area = None
+    if area is None:
+        mesin._set_status(
+            "BACA NAMA DI LAYAR aktif tapi AREA NAMA belum dipilih - "
+            "langkah ini memakai urutan daftar video. Klik langkahnya "
+            "lalu tekan PILIH AREA NAMA DI LAYAR.", C_ORANGE)
+        return None, "area kosong"
+    teks, pesan = baca_teks_area(*area)
+    if not teks:
+        mesin._set_status(
+            "OCR gagal membaca nama ({}: {}) - memakai urutan daftar "
+            "video.".format(sumber, pesan), C_ORANGE)
+        return None, pesan
+    nama = rapikan_nama_terbaca(teks)
+    if not nama:
+        mesin._set_status(
+            "OCR terbaca kosong - memakai urutan daftar video.",
+            C_ORANGE)
+        return None, "kosong"
+    asli, skor = cocokkan_nama_terdekat(nama, kandidat or [])
+    if asli:
+        mesin._set_status(
+            "Nama di layar terbaca '{}' -> video '{}' (padanan "
+            "{:.0%}).".format(nama, os.path.basename(asli), skor),
+            C_GREEN)
+        return os.path.splitext(os.path.basename(asli))[0], ""
+    mesin._set_status(
+        "Nama di layar terbaca: '{}' (tidak ada padanan di daftar "
+        "video - dipakai apa adanya).".format(nama), C_GREEN)
+    return nama, ""
 
 
 def parse_tanggal(teks):
@@ -2435,6 +2730,9 @@ class CutMotionsTab(PerekamAksiMixin):
         # ---- riwayat upload: {kunci: [nama file, ...]} ----
         # urutan isi riwayat = urutan baris video di situs (atas ke bawah)
         self.riwayat = {}
+        # v6.3: area [x1,y1,x2,y2] tulisan NAMA VIDEO baris teratas
+        # di situs, utk mode BACA NAMA DI LAYAR (OCR) fase caption
+        self.ocr_area = None
 
         # ---- v6.1: daftar video TERPILIH (path lengkap) ----
         # urutan = urutan saat user memilih di dialog = urutan upload
@@ -2463,6 +2761,10 @@ class CutMotionsTab(PerekamAksiMixin):
         # v6.0: ketik NAMA FILE di dialog pilih file supaya video yang
         # diupload PERSIS daftar yang dipakai untuk caption
         V["ketik_nama"] = tk.BooleanVar(value=True)
+        # v6.3: BACA NAMA VIDEO DI LAYAR (OCR) di fase caption -
+        # caption mengikuti nama yang TERBACA di layar per baris
+        V["baca_ocr"] = tk.BooleanVar(value=False)
+        V["ocr_area_txt"] = tk.StringVar(value="belum dipilih")
         for kunci in V:
             V[kunci].trace_add("write", self._terapkan_opts)
 
@@ -2733,6 +3035,57 @@ class CutMotionsTab(PerekamAksiMixin):
                           "(klik video pertama + Shift+panah) tidak "
                           "dipakai.",
             bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+            justify="left").pack(fill="x")
+        # v6.3: BACA NAMA VIDEO DI LAYAR (OCR) - anti salah urutan
+        # di fase caption bila urutan video di situs beda dari daftar
+        r_ocr = tk.Frame(v, bg=C_BG)
+        r_ocr.pack(fill="x", padx=8, pady=(0, 2))
+        tk.Checkbutton(
+            r_ocr, text="BACA NAMA VIDEO DI LAYAR (OCR) - caption "
+                        "mengikuti nama yang TERBACA di layar tiap "
+                        "baris (urutan upload tidak berpengaruh)",
+            variable=self.vars["baca_ocr"], bg=C_BG, fg=C_TEXT,
+            font=F_XS, anchor="w").pack(anchor="w")
+        r_ocr2 = tk.Frame(v, bg=C_BG)
+        r_ocr2.pack(fill="x", padx=8, pady=(0, 2))
+        tk.Label(r_ocr2, text="AREA NAMA BARIS 1:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        tk.Entry(r_ocr2, textvariable=self.vars["ocr_area_txt"], width=24,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 highlightthickness=0, state="readonly",
+                 readonlybackground=C_PANEL).pack(side="left", padx=(4, 6),
+                                                  ipady=2)
+        tk.Button(r_ocr2, text="PILIH AREA NAMA...",
+                  command=self._pilih_area_ocr, bg=C_BLUE, fg="white",
+                  font=F_XS, relief="raised", bd=1, cursor="hand2",
+                  activebackground=C_BLUE_D).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Button(r_ocr2, text="KOSONGKAN",
+                  command=self._kosongkan_area_ocr, bg=C_PANEL2,
+                  fg=C_TEXT, font=F_XS, relief="raised", bd=1,
+                  cursor="hand2",
+                  activebackground=C_SELROW).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Button(r_ocr2, text="TES BACA NAMA", command=self._tes_baca_ocr,
+                  bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
+                  bd=1, cursor="hand2",
+                  activebackground=C_SELROW).pack(side="left", padx=2,
+                                                  ipadx=6, ipady=2)
+        tk.Label(
+            r_ocr2, text="<- seret kotak di atas TULISAN NAMA video "
+                         "baris paling atas di situs",
+            bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left", padx=4)
+        tk.Label(
+            r_ocr, text="v6.3 - caption TIDAK SAMA dengan videonya (mis. "
+                        "baris (22) malah dapat caption (1))? Centang ini: "
+                        "sebelum mengetik caption tiap baris, aplikasi "
+                        "MEMBACA tulisan nama videonya di layar (AI/OCR) "
+                        "lalu mengetik caption dari nama itu. Kotak area "
+                        "otomatis bergeser turun mengikuti baris. Butuh "
+                        "mesin OCR (sekali saja): pip install "
+                        "rapidocr-onnxruntime. Kalau tidak terpasang, alur "
+                        "tetap jalan dengan cara biasa.",
+            bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
             justify="left").pack(fill="x")
 
         # ----- Area tengah: tabel langkah + panel properti -----
@@ -3509,6 +3862,17 @@ class CutMotionsTab(PerekamAksiMixin):
             self.pv["ctrl_a"] = tk.BooleanVar(
                 value=bool(l.get("ctrl_a", True)))
             self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            # v6.3: asal nama video (urutan daftar ATAU baca layar)
+            self.pv["sumber_nama"] = tk.StringVar(
+                value=l.get("sumber_nama")
+                if l.get("sumber_nama") in SUMBER_NAMA_OPSI
+                else SUMBER_NAMA_OPSI[0])
+            oa = l.get("ocr_area")
+            if isinstance(oa, (list, tuple)) and len(oa) == 4:
+                ocr_teks = "({},{}) - ({},{})".format(*oa)
+            else:
+                ocr_teks = "belum dipilih"
+            self.pv["ocr_txt"] = tk.StringVar(value=ocr_teks)
             r = self._baris_prop("YANG DIKETIK OTOMATIS:")
             tk.OptionMenu(r, self.pv["isi"],
                           *ISI_VIDEO_OPSI).pack(side="left")
@@ -3520,12 +3884,41 @@ class CutMotionsTab(PerekamAksiMixin):
                           "mis. 'melati'.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
+            # v6.3: ASAL NAMA VIDEO - anti salah urutan di fase caption
+            r = self._baris_prop("ASAL NAMA VIDEO (v6.3)")
+            tk.OptionMenu(r, self.pv["sumber_nama"],
+                          *SUMBER_NAMA_OPSI).pack(side="left")
+            tk.Label(r, text="OCR = anti salah urutan",
+                     bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left",
+                                                          padx=6)
+            r = self._baris_prop("AREA NAMA DI LAYAR (mode OCR)")
+            self._ent_prop(r, self.pv["ocr_txt"], 26, tengah=False)
+            self._btn_prop(r, "PILIH AREA NAMA DI LAYAR...",
+                           lambda k=iid: self._pilih_area_nama_ekstra(k))
+            self._btn_prop(r, "KOSONGKAN",
+                           lambda k=iid: self._area_nama_kosongkan_ekstra(
+                               k), bg=C_BG)
+            self._btn_prop(r, "TES BACA NAMA", self._tes_baca_ekstra)
+            tk.Label(self.prop_body,
+                     text="v6.3 - caption TIDAK SAMA dengan video barisnya? "
+                          "Pilih 'Baca nama di layar (OCR)' lalu PILIH AREA "
+                          "NAMA DI LAYAR: seret kotak TEPAT di atas TULISAN "
+                          "NAMA VIDEO baris paling atas di situs. Saat fase "
+                          "caption jalan, aplikasi MEMBACA nama tiap baris "
+                          "(area otomatis bergeser mengikuti baris) lalu "
+                          "mengetik caption dari nama itu - urutan upload "
+                          "tidak berpengaruh lagi. Hasil baca yang sedikit "
+                          "salah otomatis dicocokkan ke nama di daftar.",
+                     bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x",
+                                                          pady=(2, 0))
             r = self._baris_prop("TEKS SENDIRI + PLACEHOLDER")
             self._ent_prop(r, self.pv["teks"], 46, tengah=False)
             tk.Label(self.prop_body,
                      text="Dipakai kalau pilihan di atas = 'Teks "
                           "sendiri'. Placeholder: {caption} | {video} | "
-                          "{no} | {jumlah}.",
+                          "{no} | {jumlah}.  Mode OCR: {video} = nama "
+                          "HASIL BACAAN LAYAR.",
                      bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             tk.Checkbutton(self.prop_body,
@@ -3675,6 +4068,11 @@ class CutMotionsTab(PerekamAksiMixin):
             isi = self.pv["isi"].get()
             l["isi"] = (isi if isi in ISI_VIDEO_OPSI
                         else "Caption dasar + nama video")
+            # v6.3: asal nama video (area OCR diatur lewat tombol)
+            if "sumber_nama" in self.pv:
+                sn = self.pv["sumber_nama"].get()
+                l["sumber_nama"] = (sn if sn in SUMBER_NAMA_OPSI
+                                    else SUMBER_NAMA_OPSI[0])
             l["teks"] = self.pv["teks"].get()
             l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
             l["enter"] = bool(self.pv["enter"].get())
@@ -4522,6 +4920,328 @@ class CutMotionsTab(PerekamAksiMixin):
         self._set_status("Area fokus dikosongkan - gambar dicari di "
                          "seluruh layar.", C_GREEN)
 
+    # ---------- v6.3: AREA NAMA DI LAYAR (OCR) langkah VIDEO_CAPTION
+    # gaya Studio di alur A-J ----------
+    def _pilih_area_nama_ekstra(self, iid=None):
+        """Pilih area tulisan NAMA VIDEO baris teratas di layar.
+
+        Layar dibekukan, user MENYERET kotak di atas tulisan nama
+        video baris paling atas di situs. Hasil = [x1,y1,x2,y2]
+        disimpan di langkah ISI VIDEO & CAPTION terpilih (kunci
+        "ocr_area"); saat fase caption jalan, kotak ini otomatis
+        bergeser turun mengikuti baris yang sedang diproses.
+        """
+        if not PIL_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "Fitur area nama butuh Pillow.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install pillow")
+            return
+        uid = iid or self.sel
+        ek = self._iid_ekstra(uid) if (uid and uid not in POS_KUNCI) \
+            else None
+        if not ek or ek.get("jenis") != "VIDEO_CAPTION":
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu baris ISI VIDEO & CAPTION (langkah STUDIO "
+                "berkode S) yang mau diberi AREA NAMA.")
+            return
+        self._area_nama_uid = uid
+
+        def kerja():
+            try:
+                for s in range(3, 0, -1):
+                    self.root.after(0, lambda s=s: self._set_status(
+                        "Layar akan DIBEKUKAN dalam {} detik - pastikan "
+                        "TULISAN NAMA video baris teratas terlihat..."
+                        .format(s), C_ORANGE))
+                    time.sleep(1)
+                induk = self.root.winfo_toplevel()
+                self.root.after(0, induk.withdraw)
+                time.sleep(0.4)
+                img = ImageGrab.grab()
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror(
+                    APP_NAME,
+                    "Gagal mengambil screenshot:\n{}".format(e)))
+                self.root.after(0, self._tampil_lagi)
+                return
+
+            def tampil():
+                try:
+                    OverlayPotong(self.wadah, img, None,
+                                  on_batal=self._potong_batal,
+                                  mode="area",
+                                  on_area=self._area_nama_terpilih_ekstra)
+                except Exception as e:
+                    messagebox.showerror(
+                        APP_NAME,
+                        "Gagal membuka layar pilih area:\n{}".format(e))
+                finally:
+                    self._tampil_lagi()
+
+            self.root.after(0, tampil)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    def _area_nama_terpilih_ekstra(self, koord):
+        ek = self._iid_ekstra(getattr(self, "_area_nama_uid", None))
+        if not ek:
+            return
+        ek["ocr_area"] = list(koord)
+        self._save_settings()
+        self._refresh_tabel()
+        if self.sel == ek.get("uid"):
+            self._render_properti()
+        self._set_status(
+            "AREA NAMA tersimpan: ({},{}) - ({},{})  - saat alur jalan, "
+            "nama video tiap baris DIBACA (OCR) di kotak itu (ikut "
+            "bergeser per baris).".format(koord[0], koord[1],
+                                          koord[2], koord[3]), C_GREEN)
+
+    def _area_nama_kosongkan_ekstra(self, iid=None):
+        ek = self._iid_ekstra(iid) if (iid and iid not in POS_KUNCI) \
+            else None
+        if not ek:
+            return
+        ek["ocr_area"] = None
+        self._save_settings()
+        self._refresh_tabel()
+        if self.sel == ek.get("uid"):
+            self._render_properti()
+        self._set_status("Area nama dikosongkan - mode OCR akan memakai "
+                         "area perkiraan di kiri titik klik langkah.",
+                         C_GREEN)
+
+    def _tes_baca_ekstra(self):
+        """TES BACA NAMA langkah ISI VIDEO & CAPTION terpilih (alur A-J).
+
+        Screenshot area nama lalu OCR - hasil ditampilkan TANPA
+        mengetik apa pun, supaya user bisa memastikan kotak area
+        sudah tepat sebelum alur dijalankan.
+        """
+        ek = self._iid_ekstra(self.sel)
+        if not ek or ek.get("jenis") != "VIDEO_CAPTION":
+            messagebox.showinfo(APP_NAME,
+                                "Pilih dulu baris ISI VIDEO & CAPTION.")
+            return
+        if ocr_engine_aktif() is None:
+            messagebox.showwarning(
+                APP_NAME,
+                "Mesin OCR belum terpasang.\n\nBuka CMD lalu jalankan "
+                "(sekali saja):\n"
+                "  pip install rapidocr-onnxruntime")
+            return
+        area = ek.get("ocr_area")
+        if not (isinstance(area, (list, tuple)) and len(area) == 4):
+            if ek.get("posisi"):
+                px, py = int(ek["posisi"][0]), int(ek["posisi"][1])
+                area = [max(0, px - 700), max(0, py - 30),
+                        max(0, px - 24), py + 30]
+                pesan_area = "area PERKIRAAN di kiri titik klik (belum " \
+                             "ada pilihan manual)"
+            else:
+                messagebox.showinfo(
+                    APP_NAME,
+                    "AREA NAMA belum dipilih dan langkah belum punya "
+                    "titik klik.\n\nKlik PILIH AREA NAMA DI LAYAR dulu, "
+                    "lalu seret kotak di atas tulisan nama videonya.")
+                return
+        else:
+            pesan_area = "area pilihan"
+        kandidat = [os.path.basename(p) for p in self.video_terpilih]
+        self._set_status("Tes OCR baca nama ({})...".format(pesan_area),
+                         C_ORANGE)
+
+        def kerja():
+            teks, pesan = baca_teks_area(*area)
+
+            def lapor():
+                if not teks:
+                    self._set_status("TES GAGAL: {}".format(pesan), C_RED)
+                    messagebox.showwarning(
+                        APP_NAME,
+                        "OCR gagal membaca apa pun di area itu.\n\n{}"
+                        "\n\nCoba perlebar kotak area atau perbesar zoom "
+                        "browser.".format(pesan))
+                    return
+                nama = rapikan_nama_terbaca(teks)
+                asli, skor = cocokkan_nama_terdekat(nama, kandidat)
+                if asli:
+                    self._set_status(
+                        "TES OK: terbaca '{}' -> video '{}' ({:.0%})."
+                        .format(nama, os.path.basename(asli), skor),
+                        C_GREEN)
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "TES OK!\n\nTulisan terbaca : {}\nVideo padanan  : "
+                        "{}\nKemiripan        : {:.0%}\n\nCaption nanti "
+                        "akan memakai nama video ini.".format(
+                            nama, os.path.basename(asli), skor))
+                else:
+                    self._set_status(
+                        "TES: terbaca '{}' (tanpa padanan di daftar "
+                        "video - akan dipakai apa adanya).".format(nama),
+                        C_ORANGE)
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "Tulisan terbaca : {}\n\nTidak ada padanan di "
+                        "daftar video (kemiripan tertinggi {:.0%}) - "
+                        "teks terbaca akan dipakai apa adanya.\n\nKalau "
+                        "rasanya kurang tepat, rapikan kotak areanya "
+                        "(hanya tulisan nama videonya saja).".format(
+                            nama, skor))
+
+            self.root.after(0, lapor)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    # ---------- v6.3: AREA NAMA DI LAYAR (OCR) untuk FASE CAPTION
+    # alur A-J (kartu VIDEO & CAPTION, bukan langkah ekstra) ----------
+    def _refresh_area_ocr(self):
+        """Tampilkan koordinat AREA NAMA BARIS 1 di kartu."""
+        if getattr(self, "ocr_area", None):
+            self.vars["ocr_area_txt"].set("({},{}) - ({},{})".format(
+                *self.ocr_area))
+        else:
+            self.vars["ocr_area_txt"].set("belum dipilih")
+
+    def _pilih_area_ocr(self):
+        """Pilih area tulisan NAMA VIDEO baris teratas di situs.
+
+        Layar dibekukan, user MENYERET kotak di atas tulisan nama
+        video baris paling atas. Saat fase caption jalan, kotak ini
+        otomatis bergeser turun mengikuti baris yang diproses.
+        """
+        if not PIL_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "Fitur area nama butuh Pillow.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install pillow")
+            return
+
+        def kerja():
+            try:
+                for s in range(3, 0, -1):
+                    self.root.after(0, lambda s=s: self._set_status(
+                        "Layar akan DIBEKUKAN dalam {} detik - pastikan "
+                        "TULISAN NAMA video baris teratas terlihat..."
+                        .format(s), C_ORANGE))
+                    time.sleep(1)
+                induk = self.root.winfo_toplevel()
+                self.root.after(0, induk.withdraw)
+                time.sleep(0.4)
+                img = ImageGrab.grab()
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror(
+                    APP_NAME,
+                    "Gagal mengambil screenshot:\n{}".format(e)))
+                self.root.after(0, self._tampil_lagi)
+                return
+
+            def tampil():
+                try:
+                    OverlayPotong(self.wadah, img, None,
+                                  on_batal=self._potong_batal,
+                                  mode="area",
+                                  on_area=self._area_ocr_terpilih)
+                except Exception as e:
+                    messagebox.showerror(
+                        APP_NAME,
+                        "Gagal membuka layar pilih area:\n{}".format(e))
+                finally:
+                    self._tampil_lagi()
+
+            self.root.after(0, tampil)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    def _area_ocr_terpilih(self, koord):
+        self.ocr_area = list(koord)
+        self._refresh_area_ocr()
+        self._save_settings()
+        self._set_status(
+            "AREA NAMA BARIS 1 tersimpan: ({},{}) - ({},{})  - saat fase "
+            "caption jalan, nama video tiap baris DIBACA (OCR) di kotak "
+            "itu (ikut bergeser per baris).".format(
+                koord[0], koord[1], koord[2], koord[3]), C_GREEN)
+
+    def _kosongkan_area_ocr(self):
+        if not self.ocr_area:
+            return
+        self.ocr_area = None
+        self._refresh_area_ocr()
+        self._save_settings()
+        self._set_status("AREA NAMA BARIS 1 dikosongkan.", C_GREEN)
+
+    def _tes_baca_ocr(self):
+        """TES BACA NAMA untuk fase caption alur A-J.
+
+        Screenshot AREA NAMA lalu OCR - hasil ditampilkan TANPA
+        mengetik apa pun, supaya user bisa memastikan kotak area
+        sudah tepat sebelum alur dijalankan.
+        """
+        if ocr_engine_aktif() is None:
+            messagebox.showwarning(
+                APP_NAME,
+                "Mesin OCR belum terpasang.\n\nBuka CMD lalu jalankan "
+                "(sekali saja):\n"
+                "  pip install rapidocr-onnxruntime")
+            return
+        area = self.ocr_area
+        if not (isinstance(area, (list, tuple)) and len(area) == 4):
+            messagebox.showinfo(
+                APP_NAME,
+                "AREA NAMA BARIS 1 belum dipilih.\n\nKlik 'PILIH AREA "
+                "NAMA...' lalu SERET kotak di atas tulisan nama video "
+                "baris paling atas di situs.")
+            return
+        kandidat = [os.path.basename(p) for p in self.video_terpilih]
+        self._set_status("Tes OCR baca nama (area baris 1)...", C_ORANGE)
+
+        def kerja():
+            teks, pesan = baca_teks_area(*area)
+
+            def lapor():
+                if not teks:
+                    self._set_status("TES GAGAL: {}".format(pesan), C_RED)
+                    messagebox.showwarning(
+                        APP_NAME,
+                        "OCR gagal membaca apa pun di area itu.\n\n{}"
+                        "\n\nCoba perlebar kotak area atau perbesar zoom "
+                        "browser.".format(pesan))
+                    return
+                nama = rapikan_nama_terbaca(teks)
+                asli, skor = cocokkan_nama_terdekat(nama, kandidat)
+                if asli:
+                    self._set_status(
+                        "TES OK: terbaca '{}' -> video '{}' ({:.0%})."
+                        .format(nama, os.path.basename(asli), skor),
+                        C_GREEN)
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "TES OK!\n\nTulisan terbaca : {}\nVideo padanan  : "
+                        "{}\nKemiripan        : {:.0%}\n\nCaption nanti "
+                        "akan memakai nama video ini.".format(
+                            nama, os.path.basename(asli), skor))
+                else:
+                    self._set_status(
+                        "TES: terbaca '{}' (tanpa padanan di daftar "
+                        "video - akan dipakai apa adanya).".format(nama),
+                        C_ORANGE)
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "Tulisan terbaca : {}\n\nTidak ada padanan di "
+                        "daftar video (kemiripan tertinggi {:.0%}) - "
+                        "teks terbaca akan dipakai apa adanya.\n\nKalau "
+                        "rasanya kurang tepat, rapikan kotak areanya "
+                        "(hanya tulisan nama videonya saja).".format(
+                            nama, skor))
+
+            self.root.after(0, lapor)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
     def _tes_cari_studio(self, ek):
         """Tes pencarian gambar langkah CARI GAMBAR gaya Studio."""
         if not PYNPUT_OK:
@@ -4944,6 +5664,8 @@ class CutMotionsTab(PerekamAksiMixin):
             "klik_submit": V["klik_submit"].get().strip(),
             "auto_kirim": bool(V["auto_kirim"].get()),
             "ketik_nama": bool(V["ketik_nama"].get()),   # v6.0
+            "baca_ocr": bool(V["baca_ocr"].get()),       # v6.3
+            "ocr_area": (list(self.ocr_area) if self.ocr_area else None),
             "posisi": {k: (list(v) if v else None)
                        for k, v in self.posisi.items()},
             "slot_mati": set(self.slot_mati),   # v5.9: A-J yang dihapus
@@ -5203,6 +5925,27 @@ class CutMotionsTab(PerekamAksiMixin):
                     "Lanjut saja? (situs bisa memotong / menolak)".format(
                         JUDUL_MAX, terpanjang)):
                 return
+        # ---- v6.3: validasi BACA NAMA VIDEO DI LAYAR (OCR) ----
+        if bool(snap.get("baca_ocr")):
+            if not (isinstance(snap.get("ocr_area"), (list, tuple))
+                    and len(snap.get("ocr_area") or ()) == 4):
+                messagebox.showwarning(
+                    APP_NAME,
+                    "BACA NAMA VIDEO DI LAYAR aktif tapi AREA NAMA BARIS 1 "
+                    "belum dipilih.\n\nKlik tombol 'PILIH AREA NAMA...' di "
+                    "kartu VIDEO & CAPTION, lalu SERET kotak TEPAT di atas "
+                    "TULISAN NAMA video baris paling atas di situs.")
+                return
+            if ocr_engine_aktif() is None:
+                if not messagebox.askyesno(
+                        APP_NAME,
+                        "Mesin OCR belum terpasang sehingga BACA NAMA DI "
+                        "LAYAR tidak bisa jalan (caption akan memakai "
+                        "urutan daftar video seperti biasa).\n\n"
+                        "Install sekali saja lewat CMD:\n"
+                        "  pip install rapidocr-onnxruntime\n\n"
+                        "Lanjut tanpa OCR?"):
+                    return
         self._save_settings()
         self.stop_event.clear()
         self.running = True
@@ -5863,7 +6606,49 @@ class CutMotionsTab(PerekamAksiMixin):
             for i, nama_file in enumerate(daftar_caption):
                 if self.stop_event.is_set():
                     break
-                caption_final = compose_caption(caption_dasar, nama_file)
+                # ---- v6.3: BACA NAMA VIDEO DI LAYAR (OCR) ----
+                # bila aktif, nama video baris ke-i DIBACA langsung dari
+                # layar (area nama baris-1 digeser turun i x jarak), lalu
+                # dicocokkan ke daftar video utk koreksi salah baca kecil.
+                # Gagal baca -> jatuh ke urutan daftar seperti biasa.
+                nama_baris = os.path.basename(nama_file)
+                if bool(snap.get("baca_ocr")) and \
+                        isinstance(snap.get("ocr_area"), (list, tuple)) \
+                        and len(snap["ocr_area"]) == 4:
+                    a0 = snap["ocr_area"]
+                    area_i = [int(a0[0]), int(a0[1]) + i * jarak,
+                              int(a0[2]), int(a0[3]) + i * jarak]
+                    teks_layar, pes_ocr = baca_teks_area(*area_i)
+                    if teks_layar:
+                        nama_baca = rapikan_nama_terbaca(teks_layar)
+                        if nama_baca:
+                            asli, skor = cocokkan_nama_terdekat(
+                                nama_baca, daftar_caption)
+                            if asli:
+                                nama_baris = os.path.basename(asli)
+                                self._set_status(
+                                    "Baris {}: layar terbaca '{}' -> "
+                                    "video '{}' ({:.0%}).".format(
+                                        i + 1, nama_baca, nama_baris,
+                                        skor), C_GREEN)
+                            else:
+                                nama_baris = nama_baca
+                                self._set_status(
+                                    "Baris {}: nama di layar '{}' "
+                                    "(tanpa padanan daftar - dipakai apa "
+                                    "adanya).".format(i + 1, nama_baca),
+                                    C_GREEN)
+                        else:
+                            self._set_status(
+                                "Baris {}: OCR kosong ({}) - caption "
+                                "pakai urutan daftar.".format(
+                                    i + 1, pes_ocr), C_ORANGE)
+                    else:
+                        self._set_status(
+                            "Baris {}: OCR gagal ({}) - caption pakai "
+                            "urutan daftar.".format(i + 1, pes_ocr),
+                            C_ORANGE)
+                caption_final = compose_caption(caption_dasar, nama_baris)
                 geser = i * jarak  # baris ke-i turun sejauh i x jarak
                 self._set_progress(
                     "FASE 3 CAPTION {}/{} (baris {} | geser {} px)   |   "
@@ -6047,6 +6832,8 @@ class CutMotionsTab(PerekamAksiMixin):
             "klik_submit": V["klik_submit"].get(),
             "auto_kirim": bool(V["auto_kirim"].get()),
             "ketik_nama": bool(V["ketik_nama"].get()),   # v6.0
+            "baca_ocr": bool(V["baca_ocr"].get()),       # v6.3
+            "ocr_area": (list(self.ocr_area) if self.ocr_area else None),
             "posisi": {k: v for k, v in self.posisi.items()},
             "slot_mati": sorted(self.slot_mati),   # v5.9: A-J dihapus
             "jeda_per": {k: float(v) for k, v in self.jeda_per.items()},
@@ -6270,6 +7057,15 @@ class CutMotionsTab(PerekamAksiMixin):
         # v6.0: bawaan AKTIF - profil lama yang belum punya kunci ini
         # langsung menikmati nama file yang diketik persis di dialog
         V["ketik_nama"].set(bool(data.get("ketik_nama", True)))
+        # v6.3: BACA NAMA VIDEO DI LAYAR (OCR) + area pilihannya
+        V["baca_ocr"].set(bool(data.get("baca_ocr", False)))
+        oa = data.get("ocr_area")
+        try:
+            self.ocr_area = ([int(oa[0]), int(oa[1]), int(oa[2]),
+                              int(oa[3])] if oa and len(oa) == 4 else None)
+        except (ValueError, TypeError, IndexError):
+            self.ocr_area = None
+        self._refresh_area_ocr()
         arah = str(data.get("arah_scroll") or "Turun")
         V["arah_scroll"].set(arah if arah in ("Turun", "Naik") else "Turun")
         self._loading = False
@@ -7471,6 +8267,17 @@ class StudioMakroTab(PerekamAksiMixin):
             self.pv["ctrl_a"] = tk.BooleanVar(
                 value=bool(l.get("ctrl_a", True)))
             self.pv["enter"] = tk.BooleanVar(value=bool(l.get("enter")))
+            # v6.3: asal nama video (urutan daftar ATAU baca layar)
+            self.pv["sumber_nama"] = tk.StringVar(
+                value=l.get("sumber_nama")
+                if l.get("sumber_nama") in SUMBER_NAMA_OPSI
+                else SUMBER_NAMA_OPSI[0])
+            oa = l.get("ocr_area")
+            if isinstance(oa, (list, tuple)) and len(oa) == 4:
+                ocr_teks = "({},{}) - ({},{})".format(*oa)
+            else:
+                ocr_teks = "belum dipilih"
+            self.pv["ocr_txt"] = tk.StringVar(value=ocr_teks)
             r = self._baris_prop("YANG DIKETIK OTOMATIS:")
             tk.OptionMenu(r, self.pv["isi"],
                           *ISI_VIDEO_OPSI).pack(side="left")
@@ -7484,6 +8291,38 @@ class StudioMakroTab(PerekamAksiMixin):
                           "video saja = mis. 'melati'.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
+            # v6.3: ASAL NAMA VIDEO - urutan daftar ATAU baca layar (OCR)
+            r = self._baris_prop("ASAL NAMA VIDEO (v6.3)")
+            tk.OptionMenu(r, self.pv["sumber_nama"],
+                          *SUMBER_NAMA_OPSI).pack(side="left")
+            tk.Label(r, text="OCR = anti salah urutan",
+                     bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left",
+                                                          padx=6)
+            r = self._baris_prop("AREA NAMA DI LAYAR (mode OCR)")
+            self._ent_prop(r, self.pv["ocr_txt"], 26, tengah=False)
+            self._btn_prop(r, "PILIH AREA NAMA DI LAYAR...",
+                           lambda: self._pilih_area_nama(l["uid"]))
+            self._btn_prop(r, "KOSONGKAN",
+                           lambda: self._area_nama_kosongkan(l["uid"]),
+                           bg=C_BG)
+            self._btn_prop(r, "TES BACA NAMA", self._tes_baca_nama)
+            tk.Label(self.prop_body,
+                     text="v6.3 - MASALAH 'caption tidak sama dengan "
+                          "video' SOLUSI: pilih 'Baca nama di layar "
+                          "(OCR)', lalu klik PILIH AREA NAMA DI LAYAR - "
+                          "layar dibekukan, SERET kotak TEPAT di atas "
+                          "TULISAN NAMA VIDEO baris paling atas di situs. "
+                          "Saat alur jalan, tiap putaran ULANGI aplikasi "
+                          "MEMBACA nama video baris yang sedang diedit "
+                          "(kotak area otomatis bergeser mengikuti baris) "
+                          "lalu mengetik caption dari nama itu - urutan "
+                          "upload tidak berpengaruh lagi. TES BACA NAMA = "
+                          "uji area tanpa menjalankan alur. Bila hasil "
+                          "bacaan sedikit salah, otomatis dicocokkan ke "
+                          "nama video di daftar yang paling mirip.",
+                     bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(fill="x",
+                                                          pady=(2, 0))
             r = self._baris_prop("TEKS SENDIRI + PLACEHOLDER")
             self._ent_prop(r, self.pv["teks"], 46, tengah=False)
             tk.Label(self.prop_body,
@@ -7491,7 +8330,8 @@ class StudioMakroTab(PerekamAksiMixin):
                           "Placeholder: {caption} = caption dasar + nama "
                           "video ke-i  |  {video} = nama video ke-i  |  "
                           "{no} = nomor putaran ULANGI  |  {jumlah} = "
-                          "jumlah video total.",
+                          "jumlah video total.  Mode OCR: {video} = nama "
+                          "HASIL BACAAN LAYAR.",
                      bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             tk.Checkbutton(self.prop_body,
@@ -7646,6 +8486,11 @@ class StudioMakroTab(PerekamAksiMixin):
             isi = self.pv["isi"].get()
             l["isi"] = (isi if isi in ISI_VIDEO_OPSI
                         else "Caption dasar + nama video")
+            # v6.3: asal nama video (area OCR diatur lewat tombol)
+            if "sumber_nama" in self.pv:
+                sn = self.pv["sumber_nama"].get()
+                l["sumber_nama"] = (sn if sn in SUMBER_NAMA_OPSI
+                                    else SUMBER_NAMA_OPSI[0])
             l["teks"] = self.pv["teks"].get()
             l["ctrl_a"] = bool(self.pv["ctrl_a"].get())
             l["enter"] = bool(self.pv["enter"].get())
@@ -7943,6 +8788,187 @@ class StudioMakroTab(PerekamAksiMixin):
             self._render_properti()
         self._set_status("Area fokus dikosongkan - gambar dicari di "
                          "seluruh layar.", C_GREEN)
+
+    # ---------- v6.3: AREA NAMA DI LAYAR (OCR) langkah
+    # ISI VIDEO & CAPTION di STUDIO MAKRO ----------
+    def _pilih_area_nama(self, uid=None):
+        """Pilih area tulisan NAMA VIDEO baris teratas di layar.
+
+        Layar dibekukan, user MENYERET kotak di atas tulisan nama
+        video baris paling atas di situs. Hasil = [x1,y1,x2,y2]
+        disimpan di langkah ISI VIDEO & CAPTION terpilih (kunci
+        "ocr_area"); saat makro jalan, kotak ini otomatis bergeser
+        turun mengikuti baris yang sedang diproses (loop ULANGI).
+        """
+        if not PIL_OK:
+            messagebox.showwarning(
+                APP_NAME,
+                "Fitur area nama butuh Pillow.\n\nBuka CMD lalu jalankan:\n"
+                "  pip install pillow")
+            return
+        uid = uid or self.sel
+        l = self._get(uid)
+        if not l or l["jenis"] != "VIDEO_CAPTION":
+            messagebox.showinfo(
+                APP_NAME,
+                "Pilih dulu baris ISI VIDEO & CAPTION yang mau diberi "
+                "AREA NAMA.")
+            return
+        self._area_nama_uid = uid
+
+        def kerja():
+            try:
+                for s in range(3, 0, -1):
+                    self.root.after(0, lambda s=s: self._set_status(
+                        "Layar akan DIBEKUKAN dalam {} detik - pastikan "
+                        "TULISAN NAMA video baris teratas terlihat..."
+                        .format(s), C_ORANGE))
+                    time.sleep(1)
+                induk = self.root.winfo_toplevel()
+                self.root.after(0, induk.withdraw)
+                time.sleep(0.4)
+                img = ImageGrab.grab()
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror(
+                    APP_NAME,
+                    "Gagal mengambil screenshot:\n{}".format(e)))
+                self.root.after(0, self._tampil_lagi)
+                return
+
+            def tampil():
+                try:
+                    OverlayPotong(self.wadah, img, None,
+                                  on_batal=self._potong_batal,
+                                  mode="area",
+                                  on_area=self._area_nama_terpilih)
+                except Exception as e:
+                    messagebox.showerror(
+                        APP_NAME,
+                        "Gagal membuka layar pilih area:\n{}".format(e))
+                finally:
+                    self._tampil_lagi()
+
+            self.root.after(0, tampil)
+
+        threading.Thread(target=kerja, daemon=True).start()
+
+    def _area_nama_terpilih(self, koord):
+        l = self._get(getattr(self, "_area_nama_uid", None))
+        if not l:
+            return
+        l["ocr_area"] = list(koord)
+        self._refresh_tabel()
+        self._simpan_auto()
+        if self.sel == l["uid"]:
+            self._render_properti()
+        self._set_status(
+            "AREA NAMA tersimpan: ({},{}) - ({},{})  - saat makro jalan, "
+            "nama video tiap baris DIBACA (OCR) di kotak itu (ikut "
+            "bergeser per baris).".format(koord[0], koord[1],
+                                          koord[2], koord[3]), C_GREEN)
+
+    def _area_nama_kosongkan(self, uid):
+        l = self._get(uid)
+        if not l:
+            return
+        l["ocr_area"] = None
+        self._refresh_tabel()
+        self._simpan_auto()
+        if self.sel == uid:
+            self._render_properti()
+        self._set_status("Area nama dikosongkan - mode OCR akan memakai "
+                         "area perkiraan di kiri titik klik langkah.",
+                         C_GREEN)
+
+    def _tes_baca_nama(self):
+        """TES BACA NAMA langkah ISI VIDEO & CAPTION terpilih.
+
+        Screenshot area nama lalu OCR - hasilnya DITAMPILKAN saja
+        (tidak mengetik apa pun) supaya user bisa memastikan kotak
+        area sudah tepat sebelum makro dijalankan.
+        """
+        l = self._get(self.sel)
+        if not l or l["jenis"] != "VIDEO_CAPTION":
+            messagebox.showinfo(APP_NAME,
+                                "Pilih dulu baris ISI VIDEO & CAPTION.")
+            return
+        if ocr_engine_aktif() is None:
+            messagebox.showwarning(
+                APP_NAME,
+                "Mesin OCR belum terpasang.\n\nBuka CMD lalu jalankan "
+                "(sekali saja):\n"
+                "  pip install rapidocr-onnxruntime")
+            return
+        area = l.get("ocr_area")
+        if not (isinstance(area, (list, tuple)) and len(area) == 4):
+            if l.get("posisi"):
+                px, py = int(l["posisi"][0]), int(l["posisi"][1])
+                area = [max(0, px - 700), max(0, py - 30),
+                        max(0, px - 24), py + 30]
+                pesan_area = "area PERKIRAAN di kiri titik klik (belum " \
+                             "ada pilihan manual)"
+            else:
+                messagebox.showinfo(
+                    APP_NAME,
+                    "AREA NAMA belum dipilih dan langkah belum punya "
+                    "titik klik.\n\nKlik PILIH AREA NAMA DI LAYAR dulu, "
+                    "lalu seret kotak di atas tulisan nama videonya.")
+                return
+        else:
+            pesan_area = "area pilihan"
+        # kandidat pencocokan = daftar video kartu Studio (+ kartu
+        # CutMotions bila ada) supaya salah baca kecil terkoreksi
+        kandidat = list(self._nama_video_studio())
+        lain = self.shell.tab_lain(self) if self.shell is not self \
+            else None
+        if lain is not None:
+            kandidat += [os.path.basename(p)
+                         for p in getattr(lain, "video_terpilih", [])]
+        self._set_status("Tes OCR baca nama ({})...".format(pesan_area),
+                         C_ORANGE)
+
+        def kerja():
+            teks, pesan = baca_teks_area(*area)
+
+            def lapor():
+                if not teks:
+                    self._set_status("TES GAGAL: {}".format(pesan), C_RED)
+                    messagebox.showwarning(
+                        APP_NAME,
+                        "OCR gagal membaca apa pun di area itu.\n\n{}"
+                        "\n\nCoba perlebar kotak area atau perbesar zoom "
+                        "browser.".format(pesan))
+                    return
+                nama = rapikan_nama_terbaca(teks)
+                asli, skor = cocokkan_nama_terdekat(nama, kandidat)
+                if asli:
+                    self._set_status(
+                        "TES OK: terbaca '{}' -> video '{}' ({:.0%})."
+                        .format(nama, os.path.basename(asli), skor),
+                        C_GREEN)
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "TES OK!\n\nTulisan terbaca : {}\nVideo padanan  : "
+                        "{}\nKemiripan        : {:.0%}\n\nCaption nanti "
+                        "akan memakai nama video ini.".format(
+                            nama, os.path.basename(asli), skor))
+                else:
+                    self._set_status(
+                        "TES: terbaca '{}' (tanpa padanan di daftar "
+                        "video - akan dipakai apa adanya).".format(nama),
+                        C_ORANGE)
+                    messagebox.showinfo(
+                        APP_NAME,
+                        "Tulisan terbaca : {}\n\nTidak ada padanan di "
+                        "daftar video (kemiripan tertinggi {:.0%}) - "
+                        "teks terbaca akan dipakai apa adanya.\n\nKalau "
+                        "rasanya kurang tepat, rapikan kotak areanya "
+                        "(hanya tulisan nama videonya saja).".format(
+                            nama, skor))
+
+            self.root.after(0, lapor)
+
+        threading.Thread(target=kerja, daemon=True).start()
 
     def _tes_cari(self):
         if not PYNPUT_OK:
@@ -8307,6 +9333,21 @@ class StudioMakroTab(PerekamAksiMixin):
         tanggal = d["tanggal"]
         jumlah_total = len(videos) or d["jumlah"]
         sumber_data = d["sumber"]
+        # v6.3: langkah ISI VIDEO & CAPTION mode BACA NAMA DI LAYAR
+        ada_ocr = any(
+            l.get("aktif", True) and l["jenis"] == "VIDEO_CAPTION"
+            and str(l.get("sumber_nama") or "")
+            == "Baca nama di layar (OCR)"
+            for l in self.langkah)
+        if ada_ocr and ocr_engine_aktif() is None:
+            if not messagebox.askyesno(
+                    APP_NAME,
+                    "Ada langkah ISI VIDEO & CAPTION mode BACA NAMA DI "
+                    "LAYAR (OCR) tapi mesin OCR belum terpasang - "
+                    "langkah itu akan memakai urutan daftar video "
+                    "seperti biasa.\n\nInstall sekali saja lewat CMD:\n"
+                    "  pip install rapidocr-onnxruntime\n\nLanjut?"):
+                return
         try:
             mundur = int(_angka(self.vars["mundur"].get(), 5, 0, 60))
         except Exception:
@@ -9572,6 +10613,109 @@ def main():
             print("SELFTEST_KARTU_OK")
             root.destroy()
         root.after(3600, _ok12)
+    if "--selftest-ocr" in sys.argv:
+        def _uji_ocr():
+            # v6.3: BACA NAMA VIDEO DI LAYAR (OCR) - caption mengikuti
+            # nama yang terbaca di layar, bukan urutan daftar
+            print("OCR_RAPIKAN_OK",
+                  rapikan_nama_terbaca("  #nontondisnack -Kls "
+                                       "INTERNASIONAL-(22).mp4 \n")
+                  == "#nontondisnack -Kls INTERNASIONAL-(22)")
+            print("OCR_RAPIKAN2_OK",
+                  rapikan_nama_terbaca("melati  ") == "melati"
+                  and rapikan_nama_terbaca("") == "")
+            print("OCR_MIRIP_OK",
+                  kemiripan_teks("abc", "abc") == 1.0
+                  and kemiripan_teks("abc", "abd") > 0.6
+                  and kemiripan_teks("abc", "xyz") < 0.5)
+            daftar = ["#nontondisnack -Kls INTERNASIONAL-({}).mp4"
+                      .format(n) for n in range(1, 25)]
+            # bacaan Lengkap dengan salah baca tengah ('(2z2)' -> (22))
+            asli, skor = cocokkan_nama_terdekat(
+                "nontondisnack -Kls INTERNASIONAL-(2z2)", daftar)
+            print("OCR_COCOK_22_OK",
+                  asli == daftar[21] and skor >= 0.6)
+            asli, skor = cocokkan_nama_terdekat(
+                "nontondisnack-Kls INTERNASIONAL (1)", daftar)
+            print("OCR_COCOK_1_OK", asli == daftar[0])
+            asli, skor = cocokkan_nama_terdekat(
+                "video sama sekali beda xyz", daftar)
+            print("OCR_COCOK_TOLAK_OK", asli is None)
+            # langkah baru punya kunci v6.3 + sanitasi profil
+            l = studio_langkah_baru("VIDEO_CAPTION", 1)
+            print("OCR_LANGKAH_OK",
+                  l["sumber_nama"] == SUMBER_NAMA_OPSI[0]
+                  and l["ocr_area"] is None)
+            bersih = studio_bersihkan([
+                {"jenis": "VIDEO_CAPTION", "uid": "s1",
+                 "sumber_nama": "Baca nama di layar (OCR)",
+                 "ocr_area": [10, 5, 210, 45]}])
+            print("OCR_BERSIH_OK",
+                  bersih[0]["sumber_nama"] == "Baca nama di layar (OCR)"
+                  and bersih[0]["ocr_area"] == [10, 5, 210, 45])
+            bersih2 = studio_bersihkan([
+                {"jenis": "VIDEO_CAPTION", "uid": "s2",
+                 "sumber_nama": "nilai aneh",
+                 "ocr_area": [1, 2, 3]}])
+            print("OCR_BERSIH_RUSAK_OK",
+                  bersih2[0]["sumber_nama"] == SUMBER_NAMA_OPSI[0]
+                  and bersih2[0]["ocr_area"] is None)
+            print("OCR_DETAIL_OK",
+                  "BACA LAYAR" in studio_detail_teks(bersih[0]))
+            # mesin: nama hasil OCR MENANG atas urutan daftar
+            asli_baca = globals()["baca_teks_area"]
+            try:
+                globals()["baca_teks_area"] = (
+                    lambda *a, **k:
+                    ("nontondisnack -Kls INTERNASIONAL-(22)", ""))
+
+                class MesinOcr:
+                    stop_event = threading.Event()
+
+                    def __init__(self):
+                        self.semua_pesan = []
+
+                    def _sleep(self, _s):
+                        pass
+
+                    def _set_status(self, msg, _w=None):
+                        self.semua_pesan.append(str(msg))
+
+                    def gabung(self):
+                        return " | ".join(self.semua_pesan)
+
+                m = MesinOcr()
+                l_ocr = dict(bersih[0], posisi=None)
+                studio_jalankan_langkah(
+                    m, l_ocr, 0, ["video salah.mp4"],
+                    "#nontondisnack", 1, "")
+                print("OCR_MESIN_OK",
+                      "INTERNASIONAL-(22)" in m.gabung()
+                      and "video salah" not in m.gabung())
+                # mode Nama video saja + OCR
+                m3 = MesinOcr()
+                l_ocr3 = dict(l_ocr, isi="Nama video saja")
+                studio_jalankan_langkah(m3, l_ocr3, 0, ["x.mp4"], "", 1,
+                                        "")
+                print("OCR_MESIN_NAMA_OK",
+                  "INTERNASIONAL-(22)" in m3.gabung())
+                # OCR gagal -> jatuh ke urutan daftar (alur tetap jalan)
+                globals()["baca_teks_area"] = (
+                    lambda *a, **k: ("", "tidak ada tulisan"))
+                m2 = MesinOcr()
+                studio_jalankan_langkah(
+                    m2, l_ocr, 0, ["video benar.mp4"], "#x", 1, "")
+                print("OCR_FALBACK_OK",
+                      "video benar" in m2.gabung())
+            finally:
+                globals()["baca_teks_area"] = asli_baca
+            print("OCR_DONE")
+        root.after(700, _uji_ocr)
+
+        def _ok13():
+            print("SELFTEST_OCR_OK")
+            root.destroy()
+        root.after(3600, _ok13)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -9583,7 +10727,8 @@ def main():
             or ("--selftest-hapus" in sys.argv) \
             or ("--selftest-ketik" in sys.argv) \
             or ("--selftest-pilih" in sys.argv) \
-            or ("--selftest-kartu" in sys.argv):
+            or ("--selftest-kartu" in sys.argv) \
+            or ("--selftest-ocr" in sys.argv):
         print("SELFTEST_DONE")
 
 
