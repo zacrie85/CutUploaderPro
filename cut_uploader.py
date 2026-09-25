@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v6.3  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v6.4  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -105,6 +105,12 @@
        uji area tanpa jalan. Mesin OCR: RapidOCR (pip install
        rapidocr-onnxruntime) atau Tesseract; bila tidak ada,
        alur tetap jalan dengan cara urutan daftar.
+     - v6.4: HASIL BACA OCR DIPOTONG SAMPAI EKSTENSI FILE -
+       kalau area bacaan ikut membaca tulisan lain di sekitar
+       nama (tanggal, ukuran file, tulisan UI, nama baris
+       lain), yang dipakai HANYA bagian sampai ekstensi (.mp4 /
+       .mkv / .ts / ...) - apa pun setelahnya otomatis dibuang,
+       jadi nama yang masuk ke caption benar-benar bersih.
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -182,6 +188,10 @@
        TERSIMPAN di profil: centang BACA NAMA VIDEO DI LAYAR,
        AREA NAMA BARIS 1 (seret kotak di layar), tombol TES
        BACA NAMA untuk uji coba baca tanpa menjalankan alur.
+     - v6.4: hasil baca OCR kini DIPOTONG SAMPAI EKSTENSI FILE
+       (.mp4/.mkv/.ts/...) - tulisan lain yang ikut terbaca di
+       sekitar nama (tanggal, ukuran, dsb) otomatis dibuang,
+       nama yang masuk caption benar-benar bersih.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -298,7 +308,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.3"
+APP_VERSION = "6.4"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -2022,13 +2032,60 @@ def kemiripan_teks(a, b):
     return 1.0 - prev[lb] / max(la, lb)
 
 
+def potong_sampai_ekstensi(teks):
+    """v6.4: batasi hasil OCR SAMPAI EKSTENSI FILE saja.
+
+    Area bacaan kadang ikut membaca teks lain di sekitar nama
+    video (tanggal rilis, ukuran file, tulisan UI, bahkan nama
+    video baris lain). Karena nama video SELALU berakhir dengan
+    ekstensi (.mp4 / .mkv / .ts / ...), hasil bacaan dipotong
+    tepat di akhir ekstensi PALING AWAL yang dikenal - apa pun
+    teks SETELAH ekstensi itu dibuang.
+
+    Contoh:
+      '#nontondisnack ...(22).mp4 24 September 2026 - 12 MB'
+        -> '#nontondisnack ...(22).mp4'
+      'a.mkv b.mp4 c.ts'  -> 'a.mkv'  (baris pertama saja)
+
+    Ekstensi yang menempel huruf/angka (mis. '.mp4x', '.mp42026')
+    TIDAK dianggap akhir nama - salah baca tidak memotong. Bila
+    tidak ada ekstensi dikenal, teks dikembalikan apa adanya
+    (aturan lama).
+    """
+    t = " ".join(str(teks or "").split())
+    if not t:
+        return ""
+    low = t.lower()
+    kandidat = None  # (posisi_mulai, posisi_akhir) ekstensi paling awal
+    for ext in VIDEO_EXTS:
+        cari = 0
+        while True:
+            i = low.find(ext, cari)
+            if i < 0:
+                break
+            akhir = i + len(ext)
+            sesudah = low[akhir:akhir + 1]
+            # batas kata: setelah ekstensi bukan huruf/angka/titik
+            if not sesudah or not (sesudah.isalnum() or sesudah == "."):
+                if kandidat is None or i < kandidat[0]:
+                    kandidat = (i, akhir)
+                break
+            cari = i + 1
+    if kandidat is None:
+        return t
+    return t[:kandidat[1]].rstrip()
+
+
 def rapikan_nama_terbaca(teks):
     """Bersihkan hasil OCR jadi nama video yang layak.
 
     - gabungkan spasi/baris baru berlebih
+    - v6.4: bila teksnya kebanyakan (ada tulisan lain di sekitar
+      nama), potong SAMPAI EKSTENSI FILE saja (.mp4/.mkv/.ts/...)
+      - lihat potong_sampai_ekstensi()
     - buang ekstensi file bila OCR sempat membacanya (.mp4 dll)
     """
-    t = " ".join(str(teks or "").split())
+    t = potong_sampai_ekstensi(teks)
     if "." in t:
         kaki = t.rsplit(".", 1)[1].strip().lower()
         if ("." + kaki) in VIDEO_EXTS or kaki in ("jpg", "png", "jpeg"):
@@ -10624,6 +10681,31 @@ def main():
             print("OCR_RAPIKAN2_OK",
                   rapikan_nama_terbaca("melati  ") == "melati"
                   and rapikan_nama_terbaca("") == "")
+            # v6.4: hasil OCR dipotong SAMPAI EKSTENSI FILE saja
+            print("OCR_POTONG_OK",
+                  potong_sampai_ekstensi(
+                      "#nontondisnack -Kls INTERNASIONAL-(22).mp4 "
+                      "24 September 2026 10:30 - 12 MB")
+                  == "#nontondisnack -Kls INTERNASIONAL-(22).mp4")
+            print("OCR_POTONG2_OK",
+                  potong_sampai_ekstensi("a.mkv b.mp4 c.ts") == "a.mkv"
+                  and potong_sampai_ekstensi("rec.ts 08:00") == "rec.ts"
+                  and potong_sampai_ekstensi("tanpa ekstensi")
+                  == "tanpa ekstensi"
+                  and potong_sampai_ekstensi("file.mp4x jauh")
+                  == "file.mp4x jauh"
+                  and potong_sampai_ekstensi("file.mp42026 sisa")
+                  == "file.mp42026 sisa")
+            print("OCR_RAPIKAN3_OK",
+                  rapikan_nama_terbaca(
+                      "#nontondisnack -Kls INTERNASIONAL-(22).mp4 "
+                      "24 September 2026")
+                  == "#nontondisnack -Kls INTERNASIONAL-(22)"
+                  and rapikan_nama_terbaca("melati (2).mkv 12:30")
+                  == "melati (2)"
+                  and rapikan_nama_terbaca("nontondisnack (22).TS "
+                                           "sisa teks")
+                  == "nontondisnack (22)")
             print("OCR_MIRIP_OK",
                   kemiripan_teks("abc", "abc") == 1.0
                   and kemiripan_teks("abc", "abd") > 0.6

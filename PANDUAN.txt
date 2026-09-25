@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.3 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.4 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -368,6 +368,31 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.4 - HASIL BACA OCR DIPOTONG SAMPAI EKSTENSI FILE:
+  Umpan balik: OCR sudah berhasil membaca nama video, tapi
+  kadang area bacaan ikut membaca TEKS LAIN di sekitar nama
+  (tanggal rilis, ukuran file, tulisan UI, bahkan nama baris
+  lain) - semuanya ikut terbawa ke pencocokan.
+  Aturan baru (OTOMATIS, tanpa setelan apa pun): karena nama
+  video SELALU berakhir dengan ekstensi, hasil bacaan dipotong
+  tepat di akhir EKSTENSI PALING AWAL yang dikenal - .mp4,
+  .mkv, .ts, .mov, .avi, .webm, .m4v, .3gp, .flv, .wmv. Apa
+  pun teks SETELAH ekstensi itu dibuang.
+  Contoh:
+  - '#nontondisnack -Kls INTERNASIONAL-(22).mp4 24 September
+    2026 10:30 - 12 MB'  ->  dipakai hanya sampai '...(22).mp4'.
+  - Area kelewat lebar sampai kebaca 2 baris? 'a.mkv b.mp4
+    c.ts'  ->  dipakai 'a.mkv' (baris pertama) saja.
+  - Ekstensi yang menempel huruf/angka ('.mp4x', '.mp42026')
+    TIDAK dianggap akhir nama - salah baca OCR tidak memotong
+    nama di tengah.
+  - Nama tanpa ekstensi terbaca? Aman - teks dipakai apa
+    adanya seperti cara lama (pencocokan AI tetap bekerja).
+  Berlaku di SEMUA jalur OCR: kartu BACA NAMA VIDEO DI LAYAR
+  (tab CutMotions), langkah ISI VIDEO & CAPTION mode OCR
+  (Studio maupun sisipan gaya Studio di alur A-J), dan tombol
+  TES BACA NAMA.
 
 BARU DI V6.3 - BACA NAMA VIDEO DI LAYAR (OCR) - CAPTION SELALU
   SAMA DENGAN VIDEO YANG SEDANG DIUPLOAD:

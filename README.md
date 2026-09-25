@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.3)
+# CutUploader Pro — Macro Studio Edition (v6.4)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.3**:
+Dari halaman [Releases](../../releases) rilis **v6.4**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.3.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.4.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,17 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v6.4: hasil baca OCR dipotong SAMPAI EKSTENSI FILE saja
+
+**Umpan balik**: OCR sudah berhasil membaca nama video, tapi kadang area bacaan ikut membaca **teks lain** di sekitar nama (tanggal rilis, ukuran file, tulisan UI, bahkan nama baris lain) — semuanya ikut terbawa.
+
+**Aturan baru (otomatis, tanpa setelan)**: karena nama video **selalu berakhir dengan ekstensi**, hasil bacaan dipotong tepat di akhir **ekstensi paling awal** yang dikenal — `.mp4`, `.mkv`, `.ts`, `.mov`, `.avi`, `.webm`, `.m4v`, `.3gp`, `.flv`, `.wmv`. Apa pun teks **setelah** ekstensi itu dibuang.
+
+- `#nontondisnack -Kls INTERNASIONAL-(22).mp4 24 September 2026 10:30 - 12 MB` → dipakai `#nontondisnack -Kls INTERNASIONAL-(22).mp4` saja.
+- Area kelewat lebar sampai membaca 2 baris? `a.mkv b.mp4 c.ts` → dipakai `a.mkv` (baris pertama) saja.
+- Ekstensi yang menempel huruf/angka (`.mp4x`, `.mp42026`) **tidak** dianggap akhir nama — salah baca OCR tidak memotong nama di tengah.
+- Nama tanpa ekstensi terbaca? Aman — teks dipakai apa adanya seperti cara lama (pencocokan AI tetap bekerja).
 
 ### Baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — caption SELALU sama dengan video yang diupload
 
@@ -173,6 +184,12 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `rapidocr-onnxruntime`, `pyinstaller` (dev).
+
+## Perubahan v6.4
+
+- **Fungsi baru `potong_sampai_ekstensi()`**: hasil baca OCR dipotong tepat di akhir **ekstensi file paling awal** yang dikenal (10 ekstensi: `.mp4 .mov .avi .mkv .webm .m4v .3gp .flv .wmv .ts`); semua teks setelahnya dibuang. Batas kata diperiksa — ekstensi yang menempel huruf/angka/titik (`.mp4x`, `.mp42026`, `file.mp4.backup`) tidak dianggap akhir nama.
+- **`rapikan_nama_terbaca()` kini memanggil aturan potong dulu** — berlaku otomatis di SEMUA jalur OCR: langkah ISI VIDEO & CAPTION (Studio + sisipan gaya Studio di alur A-J), kartu BACA NAMA VIDEO DI LAYAR tab CutMotions (fase caption), dan tombol TES BACA NAMA. Tanpa setelan baru.
+- Selftest `--selftest-ocr` bertambah 3 cek (POTONG, POTONG2, RAPIKAN3) — total 16/16 True; regresi selftest lain tetap hijau.
 
 ## Perubahan v6.3
 
