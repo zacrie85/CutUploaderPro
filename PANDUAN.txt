@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.5 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.6 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -368,6 +368,27 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.6 - TAMPILAN BARU "MERAH-PUTIH MODERN":
+  Aplikasi disegarkan total TANPA mengubah cara kerja fitur
+  apa pun (profil & makro lama tetap terbaca):
+  1. TEMA MERAH-PUTIH - latar putih bersih, aksen merah
+     (tombol JALANKAN, judul kartu, baris terpilih, sidebar).
+  2. SIDEBAR NAVIGASI - tab di atas diganti bilah merah di
+     kiri: logo + nama aplikasi + chip versi + 2 tombol
+     halaman (STUDIO MAKRO / ALUR CUTMOTIONS) + hint hotkey.
+     Halaman aktif ditandai tombol putih.
+  3. TATA LETAK 2 KOLOM (kedua halaman) - kartu VIDEO &
+     CAPTION dan WAKTU & UNGGAH (tab CutMotions) serta VIDEO
+     & CAPTION STUDIO dan MUNDUR (tab Studio) pindah ke kolom
+     kiri yang BISA DIGULIR (scrollbar + roda mouse) - tidak
+     ada lagi bagian kartu terpotong; tabel langkah + panel
+     PROPERTI makin lega di kanan.
+  4. TOOLBAR DIRAPI - tombol sekunder font lebih kecil,
+     tersusun per kelompok, semua tombol utuh tanpa terpotong.
+  5. Kolom tabel disesuaikan agar pas; jendela minimal kini
+     1160x760.
+  Uji: python cut_uploader.py --selftest-tema  (21 cek).
 
 BARU DI V6.5 - PERBAIKAN MENGETIK DI SEMUA BOX:
   Keluhan: di semua box isian (panel PROPERTI, kartu VIDEO &

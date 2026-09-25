@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v6.5  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v6.6  -  MACRO STUDIO EDITION
+  (Tema MERAH-PUTIH MODERN + Sidebar Navigasi)
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
-  DUA MODE DALAM SATU APLIKASI (pilih lewat tab di atas):
+  DUA MODE DALAM SATU APLIKASI (pilih lewat MENU DI KIRI):
 
   1. STUDIO MAKRO  (BARU v5.0)
      Editor alur kerja bebas ala Jitbit Macro Recorder:
@@ -119,6 +120,14 @@
        mengetik - box yang sedang dipakai ikut terhancurkan.
        Kini panel hanya dirender ulang bila baris terpilihnya
        benar-benar berubah, jadi mengetik panjang lancar.
+     - v6.6: TAMPILAN BARU "MERAH-PUTIH MODERN" - aplikasi
+       disegarkan total: tema terang PUTIH BERSIH dengan
+       aksen MERAH, SIDEBAR NAVIGASI merah di kiri (logo,
+       tombol halaman, chip versi & hint hotkey) menggantikan
+       tab di atas, dan tata letak baru 2 KOLOM di kedua
+       halaman: kartu pengaturan (VIDEO & CAPTION, WAKTU &
+       UNGGAH) pindah ke kolom kiri yang rapi, sementara
+       tabel langkah + panel PROPERTI makin lega di kanan.
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -203,6 +212,12 @@
      - v6.5: PERBAIKAN MENGETIK - kursor tidak lagi keluar dari
        box setelah 1 huruf (panel properti tidak dirender ulang
        lagi di tengah mengetik; lihat daftar v6.5 di atas).
+     - v6.6: desain & tata letak baru "MERAH-PUTIH MODERN":
+       sidebar navigasi merah di kiri + kolom pengaturan kiri
+       (VIDEO & CAPTION + WAKTU & UNGGAH) + area kerja tabel
+       dan PROPERTI yang lebih luas di kanan. Semua fitur
+       tetap ada di tempat logisnya; profil & makro lama
+       tetap terbaca persis seperti sebelumnya.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -319,7 +334,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.5"
+APP_VERSION = "6.6"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -437,29 +452,38 @@ def muat_thumbnail(path, maks_w=190, maks_h=54):
 
 
 # ------------------------------------------------------------
-# v5.6 - Tema warna MODERN "DARK GLASS": navy pekat, panel
-# kaca (permukaan sedikit lebih terang + garis bingkai tipis),
-# dan aksen neon. Semua widget memakai konstanta di bawah,
-# jadi tema bisa diubah dari satu tempat.
 # ------------------------------------------------------------
-C_BG      = "#0B1020"   # latar jendela (navy pekat)
-C_PANEL   = "#131A2E"   # permukaan kaca (tabel / kotak isian)
-C_PANEL2  = "#1B2440"   # kaca lebih terang (heading, tombol netral)
-C_LINE    = "#2B3860"   # garis bingkai kaca
-C_BLUE    = "#3B82F6"   # aksen utama (biru elektrik)
-C_BLUE_D  = "#60A5FA"   # versi terang (teks aksen / tombol ditekan)
-C_BLUE_L  = "#16294D"   # sorotan lembut (tombol sekunder)
-C_RED     = "#EF4444"   # merah neon (BERHENTI)
-C_RED_D   = "#B91C1C"
-C_GREEN   = "#34D399"   # hijau neon (teks status)
-C_GREEN_D = "#059669"   # hijau tombol (+ TAMBAH LANGKAH)
-C_ORANGE  = "#FBBF24"   # aksen jeda / peringatan
-C_TEXT    = "#E9EEFB"   # teks utama (hampir putih)
-C_MUTED   = "#8E9BC0"   # teks redup
-C_STRIPE  = "#0F1628"   # garis zebra tabel
-C_SELROW  = "#1D3557"   # baris / sorotan terpilih
-C_UNGU    = "#A78BFA"   # langkah TEKAN TOMBOL / ULANGI / langkah "S"
-C_TEAL    = "#2DD4BF"   # langkah SCROLL
+# v6.6 - Tema warna MODERN "MERAH-PUTIH": putih bersih dengan
+# aksen merah (identitas bendera). Nama-nama konstanta lama
+# DIPERTAHANKAN (C_BLUE = aksen utama, dst) supaya seluruh
+# widget di seluruh file otomatis ikut tema baru tanpa harus
+# diubah satu per satu - cukup ganti nilai di sini.
+# ------------------------------------------------------------
+C_BG      = "#FFFFFF"   # latar jendela & kartu (putih bersih)
+C_PANEL   = "#FFF5F5"   # kotak isian / tabel (merah muda lembut)
+C_PANEL2  = "#FDECEC"   # heading, tombol netral (merah muda)
+C_LINE    = "#F2D7D7"   # garis bingkai kartu (merah muda pucat)
+C_BLUE    = "#DC2626"   # AKSEN UTAMA = MERAH CUTUPLOADER
+C_BLUE_D  = "#B91C1C"   # versi tua (teks aksen / tombol ditekan)
+C_BLUE_L  = "#FEE2E2"   # sorotan lembut (tombol sekunder)
+C_RED     = "#991B1B"   # merah gelap (tombol BERHENTI)
+C_RED_D   = "#7F1D1D"
+C_GREEN   = "#15803D"   # teks status (hijau tua, terbaca di putih)
+C_GREEN_D = "#16A34A"   # hijau tombol (+ TAMBAH LANGKAH)
+C_ORANGE  = "#D97706"   # aksen jeda / peringatan
+C_TEXT    = "#1F2937"   # teks utama (abu gelap pekat)
+C_MUTED   = "#8A8F99"   # teks redup
+C_STRIPE  = "#FFF9F9"   # garis zebra tabel
+C_SELROW  = "#FECACA"   # baris / sorotan terpilih
+C_UNGU    = "#7C3AED"   # langkah TEKAN TOMBOL / ULANGI / langkah "S"
+C_TEAL    = "#0D9488"   # langkah SCROLL
+
+# v6.6: warna SIDEBAR NAVIGASI merah di kiri jendela
+SIDEBAR_BG   = "#B91C1C"   # badan sidebar (merah tua)
+SIDEBAR_BG2  = "#991B1B"   # tombol nav tidak aktif
+SIDEBAR_AKT  = "#FFFFFF"   # tombol nav aktif (putih)
+SIDEBAR_TEKS = "#FFE4E6"   # teks sekunder di sidebar
+LEBAR_KIRI   = 384         # v6.6: lebar kolom pengaturan (2 kolom)
 
 # v5.6: bungkus tk.Entry & tk.Checkbutton supaya tema gelap
 # otomatis (kursor Entry putih, kotak centang gelap) tanpa
@@ -553,7 +577,7 @@ class TombolKapsul(tk.Canvas):
     """
 
     def __init__(self, parent, teks="", perintah=None, bg=None,
-                 fg=None, font=None, radius=11, padx=13, tinggi=32,
+                 fg=None, font=None, radius=11, padx=11, tinggi=32,
                  garis=None, lebar_min=0):
         try:
             latar = parent.cget("bg")
@@ -810,6 +834,115 @@ class HeaderKilau(tk.Canvas):
         self.create_text(w - vw - 48, tengah,
                          text="F6 Mulai   |   F7 / ESC Berhenti",
                          anchor="e", fill=C_MUTED, font=F_S)
+
+
+class SidebarMerah(tk.Frame):
+    """v6.6: bilah navigasi MERAH di kiri jendela (pengganti tab).
+
+    Berisi merek aplikasi (logo + nama + chip versi), dua tombol
+    halaman (STUDIO MAKRO / ALUR CUTMOTIONS) yang diisi ShellApp
+    lewat .wadah_nav, serta hint hotkey di bagian bawah.
+    Tombol halaman memakai TombolKapsul supaya efek sorot/tekan
+    tetap hidup; keadaan aktif = putih dengan teks merah.
+    """
+
+    def __init__(self, parent, lebar=228):
+        super().__init__(parent, bg=SIDEBAR_BG, width=lebar)
+        self.pack_propagate(False)
+        self._lebar = lebar
+
+        # ---------- merek ----------
+        atas = tk.Frame(self, bg=SIDEBAR_BG)
+        atas.pack(side="top", fill="x", padx=16, pady=(18, 0))
+        logo = tk.Canvas(atas, width=48, height=48, bg=SIDEBAR_BG,
+                         highlightthickness=0, bd=0)
+        logo.pack(side="top", anchor="w")
+        kotak_bulat(logo, 1, 1, 47, 47, 13, fill="#FFFFFF", outline="")
+        logo.create_polygon(19, 13, 19, 35, 38, 24,
+                            fill=C_BLUE, smooth=True)
+        tk.Label(self, text="CUTUPLOADER", bg=SIDEBAR_BG, fg="#FFFFFF",
+                 font=("Segoe UI", 15, "bold")).pack(
+            anchor="w", padx=16, pady=(8, 0))
+        tk.Label(self, text="PRO  \u2022  MACRO STUDIO", bg=SIDEBAR_BG,
+                 fg=SIDEBAR_TEKS, font=("Segoe UI", 8)).pack(
+            anchor="w", padx=17)
+        chip = tk.Label(self, text="v{}".format(APP_VERSION),
+                        bg="#FFFFFF", fg=SIDEBAR_BG,
+                        font=("Segoe UI", 9, "bold"), padx=9, pady=2)
+        chip.pack(anchor="w", padx=16, pady=(8, 14))
+
+        # ---------- pemisah ----------
+        tk.Frame(self, bg="#7F1D1D", height=1).pack(
+            fill="x", padx=16, pady=(0, 14))
+
+        # ---------- wadah tombol halaman (diisi ShellApp) ----------
+        self.wadah_nav = tk.Frame(self, bg=SIDEBAR_BG)
+        self.wadah_nav.pack(side="top", fill="x", padx=12)
+
+        # ---------- kaki sidebar: hint hotkey ----------
+        tk.Frame(self, bg="#7F1D1D", height=1).pack(
+            side="bottom", fill="x", padx=16, pady=(0, 10))
+        kaki = tk.Frame(self, bg=SIDEBAR_BG)
+        kaki.pack(side="bottom", fill="x", padx=17, pady=(0, 10))
+        tk.Label(kaki, text="F6  =  JALANKAN", bg=SIDEBAR_BG,
+                 fg=SIDEBAR_TEKS, font=("Segoe UI", 8, "bold"),
+                 anchor="w").pack(fill="x")
+        tk.Label(kaki, text="F7 / ESC  =  BERHENTI", bg=SIDEBAR_BG,
+                 fg=SIDEBAR_TEKS, font=("Segoe UI", 8),
+                 anchor="w").pack(fill="x")
+        tk.Label(kaki, text="\u00a9 CutUploader Pro", bg=SIDEBAR_BG,
+                 fg="#FCA5A5", font=("Segoe UI", 7),
+                 anchor="w").pack(fill="x", pady=(6, 0))
+
+
+class KolomGulir(tk.Frame):
+    """v6.6: kolom vertikal yang BISA DIGULIR (kolom pengaturan
+    kiri). Isi ditaruh di .badan; lebar isi selalu mengikuti
+    lebar kolom supaya kartu-kartu pas penuh. Kalau tinggi isi
+    melebihi kolom, muncul scrollbar di kanan - tidak ada lagi
+    bagian kartu yang terpotong."""
+
+    def __init__(self, parent, lebar=LEBAR_KIRI):
+        super().__init__(parent, bg=C_BG, width=lebar)
+        self.pack_propagate(False)
+        self.cvs = tk.Canvas(self, bg=C_BG, highlightthickness=0,
+                             bd=0)
+        vsb = ttk.Scrollbar(self, orient="vertical",
+                            command=self.cvs.yview)
+        self.cvs.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        self.cvs.pack(side="left", fill="both", expand=True)
+        self.badan = tk.Frame(self.cvs, bg=C_BG)
+        self._win = self.cvs.create_window(
+            (0, 0), window=self.badan, anchor="nw")
+        self.cvs.bind("<Configure>", self._atur_lebar)
+        self.badan.bind(
+            "<Configure>",
+            lambda _e: self.cvs.configure(
+                scrollregion=self.cvs.bbox("all")))
+        # gulir roda mouse (Windows: MouseWheel, Linux: Button-4/5)
+        for urutan in (self.cvs, self.badan):
+            urutan.bind("<MouseWheel>", self._roda)
+            urutan.bind("<Button-4>", self._roda)
+            urutan.bind("<Button-5>", self._roda)
+
+    def _atur_lebar(self, _e=None):
+        self.cvs.itemconfigure(self._win,
+                               width=self.cvs.winfo_width())
+
+    def _roda(self, e):
+        try:
+            num = getattr(e, "num", None)
+            if num == 4:
+                self.cvs.yview_scroll(-2, "units")
+            elif num == 5:
+                self.cvs.yview_scroll(2, "units")
+            else:
+                self.cvs.yview_scroll(
+                    -2 if getattr(e, "delta", 0) > 0 else 2,
+                    "units")
+        except Exception:
+            pass
 
 
 def render_properti_multi(tab, pilihan, catatan=""):
@@ -2922,66 +3055,81 @@ class CutMotionsTab(PerekamAksiMixin):
                      text="v{}  |  F6 = Mulai   F7/ESC = Berhenti".format(
                          APP_VERSION)).pack(side="right", padx=6)
 
-        # ----- Strip WAKTU (kartu membulat, di atas statusbar) -----
-        kartu_w = KartuBulat(self.root,
-                             judul="WAKTU & UNGGAH (detik)",
+        # ----- v6.6: TATA LETAK 2 KOLOM -----
+        #  kiri  = kolom pengaturan BISA DIGULIR: kartu VIDEO &
+        #          CAPTION lalu kartu WAKTU & UNGGAH
+        #  kanan = area kerja: toolbar + tabel langkah + PROPERTI
+        kiri = KolomGulir(self.root, lebar=LEBAR_KIRI)
+        kiri.pack(side="left", fill="y", padx=(8, 4), pady=(4, 8))
+        kanan = tk.Frame(self.root, bg=C_BG)
+        kanan.pack(side="left", fill="both", expand=True)
+        self.kolom_kiri = kiri
+        self.area_kanan = kanan
+
+        # ----- Kartu WAKTU & UNGGAH (kolom kiri, di bawah kartu
+        #       VIDEO & CAPTION) -----
+        kartu_w = KartuBulat(kiri.badan, judul="WAKTU & UNGGAH (detik)",
                              padding=(10, 6, 10, 8))
-        kartu_w.pack(side="bottom", fill="x", padx=8, pady=(0, 4))
+        kartu_w.pack(side="top", fill="x", pady=(0, 6))
+        self.kartu_waktu = kartu_w
         w = kartu_w.badan
-        row = tk.Frame(w, bg=C_BG)
-        row.pack(fill="x", padx=8, pady=(4, 2))
-        for kunci, label, lebar in [
-            ("mundur", "MUNDUR SEBELUM MULAI", 5),
-            ("jeda_dialog", "JEDA BUKA DIALOG/EDITOR", 5),
-            ("jeda_langkah", "JEDA ANTAR LANGKAH (default)", 5),
-            ("tunggu", "TUNGGU UPLOAD PER VIDEO", 6),
+        # v6.6: 4 kotak waktu tersusun rapi 2x2
+        bts_w1 = tk.Frame(w, bg=C_BG)
+        bts_w1.pack(fill="x", pady=(2, 1))
+        bts_w2 = tk.Frame(w, bg=C_BG)
+        bts_w2.pack(fill="x", pady=(1, 2))
+        for baris_w, kunci, label in [
+            (bts_w1, "mundur", "MUNDUR SEBELUM MULAI"),
+            (bts_w1, "jeda_dialog", "JEDA BUKA DIALOG/EDITOR"),
+            (bts_w2, "jeda_langkah", "JEDA ANTAR LANGKAH"),
+            (bts_w2, "tunggu", "TUNGGU UPLOAD / VIDEO"),
         ]:
-            cell = tk.Frame(row, bg=C_BG)
-            cell.pack(side="left", padx=(0, 12))
+            cell = tk.Frame(baris_w, bg=C_BG)
+            cell.pack(side="left", fill="x", expand=True, padx=(0, 8))
             tk.Label(cell, text=label, bg=C_BG, fg=C_MUTED,
                      font=F_XS, anchor="w").pack(anchor="w")
-            tk.Entry(cell, textvariable=self.vars[kunci], width=lebar,
+            tk.Entry(cell, textvariable=self.vars[kunci], width=6,
                      bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1,
                      font=F_N, justify="center",
                      highlightthickness=0).pack(anchor="w", ipady=3)
-        tk.Button(row, text="TERAPKAN JEDA ANTAR\nLANGKAH KE SEMUA "
-                            "LANGKAH",
+        tk.Button(w, text="TERAPKAN JEDA ANTAR LANGKAH\nKE SEMUA "
+                          "LANGKAH",
                   command=self._terapkan_jeda_semua, bg=C_BLUE_L,
                   fg=C_BLUE_D, font=F_XS, relief="raised", bd=1,
-                  cursor="hand2", activebackground=C_SELROW).pack(
-                      side="left", padx=(0, 12), pady=2)
-        kol = tk.Frame(w, bg=C_BG)
-        kol.pack(side="left", padx=(0, 4))
-        tk.Checkbutton(kol, text="Lewati video yang sudah pernah "
-                                 "terupload (riwayat otomatis)",
+                  cursor="hand2",
+                  activebackground=C_SELROW).pack(fill="x", pady=(0, 3))
+        tk.Checkbutton(w, text="Lewati video yang sudah pernah "
+                               "terupload (riwayat otomatis)",
                        variable=self.vars["skip_uploaded"],
                        bg=C_BG, fg=C_TEXT, font=F_XS, anchor="w",
-                       command=self._update_count).pack(anchor="w")
-        tk.Checkbutton(kol, text="Lewati langkah JADWAL (A-E) - langsung "
-                                 "ke 'Tambah video'",
+                       wraplength=352, justify="left",
+                       command=self._update_count).pack(fill="x")
+        tk.Checkbutton(w, text="Lewati langkah JADWAL (A-E) - langsung "
+                               "ke 'Tambah video'",
                        variable=self.vars["skip_jadwal"],
-                       bg=C_BG, fg=C_TEXT, font=F_XS,
-                       anchor="w").pack(anchor="w")
+                       bg=C_BG, fg=C_TEXT, font=F_XS, anchor="w",
+                       wraplength=352, justify="left").pack(fill="x")
         tk.Label(w, text="MUNDUR = persiapan sebelum mulai.  "
-                         "JEDA BUKA DIALOG/EDITOR = menunggu dialog pilih "
-                         "file / editor / dropdown terbuka.  "
-                         "JEDA ANTAR LANGKAH = nilai awal kolom JEDA di "
-                         "tabel (bisa dioverride per langkah).  "
-                         "TUNGGU UPLOAD PER VIDEO dikali jumlah video.",
+                         "JEDA BUKA DIALOG/EDITOR = menunggu dialog / "
+                         "editor terbuka.  JEDA ANTAR LANGKAH = nilai "
+                         "awal kolom JEDA di tabel.  TUNGGU UPLOAD PER "
+                         "VIDEO dikali jumlah video.",
                  bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
-                 justify="left").pack(fill="x", padx=8, pady=(0, 4))
+                 justify="left", wraplength=352).pack(fill="x",
+                                                      pady=(0, 4))
 
-        # ----- Toolbar v5.7 (kartu MEMBULAT + tombol kapsul
-        #      mengkilat; tetap MAKS 7 TOMBOL per baris) -----
-        tb = KartuBulat(self.root, radius=14, padding=(10, 7, 10, 8))
-        tb.pack(side="top", fill="x", padx=6, pady=(6, 2))
+        # ----- Toolbar (area kanan atas) -----
+        tb = KartuBulat(kanan, radius=14, padding=(10, 7, 10, 8))
+        tb.pack(side="top", fill="x", padx=6, pady=(6, 0))
         tb_r1 = tk.Frame(tb.badan, bg=C_BG)
         tb_r1.pack(side="top", fill="x")
         tb_r2 = tk.Frame(tb.badan, bg=C_BG)
         tb_r2.pack(side="top", fill="x")
-        self.btn_start = self._tb_btn(tb_r1, "JALANKAN  (F6)", self._start,
-                                      bg=C_BLUE, fg="white",
-                                      aktif=C_BLUE_D)
+        tb_r3 = tk.Frame(tb.badan, bg=C_BG)
+        tb_r3.pack(side="top", fill="x")
+        self.btn_start = self._tb_btn(tb_r1, "JALANKAN  (F6)",
+                                      self._start, bg=C_BLUE,
+                                      fg="white", aktif=C_BLUE_D)
         self.btn_stop = self._tb_btn(tb_r1, "BERHENTI  (F7)", self._stop,
                                      bg=C_RED, fg="white",
                                      aktif=C_RED_D)
@@ -3000,60 +3148,74 @@ class CutMotionsTab(PerekamAksiMixin):
                                     menu=m_tambah, bg=C_GREEN_D,
                                     fg="white")
         self.mb_tambah.pack(side="left", padx=(2, 2), pady=2)
-        self._tb_pemisah(tb_r1)
-        self._tb_btn(tb_r1, "TES CARI GAMBAR", self._tes_cari)
-        self._tb_btn(tb_r1, "POTONG GAMBAR REFERENSI", self._potong_gambar)
-        self._tb_btn(tb_r1, "SALIN LANGKAH", self._salin_langkah)
-        self._tb_btn(tb_r2, "TEMPEL LANGKAH", self._tempel_langkah)
-        self._tb_btn(tb_r2, "HAPUS SALINAN", self._hapus_langkah)
+        # v6.6: baris 2 & 3 - alat bantu (font kecil agar muat di
+        # lebar kolom kanan yang lebih sempit)
+        self._tb_btn(tb_r2, "TES CARI GAMBAR", self._tes_cari,
+                     font=F_XS)
+        self._tb_btn(tb_r2, "POTONG GAMBAR REFERENSI", self._potong_gambar,
+                     font=F_XS)
         self._tb_pemisah(tb_r2)
-        self._tb_btn(tb_r2, "SIMPAN PROFIL", self._simpan_profil)
-        self._tb_btn(tb_r2, "BUKA PROFIL", self._buka_profil)
+        self._tb_btn(tb_r2, "SALIN LANGKAH", self._salin_langkah,
+                     font=F_XS)
+        self._tb_btn(tb_r2, "TEMPEL LANGKAH", self._tempel_langkah,
+                     font=F_XS)
+        self._tb_btn(tb_r3, "HAPUS SALINAN", self._hapus_langkah,
+                     font=F_XS)
+        self._tb_pemisah(tb_r3)
+        self._tb_btn(tb_r3, "SIMPAN PROFIL", self._simpan_profil,
+                     font=F_XS)
+        self._tb_btn(tb_r3, "BUKA PROFIL", self._buka_profil,
+                     font=F_XS)
 
-        # ----- Strip VIDEO & CAPTION (kartu membulat) -----
+        # ----- Kartu VIDEO & CAPTION (kolom kiri, bagian atas) -----
         # v6.1: TANPA PILIH FOLDER - user cukup memilih file
         # videonya langsung (bisa banyak + campur folder); nama
         # masing-masing LANGSUNG TERSIMPAN di daftar di bawah,
         # dipakai PERSIS untuk caption, dan otomatis kosong lagi
         # setelah alur selesai.
-        kartu_v = KartuBulat(self.root, judul="VIDEO & CAPTION",
+        kartu_v = KartuBulat(kiri.badan, judul="VIDEO & CAPTION",
                              padding=(10, 6, 10, 8))
-        kartu_v.pack(side="top", fill="x", padx=8, pady=(6, 4))
+        # before=kartu_w: VIDEO & CAPTION tampil di ATAS kartu WAKTU
+        kartu_v.pack(side="top", fill="x", before=kartu_w)
+        self.kartu_video = kartu_v
         v = kartu_v.badan
-        r1 = tk.Frame(v, bg=C_BG)
-        r1.pack(fill="x", padx=8, pady=(4, 2))
-        tk.Label(r1, text="VIDEO TERPILIH", bg=C_BG, fg=C_MUTED,
-                 font=F_XS, anchor="w").pack(side="left")
+        tk.Label(v, text="VIDEO TERPILIH", bg=C_BG, fg=C_MUTED,
+                 font=F_XS, anchor="w").pack(fill="x", pady=(2, 0))
         self.lbl_video_status = tk.Label(
-            r1, text="Belum ada video - klik PILIH VIDEO...",
-            bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w")
-        self.lbl_video_status.pack(side="left", fill="x", expand=True,
-                                   padx=6)
-        tk.Button(r1, text="PILIH VIDEO...", command=self._pilih_video,
+            v, text="Belum ada video - klik PILIH VIDEO...",
+            bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
+            wraplength=352, justify="left")
+        self.lbl_video_status.pack(fill="x", pady=(0, 3))
+        # v6.6: tombol video tersusun rapi 2x2 (pas kolom sempit)
+        rv1 = tk.Frame(v, bg=C_BG)
+        rv1.pack(fill="x")
+        tk.Button(rv1, text="PILIH VIDEO...", command=self._pilih_video,
                   bg=C_BLUE, fg="white", font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_BLUE_D).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r1, text="TAMBAH VIDEO...", command=self._tambah_video,
+                  activebackground=C_BLUE_D).pack(side="left", padx=(0, 4),
+                                                  ipadx=4, ipady=2)
+        tk.Button(rv1, text="TAMBAH VIDEO...", command=self._tambah_video,
                   bg=C_BLUE_L, fg=C_BLUE_D, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r1, text="HAPUS TERPILIH",
+                  activebackground=C_SELROW).pack(side="left", ipadx=4,
+                                                  ipady=2)
+        rv2 = tk.Frame(v, bg=C_BG)
+        rv2.pack(fill="x", pady=(3, 3))
+        tk.Button(rv2, text="HAPUS TERPILIH",
                   command=self._hapus_video_pilihan,
                   bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r1, text="KOSONGKAN", command=self._kosongkan_video,
+                  activebackground=C_SELROW).pack(side="left", padx=(0, 4),
+                                                  ipadx=4, ipady=2)
+        tk.Button(rv2, text="KOSONGKAN", command=self._kosongkan_video,
                   bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
+                  activebackground=C_SELROW).pack(side="left", ipadx=4,
+                                                  ipady=2)
         # ---- daftar nama video yang tersimpan (bisa dipilih utk
         #      dihapus per item lewat HAPUS TERPILIH) ----
         f_daftar = tk.Frame(v, bg=C_BG)
-        f_daftar.pack(fill="x", padx=8, pady=(0, 2))
+        f_daftar.pack(fill="x", pady=(0, 3))
         self.lb_video = tk.Listbox(
             f_daftar, bg=C_PANEL, fg=C_TEXT, font=F_MONO,
             relief="solid", bd=1, height=4, exportselection=False,
@@ -3064,102 +3226,100 @@ class CutMotionsTab(PerekamAksiMixin):
         self.lb_video.configure(yscrollcommand=vsb_v.set)
         vsb_v.pack(side="left", fill="y")
         r2 = tk.Frame(v, bg=C_BG)
-        r2.pack(fill="x", padx=8, pady=(0, 2))
+        r2.pack(fill="x", pady=(0, 2))
         tk.Label(r2, text="JUMLAH VIDEO (maks {}):".format(MAX_BATCH),
                  bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
         tk.Entry(r2, textvariable=self.vars["jumlah"], width=5,
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
                  justify="center",
-                 highlightthickness=0).pack(side="left", padx=(4, 12),
-                                            ipady=3)
-        tk.Label(r2, text="CAPTION DASAR:", bg=C_BG, fg=C_MUTED,
-                 font=F_XS).pack(side="left")
-        tk.Entry(r2, textvariable=self.vars["caption"], width=28,
-                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
-                 highlightthickness=0).pack(side="left", padx=(4, 12),
+                 highlightthickness=0).pack(side="left", padx=(4, 0),
                                             ipady=3)
         self.lbl_count = tk.Label(r2, text="-", bg=C_BG, fg=C_BLUE,
-                                  font=F_XS, anchor="w")
-        self.lbl_count.pack(side="left", fill="x", expand=True)
+                                  font=F_XS, anchor="e",
+                                  wraplength=130, justify="right")
+        self.lbl_count.pack(side="right")
+        rc = tk.Frame(v, bg=C_BG)
+        rc.pack(fill="x", pady=(0, 2))
+        tk.Label(rc, text="CAPTION DASAR:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        tk.Entry(rc, textvariable=self.vars["caption"], width=24,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 highlightthickness=0).pack(side="left", padx=(4, 0),
+                                            ipady=3)
         self.lbl_preview = tk.Label(v, text="-", bg=C_BG, fg=C_GREEN,
-                                    font=F_MONO, anchor="w")
-        self.lbl_preview.pack(fill="x", padx=8, pady=(0, 4))
+                                    font=F_MONO, anchor="w",
+                                    wraplength=352, justify="left")
+        self.lbl_preview.pack(fill="x", pady=(0, 2))
         # v6.0: KETIK NAMA FILE - video yang diupload PASTI sama
         # dengan nama yang dipakai di caption
-        r_ketik = tk.Frame(v, bg=C_BG)
-        r_ketik.pack(fill="x", padx=8, pady=(0, 2))
         tk.Checkbutton(
-            r_ketik, text="KETIK NAMA FILE di dialog pilih file - nama "
-                          "video yang diupload PASTI sama dengan caption "
-                          "(disarankan)",
+            v, text="KETIK NAMA FILE di dialog pilih file - nama "
+                    "video yang diupload PASTI sama dengan caption "
+                    "(disarankan)",
             variable=self.vars["ketik_nama"], bg=C_BG, fg=C_TEXT,
-            font=F_XS, anchor="w").pack(anchor="w")
-        tk.Label(
-            r_ketik, text="Aktif: aplikasi mengetik nama-nama video "
-                          "TERPILIH (path lengkap) di kotak 'Nama file' "
-                          "dialog sehingga video yang masuk PERSIS daftar "
-                          "caption - dialog boleh terbuka di folder mana "
-                          "pun, tidak perlu disamakan lagi. Langkah H "
-                          "(klik video pertama + Shift+panah) tidak "
-                          "dipakai.",
-            bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+            font=F_XS, anchor="w", wraplength=352,
             justify="left").pack(fill="x")
+        tk.Label(
+            v, text="Aktif: nama-nama video TERPILIH diketik di kotak "
+                    "'Nama file' dialog - video yang masuk PERSIS "
+                    "daftar caption; dialog boleh terbuka di folder "
+                    "mana pun (Langkah H tidak dipakai).",
+            bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+            justify="left", wraplength=352).pack(fill="x")
         # v6.3: BACA NAMA VIDEO DI LAYAR (OCR) - anti salah urutan
         # di fase caption bila urutan video di situs beda dari daftar
-        r_ocr = tk.Frame(v, bg=C_BG)
-        r_ocr.pack(fill="x", padx=8, pady=(0, 2))
         tk.Checkbutton(
-            r_ocr, text="BACA NAMA VIDEO DI LAYAR (OCR) - caption "
-                        "mengikuti nama yang TERBACA di layar tiap "
-                        "baris (urutan upload tidak berpengaruh)",
+            v, text="BACA NAMA VIDEO DI LAYAR (OCR) - caption "
+                    "mengikuti nama yang TERBACA di layar tiap "
+                    "baris (urutan upload tidak berpengaruh)",
             variable=self.vars["baca_ocr"], bg=C_BG, fg=C_TEXT,
-            font=F_XS, anchor="w").pack(anchor="w")
-        r_ocr2 = tk.Frame(v, bg=C_BG)
-        r_ocr2.pack(fill="x", padx=8, pady=(0, 2))
-        tk.Label(r_ocr2, text="AREA NAMA BARIS 1:", bg=C_BG, fg=C_MUTED,
+            font=F_XS, anchor="w", wraplength=352,
+            justify="left").pack(fill="x")
+        ro1 = tk.Frame(v, bg=C_BG)
+        ro1.pack(fill="x", pady=(2, 0))
+        tk.Label(ro1, text="AREA NAMA BARIS 1:", bg=C_BG, fg=C_MUTED,
                  font=F_XS).pack(side="left")
-        tk.Entry(r_ocr2, textvariable=self.vars["ocr_area_txt"], width=24,
+        tk.Entry(ro1, textvariable=self.vars["ocr_area_txt"], width=16,
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
                  highlightthickness=0, state="readonly",
-                 readonlybackground=C_PANEL).pack(side="left", padx=(4, 6),
+                 readonlybackground=C_PANEL).pack(side="left", padx=(4, 0),
                                                   ipady=2)
-        tk.Button(r_ocr2, text="PILIH AREA NAMA...",
+        ro2 = tk.Frame(v, bg=C_BG)
+        ro2.pack(fill="x", pady=(3, 0))
+        tk.Button(ro2, text="PILIH AREA NAMA...",
                   command=self._pilih_area_ocr, bg=C_BLUE, fg="white",
                   font=F_XS, relief="raised", bd=1, cursor="hand2",
-                  activebackground=C_BLUE_D).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r_ocr2, text="KOSONGKAN",
+                  activebackground=C_BLUE_D).pack(side="left", padx=(0, 3),
+                                                  ipadx=3, ipady=2)
+        tk.Button(ro2, text="KOSONGKAN",
                   command=self._kosongkan_area_ocr, bg=C_PANEL2,
                   fg=C_TEXT, font=F_XS, relief="raised", bd=1,
                   cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r_ocr2, text="TES BACA NAMA", command=self._tes_baca_ocr,
+                  activebackground=C_SELROW).pack(side="left", padx=(0, 3),
+                                                  ipadx=3, ipady=2)
+        tk.Button(ro2, text="TES BACA NAMA", command=self._tes_baca_ocr,
                   bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
+                  activebackground=C_SELROW).pack(side="left", ipadx=3,
+                                                  ipady=2)
         tk.Label(
-            r_ocr2, text="<- seret kotak di atas TULISAN NAMA video "
-                         "baris paling atas di situs",
-            bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left", padx=4)
-        tk.Label(
-            r_ocr, text="v6.3 - caption TIDAK SAMA dengan videonya (mis. "
-                        "baris (22) malah dapat caption (1))? Centang ini: "
-                        "sebelum mengetik caption tiap baris, aplikasi "
-                        "MEMBACA tulisan nama videonya di layar (AI/OCR) "
-                        "lalu mengetik caption dari nama itu. Kotak area "
-                        "otomatis bergeser turun mengikuti baris. Butuh "
-                        "mesin OCR (sekali saja): pip install "
-                        "rapidocr-onnxruntime. Kalau tidak terpasang, alur "
-                        "tetap jalan dengan cara biasa.",
+            v, text="v6.3 - caption TIDAK SAMA dengan videonya (mis. "
+                    "baris (22) malah dapat caption (1))? Centang ini: "
+                    "sebelum mengetik caption tiap baris, aplikasi "
+                    "MEMBACA tulisan nama videonya di layar (AI/OCR) "
+                    "lalu mengetik caption dari nama itu; kotak area "
+                    "otomatis bergeser turun mengikuti baris. Butuh "
+                    "mesin OCR (sekali saja): pip install "
+                    "rapidocr-onnxruntime - tanpa itu alur tetap jalan "
+                    "cara biasa. AREA dipilih dengan menyeret kotak di "
+                    "atas TULISAN NAMA video baris teratas di situs.",
             bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
-            justify="left").pack(fill="x")
+            justify="left", wraplength=352).pack(fill="x", pady=(2, 4))
 
         # ----- Area tengah: tabel langkah + panel properti -----
-        paned = tk.PanedWindow(self.root, orient="vertical", sashwidth=5,
+        paned = tk.PanedWindow(kanan, orient="vertical", sashwidth=5,
                                bg=C_LINE, bd=0)
-        paned.pack(side="top", fill="both", expand=True, padx=8, pady=4)
+        paned.pack(side="top", fill="both", expand=True, padx=6, pady=4)
 
         # ---- tabel langkah makro (v5.7: kartu membulat + MULTI-
         #      PILIH: Ctrl+Klik / Shift+Klik / Ctrl+A) ----
@@ -3189,11 +3349,11 @@ class CutMotionsTab(PerekamAksiMixin):
                                  style="Makro.Treeview",
                                  selectmode="extended")
         for k, t, w_, a in [
-            ("no", "#", 44, "center"),
-            ("nama", "LANGKAH", 205, "w"),
-            ("detail", "DETAIL / KOORDINAT", 330, "w"),
-            ("jeda", "JEDA", 62, "center"),
-            ("ulang", "ULANGI", 170, "w"),
+            ("no", "#", 38, "center"),
+            ("nama", "LANGKAH", 180, "w"),
+            ("detail", "DETAIL / KOORDINAT", 240, "w"),
+            ("jeda", "JEDA", 50, "center"),
+            ("ulang", "ULANGI", 140, "w"),
         ]:
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w_, anchor=a, stretch=(k == "detail"))
@@ -3221,10 +3381,11 @@ class CutMotionsTab(PerekamAksiMixin):
         self.prop_body.pack(fill="both", expand=True)
 
     # ---------- pembantu tampilan ----------
-    def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None):
+    def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None,
+                font=None):
         # v5.7: tombol kapsul membulat menggantikan tk.Button datar
         b = TombolKapsul(parent, teks=teks, perintah=cmd,
-                         bg=bg or C_PANEL2, fg=fg or C_TEXT)
+                         bg=bg or C_PANEL2, fg=fg or C_TEXT, font=font)
         b.pack(side="left", padx=3, pady=2)
         return b
 
@@ -7351,9 +7512,19 @@ class StudioMakroTab(PerekamAksiMixin):
 
     # ================== PEMBANGUNAN TAMPILAN ==================
     def _build_ui(self):
-        # ----- Toolbar 1 v5.7 (kartu MEMBULAT + tombol kapsul
-        #      mengkilat; tetap MAKS 7 TOMBOL per baris) -----
-        tb1 = KartuBulat(self.wadah, radius=14, padding=(10, 7, 10, 8))
+        # ----- v6.6: TATA LETAK 2 KOLOM (sama seperti tab CutMotions)
+        #  kiri  = kolom pengaturan BISA DIGULIR: kartu VIDEO &
+        #          CAPTION STUDIO lalu kartu MUNDUR
+        #  kanan = toolbar + tabel alur kerja + PROPERTI
+        kiri = KolomGulir(self.wadah, lebar=LEBAR_KIRI)
+        kiri.pack(side="left", fill="y", padx=(8, 4), pady=(4, 8))
+        kanan = tk.Frame(self.wadah, bg=C_BG)
+        kanan.pack(side="left", fill="both", expand=True)
+        self.kolom_kiri = kiri
+        self.area_kanan = kanan
+
+        # ----- Toolbar 1 (area kanan atas) -----
+        tb1 = KartuBulat(kanan, radius=14, padding=(10, 7, 10, 8))
         tb1.pack(side="top", fill="x", padx=6, pady=(6, 2))
         tb1_r1 = tk.Frame(tb1.badan, bg=C_BG)
         tb1_r1.pack(side="top", fill="x")
@@ -7374,21 +7545,23 @@ class StudioMakroTab(PerekamAksiMixin):
                                       bg="#DC2626", fg="white",
                                       aktif="#EF4444")
         self._tb_pemisah(tb1_r1)
+        # v6.6: tombol tambah-langkah pakai font kecil agar muat
         for jenis in ("KLIK", "JEDA", "GAMBAR", "KETIK"):
             self._tb_btn(tb1_r1, LABEL_TB[jenis],
-                         lambda j=jenis: self._tambah(j))
+                         lambda j=jenis: self._tambah(j), font=F_XS)
         for jenis in ("TANGGAL_JAM", "VIDEO_CAPTION", "TOMBOL",
                       "SCROLL", "CATATAN"):
             self._tb_btn(tb1_r2, LABEL_TB[jenis],
-                         lambda j=jenis: self._tambah(j))
-        self._tb_pemisah(tb1_r2)
-        self._tb_btn(tb1_r2, "+ ULANGI MULAI",
-                     lambda: self._tambah("LOOP_MULAI"))
-        self._tb_btn(tb1_r2, "+ ULANGI AKHIR",
-                     lambda: self._tambah("LOOP_AKHIR"))
+                         lambda j=jenis: self._tambah(j), font=F_XS)
+        tb1_r3 = tk.Frame(tb1.badan, bg=C_BG)
+        tb1_r3.pack(side="top", fill="x")
+        self._tb_btn(tb1_r3, "+ ULANGI - MULAI",
+                     lambda: self._tambah("LOOP_MULAI"), font=F_XS)
+        self._tb_btn(tb1_r3, "+ ULANGI - AKHIR",
+                     lambda: self._tambah("LOOP_AKHIR"), font=F_XS)
 
         # ----- Toolbar 2: sunting + file + alat gambar (kartu) -----
-        tb2 = KartuBulat(self.wadah, radius=14, padding=(10, 7, 10, 8))
+        tb2 = KartuBulat(kanan, radius=14, padding=(10, 7, 10, 8))
         tb2.pack(side="top", fill="x", padx=6, pady=(2, 2))
         tb2_r1 = tk.Frame(tb2.badan, bg=C_BG)
         tb2_r1.pack(side="top", fill="x")
@@ -7409,68 +7582,74 @@ class StudioMakroTab(PerekamAksiMixin):
         self._tb_btn(tb2_r2, "POTONG GAMBAR", self._potong_dari_menu)
         self._tb_btn(tb2_r2, "TES CARI", self._tes_cari)
 
-        # ----- Strip mundur -----
-        strip = tk.Frame(self.wadah, bg=C_BG)
-        strip.pack(side="top", fill="x", padx=8, pady=(4, 0))
-        tk.Label(strip, text="MUNDUR SEBELUM MULAI (detik):", bg=C_BG,
-                 fg=C_MUTED, font=F_XS).pack(side="left")
-        tk.Entry(strip, textvariable=self.vars["mundur"], width=4,
+        # ----- Kartu MUNDUR (kolom kiri, di bawah kartu VIDEO) -----
+        kartu_m = KartuBulat(kiri.badan,
+                             judul="MUNDUR SEBELUM MULAI (detik)",
+                             padding=(10, 6, 10, 8))
+        kartu_m.pack(side="top", fill="x", pady=(0, 6))
+        self.kartu_mundur = kartu_m
+        m = kartu_m.badan
+        tk.Entry(m, textvariable=self.vars["mundur"], width=6,
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
                  justify="center",
-                 highlightthickness=0).pack(side="left", padx=(4, 10),
-                                            ipady=2)
-        tk.Label(strip, text="Jeda setiap langkah diatur lewat kolom JEDA "
-                             "/ panel PROPERTI.  Klik kanan baris = "
-                             "salin/tempel/hapus/urutkan.  Tahan "
-                             "CTRL/SHIFT saat klik = PILIH BANYAK "
-                             "langkah (Ctrl+A = semua).  "
-                             "● REKAM AKSI = klik/ketikan/scrollmu "
-                             "direkam otomatis jadi langkah (F8 = "
-                             "berhenti).",
-                 bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
+                 highlightthickness=0).pack(fill="x", ipady=3)
+        tk.Label(m, text="Jeda setiap langkah diatur lewat kolom JEDA "
+                         "/ panel PROPERTI.  Klik kanan baris = "
+                         "salin/tempel/hapus/urutkan.  Tahan "
+                         "CTRL/SHIFT saat klik = PILIH BANYAK "
+                         "langkah (Ctrl+A = semua).  "
+                         "● REKAM AKSI = klik/ketikan/scrollmu "
+                         "direkam otomatis jadi langkah (F8 = "
+                         "berhenti).",
+                 bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                 justify="left", wraplength=352).pack(fill="x",
+                                                      pady=(3, 2))
 
-        # ----- v6.2: kartu VIDEO & CAPTION (sumber data langkah
-        #      ISI TANGGAL-JAM & ISI VIDEO & CAPTION) -----
-        kartu_v = KartuBulat(self.wadah,
-                             judul="VIDEO & CAPTION STUDIO - sumber data "
-                                   "langkah ISI TANGGAL-JAM & ISI VIDEO "
-                                   "& CAPTION",
+        # ----- Kartu VIDEO & CAPTION STUDIO (kolom kiri, atas) -----
+        # v6.2: sumber data langkah ISI TANGGAL-JAM & ISI VIDEO &
+        # CAPTION.
+        kartu_v = KartuBulat(kiri.badan, judul="VIDEO & CAPTION STUDIO",
                              padding=(10, 6, 10, 8))
-        kartu_v.pack(side="top", fill="x", padx=6, pady=(4, 2))
+        # before=kartu_m: VIDEO & CAPTION tampil di ATAS kartu MUNDUR
+        kartu_v.pack(side="top", fill="x", before=kartu_m)
+        self.kartu_video = kartu_v
         v = kartu_v.badan
-        r1 = tk.Frame(v, bg=C_BG)
-        r1.pack(fill="x", padx=8, pady=(4, 2))
-        tk.Label(r1, text="VIDEO TERPILIH", bg=C_BG, fg=C_MUTED,
-                 font=F_XS, anchor="w").pack(side="left")
+        tk.Label(v, text="VIDEO TERPILIH", bg=C_BG, fg=C_MUTED,
+                 font=F_XS, anchor="w").pack(fill="x", pady=(2, 0))
         self.lbl_video_status = tk.Label(
-            r1, text="Belum ada video - klik PILIH VIDEO... (kosong = "
-                     "data diambil dari tab CutMotions bila ada)",
-            bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w")
-        self.lbl_video_status.pack(side="left", fill="x", expand=True,
-                                   padx=6)
-        tk.Button(r1, text="PILIH VIDEO...", command=self._pilih_video,
+            v, text="Belum ada video - klik PILIH VIDEO... (kosong = "
+                    "data diambil dari tab CutMotions bila ada)",
+            bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
+            wraplength=352, justify="left")
+        self.lbl_video_status.pack(fill="x", pady=(0, 3))
+        # v6.6: tombol video tersusun rapi 2x2 (pas kolom sempit)
+        rv1 = tk.Frame(v, bg=C_BG)
+        rv1.pack(fill="x")
+        tk.Button(rv1, text="PILIH VIDEO...", command=self._pilih_video,
                   bg=C_BLUE, fg="white", font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_BLUE_D).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r1, text="TAMBAH VIDEO...", command=self._tambah_video,
+                  activebackground=C_BLUE_D).pack(side="left", padx=(0, 4),
+                                                  ipadx=4, ipady=2)
+        tk.Button(rv1, text="TAMBAH VIDEO...", command=self._tambah_video,
                   bg=C_BLUE_L, fg=C_BLUE_D, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r1, text="HAPUS TERPILIH",
+                  activebackground=C_SELROW).pack(side="left", ipadx=4,
+                                                  ipady=2)
+        rv2 = tk.Frame(v, bg=C_BG)
+        rv2.pack(fill="x", pady=(3, 3))
+        tk.Button(rv2, text="HAPUS TERPILIH",
                   command=self._hapus_video_pilihan,
                   bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
-        tk.Button(r1, text="KOSONGKAN", command=self._kosongkan_video,
+                  activebackground=C_SELROW).pack(side="left", padx=(0, 4),
+                                                  ipadx=4, ipady=2)
+        tk.Button(rv2, text="KOSONGKAN", command=self._kosongkan_video,
                   bg=C_PANEL2, fg=C_TEXT, font=F_XS, relief="raised",
                   bd=1, cursor="hand2",
-                  activebackground=C_SELROW).pack(side="left", padx=2,
-                                                  ipadx=6, ipady=2)
+                  activebackground=C_SELROW).pack(side="left", ipadx=4,
+                                                  ipady=2)
         f_daftar = tk.Frame(v, bg=C_BG)
-        f_daftar.pack(fill="x", padx=8, pady=(0, 2))
+        f_daftar.pack(fill="x", pady=(0, 3))
         self.lb_video = tk.Listbox(
             f_daftar, bg=C_PANEL, fg=C_TEXT, font=F_MONO,
             relief="solid", bd=1, height=3, exportselection=False,
@@ -7482,42 +7661,48 @@ class StudioMakroTab(PerekamAksiMixin):
         vsb_v.pack(side="left", fill="y")
         # ---- baris tanggal-jam rilis (sumber ISI TANGGAL-JAM) ----
         r_t = tk.Frame(v, bg=C_BG)
-        r_t.pack(fill="x", padx=8, pady=(0, 2))
+        r_t.pack(fill="x", pady=(0, 2))
         tk.Label(r_t, text="TANGGAL & JAM RILIS:", bg=C_BG, fg=C_MUTED,
                  font=F_XS).pack(side="left")
-        tk.Entry(r_t, textvariable=self.vars["tanggal"], width=22,
+        tk.Entry(r_t, textvariable=self.vars["tanggal"], width=21,
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
-                 highlightthickness=0).pack(side="left", padx=(4, 6),
+                 highlightthickness=0).pack(side="left", padx=(4, 0),
                                             ipady=3)
-        tk.Label(r_t, text="format 2026-09-10 02:05:01 (detik boleh "
-                           "dilewat) - dipakai langkah ISI TANGGAL-JAM "
-                           "yang sumbernya 'Studio Makro (tab ini)'",
-                 bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
+        tk.Label(v, text="format 2026-09-10 02:05:01 (detik boleh "
+                         "dilewat) - dipakai langkah ISI TANGGAL-JAM "
+                         "yang sumbernya 'Studio Makro (tab ini)'",
+                 bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                 justify="left", wraplength=352).pack(fill="x",
+                                                      pady=(0, 2))
         # ---- baris jumlah + caption ----
         r2 = tk.Frame(v, bg=C_BG)
-        r2.pack(fill="x", padx=8, pady=(0, 2))
+        r2.pack(fill="x", pady=(0, 2))
         tk.Label(r2, text="JUMLAH VIDEO (maks {}):".format(MAX_BATCH),
                  bg=C_BG, fg=C_MUTED, font=F_XS).pack(side="left")
         tk.Entry(r2, textvariable=self.vars["jumlah"], width=5,
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
                  justify="center",
-                 highlightthickness=0).pack(side="left", padx=(4, 12),
-                                            ipady=3)
-        tk.Label(r2, text="CAPTION DASAR:", bg=C_BG, fg=C_MUTED,
-                 font=F_XS).pack(side="left")
-        tk.Entry(r2, textvariable=self.vars["caption"], width=28,
-                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
-                 highlightthickness=0).pack(side="left", padx=(4, 12),
+                 highlightthickness=0).pack(side="left", padx=(4, 0),
                                             ipady=3)
         self.lbl_count = tk.Label(r2, text="-", bg=C_BG, fg=C_BLUE,
-                                  font=F_XS, anchor="w")
-        self.lbl_count.pack(side="left", fill="x", expand=True)
+                                  font=F_XS, anchor="e",
+                                  wraplength=130, justify="right")
+        self.lbl_count.pack(side="right")
+        rc = tk.Frame(v, bg=C_BG)
+        rc.pack(fill="x", pady=(0, 2))
+        tk.Label(rc, text="CAPTION DASAR:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        tk.Entry(rc, textvariable=self.vars["caption"], width=24,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 highlightthickness=0).pack(side="left", padx=(4, 0),
+                                            ipady=3)
         self.lbl_preview = tk.Label(v, text="-", bg=C_BG, fg=C_GREEN,
-                                    font=F_MONO, anchor="w")
-        self.lbl_preview.pack(fill="x", padx=8, pady=(0, 4))
+                                    font=F_MONO, anchor="w",
+                                    wraplength=352, justify="left")
+        self.lbl_preview.pack(fill="x", pady=(0, 2))
         # ---- pilihan sumber data saat F6 ----
         r_s = tk.Frame(v, bg=C_BG)
-        r_s.pack(fill="x", padx=8, pady=(0, 2))
+        r_s.pack(fill="x", pady=(0, 2))
         tk.Label(r_s, text="AMBIL DATA DARI:", bg=C_BG, fg=C_MUTED,
                  font=F_XS).pack(side="left")
         om = tk.OptionMenu(r_s, self.vars["sumber_data"],
@@ -7525,19 +7710,20 @@ class StudioMakroTab(PerekamAksiMixin):
         om.configure(bg=C_PANEL2, fg=C_TEXT, font=F_XS,
                      activebackground=C_SELROW, relief="raised", bd=1,
                      highlightthickness=0)
-        om.pack(side="left", padx=(6, 10))
-        tk.Label(r_s, text="Otomatis = kartu Studio yang dipakai lebih "
-                           "dulu; kolom yang kosong diambil dari tab "
-                           "CutMotions (cara lama tetap jalan).",
-                 bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w").pack(
-                     side="left", fill="x", expand=True)
+        om.pack(side="left", padx=(6, 0))
+        tk.Label(v, text="Otomatis = kartu Studio yang dipakai lebih "
+                         "dulu; kolom yang kosong diambil dari tab "
+                         "CutMotions (cara lama tetap jalan).",
+                 bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+                 justify="left", wraplength=352).pack(fill="x",
+                                                      pady=(0, 4))
         self.vars["caption"].trace_add("write", self._update_preview)
         self.vars["jumlah"].trace_add("write", self._update_count)
 
         # ----- Area tengah: tabel alur kerja + panel properti -----
-        paned = tk.PanedWindow(self.wadah, orient="vertical",
+        paned = tk.PanedWindow(kanan, orient="vertical",
                                sashwidth=5, bg=C_LINE, bd=0)
-        paned.pack(side="top", fill="both", expand=True, padx=8, pady=4)
+        paned.pack(side="top", fill="both", expand=True, padx=6, pady=4)
 
         # ---- tabel alur kerja (v5.7: kartu membulat + MULTI-PILIH:
         #      Ctrl+Klik / Shift+Klik / Ctrl+A) ----
@@ -7553,11 +7739,11 @@ class StudioMakroTab(PerekamAksiMixin):
                                  style="Makro.Treeview",
                                  selectmode="extended")
         for k, t, w_, a in [
-            ("no", "#", 44, "center"),
-            ("nama", "LANGKAH", 215, "w"),
-            ("detail", "PARAMETER", 330, "w"),
-            ("jeda", "JEDA", 62, "center"),
-            ("ulang", "ULANGI", 170, "w"),
+            ("no", "#", 38, "center"),
+            ("nama", "LANGKAH", 180, "w"),
+            ("detail", "PARAMETER", 240, "w"),
+            ("jeda", "JEDA", 50, "center"),
+            ("ulang", "ULANGI", 140, "w"),
         ]:
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w_, anchor=a,
@@ -7592,10 +7778,11 @@ class StudioMakroTab(PerekamAksiMixin):
         self.prop_body.pack(fill="both", expand=True)
 
     # ---------- pembantu tampilan ----------
-    def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None):
+    def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None,
+                font=None):
         # v5.7: tombol kapsul membulat menggantikan tk.Button datar
         b = TombolKapsul(parent, teks=teks, perintah=cmd,
-                         bg=bg or C_PANEL2, fg=fg or C_TEXT)
+                         bg=bg or C_PANEL2, fg=fg or C_TEXT, font=font)
         b.pack(side="left", padx=3, pady=2)
         return b
 
@@ -9842,7 +10029,7 @@ class ShellApp:
         root.title("{} v{} - Macro Studio".format(APP_NAME, APP_VERSION))
         root.configure(bg=C_BG)
         root.geometry("1280x880")
-        root.minsize(1000, 760)
+        root.minsize(1160, 760)
         if sys.platform == "win32":
             try:
                 root.iconbitmap(os.path.join(app_dir(), "icon.ico"))
@@ -9859,8 +10046,8 @@ class ShellApp:
             self.kb = None
             self.mouse = None
 
-        # ----- header gradien mengkilat (v5.7) -----
-        HeaderKilau(root).pack(side="top", fill="x")
+        # ----- header gradien DIHAPUS v6.6: ruang vertikal diberikan
+        #       ke konten; identitas merek pindah ke sidebar merah -----
 
         # ----- statusbar bersama (paling bawah) -----
         status = tk.Frame(root, bg=C_PANEL, bd=0,
@@ -9879,20 +10066,12 @@ class ShellApp:
                  text="v{}  |  F6 = Mulai   F7/ESC = Berhenti".format(
                      APP_VERSION)).pack(side="right", padx=6)
 
-        # ----- notebook 2 tab -----
+        # ----- v6.6: gaya ttk untuk widget pelengkap -----
         gaya = ttk.Style()
         try:
             gaya.theme_use("clam")
         except Exception:
             pass
-        gaya.configure("TNotebook", background=C_BG, borderwidth=0)
-        gaya.configure("TNotebook.Tab", font=F_H, padding=(16, 8))
-        gaya.map("TNotebook.Tab",
-                 background=[("selected", C_BLUE),
-                             ("!selected", C_PANEL2)],
-                 foreground=[("selected", "white"),
-                             ("!selected", C_MUTED)])
-        # v5.6: widget pelengkap ikut tema gelap
         gaya.configure("Vertical.TScrollbar", background=C_PANEL2,
                        troughcolor=C_BG, bordercolor=C_BG,
                        arrowcolor=C_MUTED)
@@ -9902,17 +10081,51 @@ class ShellApp:
         gaya.configure("TCombobox", fieldbackground=C_PANEL,
                        background=C_PANEL2, foreground=C_TEXT,
                        arrowcolor=C_TEXT)
-        self.nb = ttk.Notebook(root)
-        self.nb.pack(fill="both", expand=True)
-        f_studio = tk.Frame(self.nb, bg=C_BG)
-        f_cut = tk.Frame(self.nb, bg=C_BG)
-        self.nb.add(f_studio, text="  STUDIO MAKRO (alur bebas)  ")
-        self.nb.add(f_cut, text="  ALUR CUTMOTIONS (A-J)  ")
+
+        # ----- v6.6: SIDEBAR NAVIGASI MERAH + HALAMAN KONTEN
+        #       (pengganti Notebook; pindah halaman = tombol kiri) -----
+        self._halaman = 0
+        self.sidebar = SidebarMerah(root)
+        self.sidebar.pack(side="left", fill="y")
+
+        konten = tk.Frame(root, bg=C_BG)
+        konten.pack(side="left", fill="both", expand=True)
+        f_studio = tk.Frame(konten, bg=C_BG)
+        f_cut = tk.Frame(konten, bg=C_BG)
+        self._halaman_frame = [f_studio, f_cut]
+
+        self._nav_btns = []
+        for i, teks_nav in enumerate(("STUDIO MAKRO",
+                                      "ALUR CUTMOTIONS")):
+            b = TombolKapsul(
+                self.sidebar.wadah_nav, teks=teks_nav,
+                perintah=lambda i=i: self._pilih_halaman(i),
+                bg=SIDEBAR_BG2, fg=SIDEBAR_TEKS, radius=10,
+                tinggi=38, padx=10, lebar_min=198, font=F_H)
+            b.pack(side="top", fill="x", pady=3)
+            self._nav_btns.append(b)
 
         self.tab_studio = StudioMakroTab(f_studio, self)
         self.tab_cut = CutMotionsTab(f_cut, self)
+        self._pilih_halaman(0)
         self._build_menubar()
         root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # ---------- navigasi halaman v6.6 ----------
+    def _pilih_halaman(self, i):
+        """v6.6: tampilkan halaman ke-i (0 = Studio, 1 = CutMotions)
+        dan tandai tombol navigasinya di sidebar."""
+        self._halaman = 0 if i not in (0, 1) else i
+        for j, hal in enumerate(self._halaman_frame):
+            if j == self._halaman:
+                hal.pack(side="top", fill="both", expand=True)
+            else:
+                hal.pack_forget()
+        for j, b in enumerate(self._nav_btns):
+            if j == self._halaman:
+                b.config(bg=SIDEBAR_AKT, fg=SIDEBAR_BG)
+            else:
+                b.config(bg=SIDEBAR_BG2, fg=SIDEBAR_TEKS)
 
     # ---------- menubar ----------
     def _build_menubar(self):
@@ -9983,7 +10196,7 @@ class ShellApp:
         m_alat.add_command(
             label="Tambah Langkah Studio ke Alur CutMotions "
                   "(pakai tombol '+ TAMBAH LANGKAH' di tab itu)",
-            command=lambda: (self.nb.select(self.tab_cut.wadah),
+            command=lambda: (self._pilih_halaman(1),
                              self.tab_cut._tambah_studio("KLIK")))
         m_alat.add_command(label="Muat Template Alur CutMotions ke Studio",
                            command=self.tab_studio._template_cutmotions)
@@ -10006,11 +10219,11 @@ class ShellApp:
         menubar.add_cascade(label="Bantuan", menu=m_bantu)
         self.root.config(menu=menubar)
 
-    # ---------- routing tab & hotkey ----------
+    # ---------- routing halaman & hotkey ----------
     def tab_aktif(self):
         try:
             return (self.tab_studio
-                    if self.nb.index(self.nb.select()) == 0
+                    if getattr(self, "_halaman", 0) == 0
                     else self.tab_cut)
         except Exception:
             return self.tab_studio
@@ -10080,6 +10293,12 @@ class ShellApp:
             "TEMPEL / HAPUS / AKTIF-MATI berlaku untuk semuanya.\n"
             "Desain makin modern & elegan: tombol kapsul membulat\n"
             "mengkilat, panel bersudut membulat, dan header gradien.\n\n"
+            "v6.6: TAMPILAN BARU 'MERAH-PUTIH MODERN' - tema putih "
+            "bersih "
+            "dengan aksen merah, SIDEBAR NAVIGASI merah di kiri "
+            "(pengganti tab di atas), dan tata letak 2 KOLOM: kartu "
+            "VIDEO & CAPTION + WAKTU rapi di kolom kiri, tabel "
+            "langkah + panel PROPERTI makin lega di kanan.\n\n"
             "2. ALUR CUTMOTIONS (A-J) - uploader batch CutMotions.\n\n"
             "Maksimal {} video sekali jalan (aturan situs).\n"
             "Login dilakukan manual - tidak ada data akun yang disimpan."
@@ -10952,6 +11171,71 @@ def main():
             print("SELFTEST_FOKUS_OK")
             root.destroy()
         root.after(5200, _ok14)
+    if "--selftest-tema" in sys.argv:
+        # v6.6: REDESIGN MERAH-PUTIH - uji palet baru, sidebar
+        # navigasi, pindah halaman bolak-balik, dan tata letak
+        # 2 kolom (kartu pengaturan kiri, tabel/PROPERTI kanan).
+        def _uji_tema():
+            cek = []
+            # 1) palet merah-putih aktif
+            cek.append(("TEMA_BG_PUTIH", C_BG == "#FFFFFF"))
+            cek.append(("TEMA_AKSEN_MERAH",
+                        C_BLUE.lower() == "#dc2626"))
+            cek.append(("TEMA_SIDEBAR_MERAH", SIDEBAR_BG == "#B91C1C"))
+            # 2) sidebar + tombol navigasi
+            cek.append(("SIDEBAR_ADA",
+                        bool(app.sidebar and
+                             app.sidebar.winfo_exists())))
+            cek.append(("NAV_JUMLAH_TOMBOL", len(app._nav_btns) == 2))
+            # 3) pindah halaman bolak-balik tanpa error
+            app._pilih_halaman(1)
+            root.update()
+            cek.append(("PINDAH_CUT", app._halaman == 1))
+            cek.append(("CUT_TAMPIL",
+                        app.tab_cut.wadah.winfo_ismapped()))
+            app._pilih_halaman(0)
+            root.update()
+            cek.append(("PINDAH_STUDIO", app._halaman == 0))
+            # 4) routing tab_aktif ikut halaman
+            app._pilih_halaman(1)
+            cek.append(("TAB_AKTIF_CUT",
+                        app.tab_aktif() is app.tab_cut))
+            app._pilih_halaman(0)
+            cek.append(("TAB_AKTIF_STUDIO",
+                        app.tab_aktif() is app.tab_studio))
+            # 5) tata letak 2 kolom di kedua halaman
+            for nama, tab in (("CUT", app.tab_cut),
+                              ("STUDIO", app.tab_studio)):
+                cek.append(("KIRI_" + nama + "_ADA",
+                            bool(tab.kolom_kiri.winfo_exists())))
+                cek.append(("KANAN_" + nama + "_ADA",
+                            bool(tab.area_kanan.winfo_exists())))
+                cek.append(("KARTU_VIDEO_DI_KIRI_" + nama,
+                            tab.kartu_video.master
+                            is tab.kolom_kiri.badan))
+            cek.append(("KARTU_WAKTU_DI_KIRI_CUT",
+                        app.tab_cut.kartu_waktu.master
+                        is app.tab_cut.kolom_kiri.badan))
+            cek.append(("KARTU_MUNDUR_DI_KIRI_STUDIO",
+                        app.tab_studio.kartu_mundur.master
+                        is app.tab_studio.kolom_kiri.badan))
+            cek.append(("PANED_DI_KANAN_CUT",
+                        app.tab_cut.tree.master.master.master.master
+                        is app.tab_cut.area_kanan))
+            # 6) tombol JALANKAN memakai aksen merah
+            cek.append(("START_MERAH",
+                        app.tab_cut.btn_start._bg.lower()
+                        == C_BLUE.lower()))
+            for tag, ok in cek:
+                print(tag, bool(ok))
+            print("TEMA_SEMUA_OK",
+                  all(ok for _tag, ok in cek))
+        root.after(1100, _uji_tema)
+
+        def _ok15():
+            print("SELFTEST_TEMA_OK")
+            root.destroy()
+        root.after(3600, _ok15)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -10964,7 +11248,9 @@ def main():
             or ("--selftest-ketik" in sys.argv) \
             or ("--selftest-pilih" in sys.argv) \
             or ("--selftest-kartu" in sys.argv) \
-            or ("--selftest-ocr" in sys.argv):
+            or ("--selftest-ocr" in sys.argv) \
+            or ("--selftest-fokus" in sys.argv) \
+            or ("--selftest-tema" in sys.argv):
         print("SELFTEST_DONE")
 
 

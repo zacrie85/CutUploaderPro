@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.5)
+# CutUploader Pro — Macro Studio Edition (v6.6)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**, dan **baru v6.6: TAMPILAN BARU MERAH-PUTIH MODERN — tema putih bersih dengan aksen merah, SIDEBAR NAVIGASI merah di kiri (pengganti tab di atas), dan tata letak 2 KOLOM: kartu VIDEO & CAPTION + WAKTU rapi di kolom kiri yang bisa digulir, tabel langkah + panel PROPERTI makin lega di kanan**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.5**:
+Dari halaman [Releases](../../releases) rilis **v6.6**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.5.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.6.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,20 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v6.6: tampilan & tata letak baru "MERAH-PUTIH MODERN"
+
+**Keluhan**: tata letak menu terasa berantakan; tampilan ingin lebih fresh & modern dengan warna **merah-putih**.
+
+**Perubahan visual (tanpa mengubah satu pun cara kerja fitur)**:
+
+1. **Tema MERAH-PUTIH** — latar putih bersih, aksen merah di mana-mana (tombol JALANKAN, judul kartu, baris terpilih, sidebar). Teks gelap yang nyaman dibaca; warna langkah di tabel tetap membedakan jenisnya.
+2. **SIDEBAR NAVIGASI** — tab di atas diganti bilah merah di kiri: logo + nama aplikasi + chip versi + 2 tombol halaman (STUDIO MAKRO / ALUR CUTMOTIONS) + hint hotkey. Halaman aktif ditandai tombol putih.
+3. **Tata letak 2 KOLOM** (kedua halaman) — kartu **VIDEO & CAPTION** dan **WAKTU & UNGGAH** (tab CutMotions) serta **VIDEO & CAPTION STUDIO** dan **MUNDUR** (tab Studio) pindah ke **kolom kiri yang bisa DIGULIR** (scrollbar + roda mouse) — tidak ada lagi bagian kartu terpotong; **tabel langkah + panel PROPERTI** makin lega di kanan.
+4. **Toolbar dirapi** — tombol sekunder pakai font lebih kecil dan tersusun per kelompok (aksi utama | alat bantu | profil) sehingga semua tombol utuh tanpa terpotong.
+5. Kolom tabel disesuaikan agar pas di lebar baru; jendela minimal ikut disesuaikan (1160×760).
+
+Uji baru **`--selftest-tema`** (21 cek): palet merah-putih aktif, sidebar ada, pindah halaman bolak-balik mulus, kartu benar berada di kolom kiri, tombol JALANKAN merah — **semua True**.
 
 ### Baru v6.5: perbaikan — mengetik di semua box tidak lagi "keluar" setelah 1 huruf
 
@@ -198,6 +212,17 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `rapidocr-onnxruntime`, `pyinstaller` (dev).
+
+## Perubahan v6.6
+
+- **Palet baru di satu tempat**: semua konstanta warna `C_*` diganti ke tema terang merah-putih (nama konstanta dipertahankan supaya seluruh widget ikut otomatis); tambahan konstanta `SIDEBAR_*` dan `LEBAR_KIRI`.
+- **Kelas baru `SidebarMerah`**: bilah navigasi kiri (logo Canvas + chip versi + wadah tombol halaman + hint hotkey) menggantikan `ttk.Notebook` + header gradien; halaman kini frame biasa yang di-pack/forget lewat **`ShellApp._pilih_halaman()`**, tombol nav memakai `TombolKapsul` (aktif = putih teks merah).
+- **Routing**: `tab_aktif()` kini membaca `_halaman` (bukan `nb.index`); menu Alat "Tambah Langkah Studio ke Alur CutMotions" ikut memanggil `_pilih_halaman(1)`.
+- **Kelas baru `KolomGulir`**: kolom pengaturan kiri yang bisa digulir (Canvas + scrollbar + roda mouse Windows/Linux, lebar isi mengikuti kolom); kartu VIDEO & CAPTION + WAKTU & UNGGAH (CutMotions) dan VIDEO & CAPTION STUDIO + MUNDUR (Studio) pindah ke dalamnya (urutan pakai `before=` supaya kartu video selalu di atas).
+- **Kartu disusun ulang untuk kolom sempit**: tombol video 2×2, kotak WAKTU 2×2, semua teks penjelasan diberi `wraplength`, label jumlah video wrap kanan, teks hint diringkas.
+- **Toolbar**: tombol alat bantu `font=F_XS`; tab CutMotions kini 3 baris (aksi utama | alat gambar & salin-tempel | hapus/profil), tab Studio blok ULANGI pindah ke baris sendiri; `_tb_btn` menerima parameter `font`; `TombolKapsul` default `padx` 13→11.
+- **Kolom tabel** dirapatkan (38/180/240/50/140) agar pas di kolom kanan; `root.minsize(1160, 760)`.
+- Selftest baru **`--selftest-tema`** (21 cek, semua True); regresi selftest lain hijau dengan data bersih (catatan lama tetap: selftest yang mengubah slot/langkah mempollute `~/.cutuploaderpro` untuk run berikutnya — hapus folder itu bila hasil selftest aneh).
 
 ## Perubahan v6.5
 
