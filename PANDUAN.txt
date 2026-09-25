@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.6 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.7 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -368,6 +368,28 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.7 - ULANGI SEMUA (PUTARAN):
+  Mau semua proses diulang dari awal? Sekarang cukup isi satu
+  box angka:
+  1. Tab ALUR CUTMOTIONS -> kartu WAKTU & UNGGAH ada box
+     "ULANGI SEMUA (PUTARAN)".
+     Tab STUDIO MAKRO -> kartu "MUNDUR & ULANGI SEMUA" ada box
+     "ULANGI SEMUA (PUTARAN)" di samping MUNDUR.
+  2. Isi angkanya. Contoh 3 = setelah langkah TERAKHIR selesai
+     (tab CutMotions: sampai SUBMIT diklik), seluruh proses
+     otomatis dimulai LAGI dari langkah pertama, dan begitu
+     seterusnya sampai 3 putaran habis.
+  3. Isi 1 atau kosong = jalan sekali seperti biasa.
+  4. Jeda antar putaran memakai nilai MUNDUR juga (isi 0 =
+     langsung jalan ke putaran berikutnya). F7 tetap bisa
+     menghentikan kapan saja, di putaran mana pun.
+  5. Status bar menunjukkan progres: "PUTARAN 2/3 SELESAI -
+     mengulang semua proses dari langkah pertama..." dan pesan
+     akhir menyebut jumlah putaran penuh.
+  6. Nilainya TERSIMPAN otomatis di profil / makro (ikut
+     SIMPAN MAKRO & BUKA MAKRO).
+  Uji: python cut_uploader.py --selftest-putaran  (23 cek).
 
 BARU DI V6.6 - TAMPILAN BARU "MERAH-PUTIH MODERN":
   Aplikasi disegarkan total TANPA mengubah cara kerja fitur

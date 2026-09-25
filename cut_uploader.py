@@ -334,7 +334,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.6"
+APP_VERSION = "6.7"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -2430,6 +2430,20 @@ def _baca_angka(nama, teks, bawaan=None, bulat=False):
     return int(v) if bulat else v
 
 
+def putaran_bersih(teks, bawaan=1):
+    """v6.7: baca isi box ULANGI SEMUA (PUTARAN) -> bilangan 1..999.
+
+    Kosong / rusak -> `bawaan`; koma diterima ("2,7" -> 2); nilai
+    di luar rentang dijepit ke 1..999. Isi 1 berarti alur jalan
+    sekali saja (perilaku lama).
+    """
+    try:
+        n = int(_angka(str(teks).strip(), bawaan, 1, 999))
+    except Exception:
+        n = bawaan
+    return max(1, min(999, int(n)))
+
+
 def cari_di_layar(gambar_path, cx, cy, radius, kemiripan=0.8):
     """Cari gambar referensi di layar dalam RADIUS piksel dari titik
     acuan (cx, cy) - dipakai untuk memilih negara lewat gambar.
@@ -2948,6 +2962,9 @@ class CutMotionsTab(PerekamAksiMixin):
             ("jumlah", "5"), ("caption", "#dangdut"),
             ("mundur", "5"), ("jeda_dialog", "2"), ("jeda_langkah", "1"),
             ("tunggu", "60"), ("tanggal", "2026-09-10 02:05:01"),
+            # v6.7: ULANGI SEMUA (PUTARAN) - seluruh alur diulang dari
+            # langkah pertama sebanyak N putaran (1 = sekali jalan)
+            ("putaran", "1"),
             ("radius", "300"), ("kemiripan", "0.80"),
             ("klik_bebas1", "2"), ("scroll_bebas1", "0"),
             ("arah_scroll", "Turun"), ("klik_bebas2", "1"),
@@ -3092,6 +3109,18 @@ class CutMotionsTab(PerekamAksiMixin):
                      bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1,
                      font=F_N, justify="center",
                      highlightthickness=0).pack(anchor="w", ipady=3)
+        # v6.7: box ULANGI SEMUA (PUTARAN) - cukup isi angka berapa
+        # kali seluruh proses mau diulang dari langkah pertama
+        bts_w3 = tk.Frame(w, bg=C_BG)
+        bts_w3.pack(fill="x", pady=(1, 2))
+        cell_p = tk.Frame(bts_w3, bg=C_BG)
+        cell_p.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        tk.Label(cell_p, text="ULANGI SEMUA (PUTARAN)", bg=C_BG,
+                 fg=C_MUTED, font=F_XS, anchor="w").pack(anchor="w")
+        tk.Entry(cell_p, textvariable=self.vars["putaran"], width=6,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1,
+                 font=F_N, justify="center",
+                 highlightthickness=0).pack(anchor="w", ipady=3)
         tk.Button(w, text="TERAPKAN JEDA ANTAR LANGKAH\nKE SEMUA "
                           "LANGKAH",
                   command=self._terapkan_jeda_semua, bg=C_BLUE_L,
@@ -3109,11 +3138,15 @@ class CutMotionsTab(PerekamAksiMixin):
                        variable=self.vars["skip_jadwal"],
                        bg=C_BG, fg=C_TEXT, font=F_XS, anchor="w",
                        wraplength=352, justify="left").pack(fill="x")
-        tk.Label(w, text="MUNDUR = persiapan sebelum mulai.  "
-                         "JEDA BUKA DIALOG/EDITOR = menunggu dialog / "
-                         "editor terbuka.  JEDA ANTAR LANGKAH = nilai "
-                         "awal kolom JEDA di tabel.  TUNGGU UPLOAD PER "
-                         "VIDEO dikali jumlah video.",
+        tk.Label(w, text="MUNDUR = persiapan sebelum mulai (dipakai "
+                         "juga sebagai jeda antar putaran).  JEDA BUKA "
+                         "DIALOG/EDITOR = menunggu dialog / editor "
+                         "terbuka.  JEDA ANTAR LANGKAH = nilai awal "
+                         "kolom JEDA di tabel.  TUNGGU UPLOAD PER VIDEO "
+                         "dikali jumlah video.  ULANGI SEMUA = setelah "
+                         "langkah terakhir selesai, SEMUA proses dimulai "
+                         "lagi dari langkah pertama (isi 1 / kosong = "
+                         "sekali jalan seperti biasa).",
                  bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
                  justify="left", wraplength=352).pack(fill="x",
                                                       pady=(0, 4))
@@ -5901,6 +5934,7 @@ class CutMotionsTab(PerekamAksiMixin):
             "jeda_dialog": V["jeda_dialog"].get().strip(),
             "jeda_langkah": V["jeda_langkah"].get().strip(),
             "tunggu": V["tunggu"].get().strip(),
+            "putaran": V["putaran"].get().strip(),   # v6.7
             "skip": bool(V["skip_uploaded"].get()),
             "skip_jadwal": bool(V["skip_jadwal"].get()),
             "pakai_gambar": bool(V["pakai_gambar"].get()),
@@ -5965,6 +5999,8 @@ class CutMotionsTab(PerekamAksiMixin):
                                        snap["jeda_langkah"], 1)
             tunggu = _baca_angka("TUNGGU UPLOAD PER VIDEO",
                                  snap["tunggu"], 60)
+            putaran = _baca_angka("ULANGI SEMUA (PUTARAN)",
+                                  snap["putaran"], 1, bulat=True)
         except ValueError as e:
             nama, isian = e.args[0]
             messagebox.showwarning(
@@ -6138,6 +6174,15 @@ class CutMotionsTab(PerekamAksiMixin):
             return
         if tunggu < 0:
             tunggu = 0
+        # v6.7: ULANGI SEMUA (PUTARAN) harus 1-999
+        if putaran < 1 or putaran > 999:
+            messagebox.showwarning(
+                APP_NAME,
+                "ULANGI SEMUA (PUTARAN) harus diisi angka 1-999.\n\n"
+                "Isi 1 = jalan sekali seperti biasa. Isi 3 = setelah "
+                "langkah terakhir selesai, semua proses otomatis "
+                "diulang dari langkah pertama sampai 3 putaran.")
+            return
         # ---- susun daftar video yang mau diupload (v6.1: dari
         #      daftar video TERPILIH, urutan = urutan pilihan) ----
         semua = list(videos)
@@ -6205,7 +6250,7 @@ class CutMotionsTab(PerekamAksiMixin):
         self.btn_stop.config(state="normal")
         threading.Thread(target=self._worker,
                          args=(snap, jumlah, mundur, jeda_dialog,
-                               jeda_langkah, tunggu),
+                               jeda_langkah, tunggu, putaran),
                          daemon=True).start()
 
     # ================== BANTUAN SCROLL & KLIK ==================
@@ -6517,7 +6562,45 @@ class CutMotionsTab(PerekamAksiMixin):
             self.stop_event.set()
 
     def _worker(self, snap, jumlah, mundur, jeda_dialog, jeda_langkah,
-                tunggu):
+                tunggu, putaran=1):
+        """v6.7: pembungkus ULANGI SEMUA (PUTARAN).
+
+        Alur penuh (FASE 1-3 + Submit) dijalankan `putaran` kali
+        berturut-turut; tiap putaran mulai LAGI dari langkah
+        pertama. F7 tetap bisa menghentikan kapan saja.
+        """
+        total = putaran_bersih(putaran, 1)
+        for ke in range(1, total + 1):
+            hasil = self._jalankan_sekali(snap, jumlah, mundur,
+                                          jeda_dialog, jeda_langkah,
+                                          tunggu, ke, total)
+            if hasil is None:
+                return        # dihentikan/error - pesan sudah tampil
+            pesan, n_cap = hasil
+            if ke < total:
+                self._set_status(
+                    "PUTARAN {}/{} SELESAI ({} video) - mengulang semua "
+                    "proses dari langkah pertama...".format(
+                        ke, total, n_cap), C_ORANGE)
+                self._sleep(1.0)
+                if self.stop_event.is_set():
+                    self._finish(
+                        "{} putaran selesai (dihentikan sebelum "
+                        "putaran berikutnya).".format(ke), warn=True)
+                    return
+                continue
+            if total > 1:
+                pesan += " Semua proses sudah diulang {} putaran " \
+                         "penuh.".format(total)
+            self._finish(pesan)
+
+    def _jalankan_sekali(self, snap, jumlah, mundur, jeda_dialog,
+                         jeda_langkah, tunggu, putaran_ke=1,
+                         putaran_total=1):
+        """Menjalankan SATU putaran alur penuh (v6.7 dipisah dari
+        _worker supaya bisa diulang). Kembalikan (pesan_akhir,
+        jumlah_video) kalau putaran selesai sampai tuntas, atau
+        None kalau dihentikan/error (pesan sudah ditampilkan)."""
         try:
             pos = {k: tuple(v) for k, v in snap["posisi"].items() if v}
             caption_dasar = snap["caption"]
@@ -6533,12 +6616,19 @@ class CutMotionsTab(PerekamAksiMixin):
                 return self._ekstra_setelah(ekstra_all, anchor)
 
             # ---- hitung mundur sebelum mulai ----
+            # v6.7: putaran > 1 memakai MUNDUR sebagai jeda antar
+            # putaran juga ("PUTARAN 2/3 - mulai lagi dari awal...")
             if mundur > 0:
                 for s in range(mundur, 0, -1):
                     if self.stop_event.is_set():
                         self._finish("Dibatalkan sebelum mulai.", warn=True)
                         return
-                    if caption_only:
+                    if putaran_total > 1:
+                        pesan = ("PUTARAN {}/{} - mulai lagi dari "
+                                 "langkah pertama dalam {{}} "
+                                 "detik...".format(putaran_ke,
+                                                  putaran_total))
+                    elif caption_only:
                         pesan = ("Lanjut CAPTION dalam {} detik - buka "
                                  "halaman Rilis karya sekarang...")
                     else:
@@ -6546,6 +6636,12 @@ class CutMotionsTab(PerekamAksiMixin):
                                  "Rilis karya CutMotions sekarang...")
                     self._set_status(pesan.format(s), C_ORANGE)
                     self._sleep(1.0)
+            if putaran_total > 1:
+                self._set_status(
+                    "=== PUTARAN {} dari {} - semua proses diulang dari "
+                    "langkah pertama ===".format(putaran_ke,
+                                                 putaran_total), C_ORANGE)
+                self._sleep(0.8)
 
             # =================================================
             # FASE 1 - JADWAL RILIS (A - E)
@@ -7006,15 +7102,17 @@ class CutMotionsTab(PerekamAksiMixin):
                               "caption"
                               if bool(snap.get("ketik_nama"))
                               else "Shift+turun")
-                self._finish(
-                    "Selesai! {} video: jadwal diatur, video ditambahkan "
-                    "({}), caption ditulis per baris, dan SUBMIT "
-                    "sudah diklik. Cek status rilis di situs.".format(
-                        n_cap, cara_pilih))
+                # v6.7: sukses TIDAK langsung _finish - laporan
+                # dikembalikan ke pembungkus putaran untuk mengulang
+                # bila ULANGI SEMUA masih ada sisa putaran
+                return ("Selesai! {} video: jadwal diatur, video "
+                        "ditambahkan ({}), caption ditulis per baris, "
+                        "dan SUBMIT sudah diklik. Cek status rilis di "
+                        "situs.".format(n_cap, cara_pilih), n_cap)
             else:
-                self._finish(
-                    "Caption {} video selesai! Cek dulu di browser, lalu "
-                    "klik tombol 'Submit' secara manual.".format(n_cap))
+                return ("Caption {} video selesai! Cek dulu di browser, "
+                        "lalu klik tombol 'Submit' secara manual."
+                        .format(n_cap), n_cap)
         except Exception as e:
             self._finish("Terjadi error: {}".format(e), warn=True)
 
@@ -7069,6 +7167,7 @@ class CutMotionsTab(PerekamAksiMixin):
             "jeda_dialog": V["jeda_dialog"].get(),
             "jeda_langkah": V["jeda_langkah"].get(),
             "tunggu_upload": V["tunggu"].get(),
+            "putaran": V["putaran"].get(),               # v6.7
             "skip_uploaded": bool(V["skip_uploaded"].get()),
             "skip_jadwal": bool(V["skip_jadwal"].get()),
             "pakai_gambar": bool(V["pakai_gambar"].get()),
@@ -7279,6 +7378,7 @@ class CutMotionsTab(PerekamAksiMixin):
             ("jarak_baris", V["jarak_baris"]),
             ("klik_submit", V["klik_submit"]),
             ("gambar_ref", V["gambar_ref"]),
+            ("putaran", V["putaran"]),                  # v6.7
         ]
         # v5.9: kolom angka disanitasi saat dimuat - nilai rusak dari
         # profil lama dibuang (kembali ke bawaan) sehingga F6 tidak
@@ -7286,7 +7386,7 @@ class CutMotionsTab(PerekamAksiMixin):
         ANGKA_VAR = ("jumlah", "mundur", "jeda_dialog", "jeda_langkah",
                      "tunggu", "radius", "kemiripan", "klik_bebas1",
                      "scroll_bebas1", "klik_bebas2", "jarak_baris",
-                     "klik_submit")
+                     "klik_submit", "putaran")
         for key, var in pasangan:
             val = data.get(key)
             if val is None:
@@ -7493,6 +7593,9 @@ class StudioMakroTab(PerekamAksiMixin):
 
         self.vars = {
             "mundur": tk.StringVar(value="5"),
+            # v6.7: ULANGI SEMUA (PUTARAN) - seluruh alur Studio
+            # diulang dari langkah pertama sebanyak N putaran
+            "putaran": tk.StringVar(value="1"),
             # v6.2: kartu VIDEO & CAPTION
             "jumlah": tk.StringVar(value=""),
             "caption": tk.StringVar(value=""),
@@ -7582,19 +7685,39 @@ class StudioMakroTab(PerekamAksiMixin):
         self._tb_btn(tb2_r2, "POTONG GAMBAR", self._potong_dari_menu)
         self._tb_btn(tb2_r2, "TES CARI", self._tes_cari)
 
-        # ----- Kartu MUNDUR (kolom kiri, di bawah kartu VIDEO) -----
+        # ----- Kartu MUNDUR & ULANGI (kolom kiri, di bawah kartu
+        #       VIDEO) ----- v6.7: + box ULANGI SEMUA (PUTARAN)
         kartu_m = KartuBulat(kiri.badan,
-                             judul="MUNDUR SEBELUM MULAI (detik)",
+                             judul="MUNDUR & ULANGI SEMUA",
                              padding=(10, 6, 10, 8))
         kartu_m.pack(side="top", fill="x", pady=(0, 6))
         self.kartu_mundur = kartu_m
         m = kartu_m.badan
-        tk.Entry(m, textvariable=self.vars["mundur"], width=6,
+        m_row = tk.Frame(m, bg=C_BG)
+        m_row.pack(fill="x")
+        m_c1 = tk.Frame(m_row, bg=C_BG)
+        m_c1.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        tk.Label(m_c1, text="MUNDUR (detik)", bg=C_BG, fg=C_MUTED,
+                 font=F_XS, anchor="w").pack(anchor="w")
+        tk.Entry(m_c1, textvariable=self.vars["mundur"], width=6,
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
                  justify="center",
-                 highlightthickness=0).pack(fill="x", ipady=3)
-        tk.Label(m, text="Jeda setiap langkah diatur lewat kolom JEDA "
-                         "/ panel PROPERTI.  Klik kanan baris = "
+                 highlightthickness=0).pack(anchor="w", ipady=3)
+        m_c2 = tk.Frame(m_row, bg=C_BG)
+        m_c2.pack(side="left", fill="x", expand=True)
+        tk.Label(m_c2, text="ULANGI SEMUA (PUTARAN)", bg=C_BG,
+                 fg=C_MUTED, font=F_XS, anchor="w").pack(anchor="w")
+        tk.Entry(m_c2, textvariable=self.vars["putaran"], width=6,
+                 bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
+                 justify="center",
+                 highlightthickness=0).pack(anchor="w", ipady=3)
+        tk.Label(m, text="ULANGI SEMUA = setelah langkah TERAKHIR "
+                         "selesai, seluruh alur dimulai LAGI dari "
+                         "langkah pertama (mis. isi 3 = diulang 3 "
+                         "putaran; isi 1 / kosong = sekali jalan). "
+                         "Jeda antar putaran memakai MUNDUR.  Jeda "
+                         "setiap langkah diatur lewat kolom JEDA / "
+                         "panel PROPERTI.  Klik kanan baris = "
                          "salin/tempel/hapus/urutkan.  Tahan "
                          "CTRL/SHIFT saat klik = PILIH BANYAK "
                          "langkah (Ctrl+A = semua).  "
@@ -9379,10 +9502,16 @@ class StudioMakroTab(PerekamAksiMixin):
                 json.dump({"app": APP_NAME, "versi": APP_VERSION,
                            "jenis": "studio", "langkah": self.langkah,
                            # v6.2: kartu VIDEO & CAPTION ikut tersimpan
-                           "kartu": self._kartu_data()},
+                           "kartu": self._kartu_data(),
+                           # v6.7: ULANGI SEMUA (PUTARAN) ikut auto-save
+                           "putaran": self.vars["putaran"].get()},
                           f, indent=2, ensure_ascii=False)
         except Exception:
             pass
+
+    def _pasang_putaran(self, teks):
+        """v6.7: pasang nilai ULANGI SEMUA (PUTARAN) dengan sanitasi."""
+        self.vars["putaran"].set(str(putaran_bersih(teks, 1)))
 
     def _kartu_data(self):
         """v6.2: isi kartu VIDEO & CAPTION Studio sbg dict JSON."""
@@ -9422,6 +9551,9 @@ class StudioMakroTab(PerekamAksiMixin):
             # v6.2: kartu VIDEO & CAPTION dipulihkan WALAU langkah
             # kosong (dulu return cepat membuat kartu hilang)
             self._pasang_kartu(data.get("kartu"))
+            # v6.7: ULANGI SEMUA (PUTARAN) dipulihkan dari auto-save
+            if data.get("putaran") is not None:
+                self._pasang_putaran(data.get("putaran"))
             ls = studio_bersihkan(data.get("langkah"))
             if not ls:
                 return
@@ -9466,7 +9598,9 @@ class StudioMakroTab(PerekamAksiMixin):
                 json.dump({"app": APP_NAME, "versi": APP_VERSION,
                            "jenis": "studio", "langkah": self.langkah,
                            # v6.2: kartu VIDEO & CAPTION ikut file makro
-                           "kartu": self._kartu_data()},
+                           "kartu": self._kartu_data(),
+                           # v6.7: ULANGI SEMUA (PUTARAN) ikut makro
+                           "putaran": self.vars["putaran"].get()},
                           d, indent=2, ensure_ascii=False)
             self._set_status("Makro tersimpan: {}".format(f), C_GREEN)
         except Exception as e:
@@ -9506,6 +9640,10 @@ class StudioMakroTab(PerekamAksiMixin):
         # v6.2: kartu VIDEO & CAPTION ikut dimuat (file lama tanpa
         # kartu -> isi kartu sekarang dipertahankan)
         self._pasang_kartu(data.get("kartu"))
+        # v6.7: ULANGI SEMUA (PUTARAN) ikut file makro (kalau ada;
+        # file lama tanpa kunci ini -> nilai sekarang dipertahankan)
+        if data.get("putaran") is not None:
+            self._pasang_putaran(data.get("putaran"))
         self._set_status("Makro dimuat: {} langkah dari {}".format(
             len(ls), f), C_GREEN)
 
@@ -9652,6 +9790,8 @@ class StudioMakroTab(PerekamAksiMixin):
             mundur = 5
         snap = {
             "mundur": mundur,
+            # v6.7: ULANGI SEMUA (PUTARAN)
+            "putaran": putaran_bersih(self.vars["putaran"].get(), 1),
             "langkah": json.loads(json.dumps(self.langkah)),
             "videos": list(videos),
             "caption": caption,
@@ -9695,6 +9835,9 @@ class StudioMakroTab(PerekamAksiMixin):
                 self._finish("Tidak ada langkah yang dijalankan.",
                              warn=True)
                 return
+            # v6.7: ULANGI SEMUA (PUTARAN) - seluruh alur dijalankan
+            # berulang dari langkah pertama sampai putaran habis
+            total = putaran_bersih(snap.get("putaran", 1), 1)
             if snap["mundur"] > 0:
                 for s in range(snap["mundur"], 0, -1):
                     if self.stop_event.is_set():
@@ -9707,66 +9850,98 @@ class StudioMakroTab(PerekamAksiMixin):
                     self._sleep(1.0)
             videos = snap.get("videos") or []
             caption = snap.get("caption") or ""
-            loop_stack = []
-            i = 0
             aman = 0
-            while i < n:
-                if self.stop_event.is_set():
-                    self._finish("Makro dihentikan (F7) di langkah {}/{}."
-                                 .format(i + 1, n), warn=True)
-                    return
-                aman += 1
-                if aman > 500000:
-                    self._finish("Dihentikan: alur ULANGI terlalu panjang "
-                                 "(kemungkinan loop tanpa akhir).",
-                                 warn=True)
-                    return
-                l = langkah[i]
-                if not l.get("aktif", True):
-                    i += 1
-                    continue
-                self._set_progress("LANGKAH {}/{} - {}".format(
-                    i + 1, n,
-                    str(l.get("nama") or "") or LABEL_JENIS[l["jenis"]]))
-                self._sleep(max(0.0, _angka(l.get("jeda"), 0.5, 0,
-                                            86400)))
-                jenis = l["jenis"]
-                if jenis == "LOOP_MULAI":
-                    if l.get("ikut_video"):
-                        jumlah = len(videos)
-                    else:
-                        jumlah = int(_angka(l.get("jumlah_loop"), 2, 0,
-                                            100000))
-                    if jumlah <= 0:
-                        j = cari_akhir_loop(langkah, i)
-                        i = (j + 1) if j >= 0 else i + 1
-                        continue
-                    loop_stack.append({"mulai": i, "sisa": jumlah,
-                                       "idx": 0})
-                elif jenis == "LOOP_AKHIR":
-                    if loop_stack:
-                        top = loop_stack[-1]
-                        top["sisa"] -= 1
-                        top["idx"] += 1
-                        if top["sisa"] > 0:
-                            i = top["mulai"] + 1
-                            continue
-                        loop_stack.pop()
-                elif jenis in JENIS_STUDIO:
-                    # v5.5: mesin langkah Studio kini fungsi modul
-                    # bersama - dipakai juga oleh alur CutMotions
-                    idx = loop_stack[-1]["idx"] if loop_stack else 0
-                    if studio_jalankan_langkah(
-                            self, l, idx, videos, caption,
-                            len(videos) or int(_angka(
-                                snap.get("jumlah"), 0, 0, 100000)),
-                            str(snap.get("tanggal") or ""),
-                            tanggal_studio=str(
-                                snap.get("tanggal_studio") or "")) == "stop":
+            for putaran in range(1, total + 1):
+                if putaran > 1:
+                    # jeda antar putaran memakai nilai MUNDUR juga
+                    # (0 = langsung jalan ke langkah pertama lagi)
+                    for s in range(int(snap["mundur"]), 0, -1):
+                        if self.stop_event.is_set():
+                            self._finish(
+                                "Makro dihentikan sebelum putaran "
+                                "{}/{}.".format(putaran, total),
+                                warn=True)
+                            return
+                        self._set_status(
+                            "PUTARAN {}/{} - mulai lagi dari langkah 1 "
+                            "dalam {} detik...".format(putaran, total, s),
+                            C_ORANGE)
+                        self._sleep(1.0)
+                loop_stack = []
+                i = 0
+                while i < n:
+                    if self.stop_event.is_set():
+                        self._finish("Makro dihentikan (F7) di langkah "
+                                     "{}/{}{}.".format(
+                                         i + 1, n,
+                                         " (putaran {}/{})".format(
+                                             putaran, total)
+                                         if total > 1 else ""),
+                                     warn=True)
                         return
-                i += 1
-            self._finish("Makro selesai! {} langkah sudah dijalankan."
-                         .format(n))
+                    aman += 1
+                    if aman > 500000:
+                        self._finish("Dihentikan: alur ULANGI terlalu "
+                                     "panjang (kemungkinan loop tanpa "
+                                     "akhir).", warn=True)
+                        return
+                    l = langkah[i]
+                    if not l.get("aktif", True):
+                        i += 1
+                        continue
+                    nama_l = (str(l.get("nama") or "")
+                              or LABEL_JENIS[l["jenis"]])
+                    if total > 1:
+                        self._set_progress(
+                            "PUTARAN {}/{} - LANGKAH {}/{} - {}".format(
+                                putaran, total, i + 1, n, nama_l))
+                    else:
+                        self._set_progress("LANGKAH {}/{} - {}".format(
+                            i + 1, n, nama_l))
+                    self._sleep(max(0.0, _angka(l.get("jeda"), 0.5, 0,
+                                                86400)))
+                    jenis = l["jenis"]
+                    if jenis == "LOOP_MULAI":
+                        if l.get("ikut_video"):
+                            jumlah = len(videos)
+                        else:
+                            jumlah = int(_angka(l.get("jumlah_loop"), 2,
+                                                0, 100000))
+                        if jumlah <= 0:
+                            j = cari_akhir_loop(langkah, i)
+                            i = (j + 1) if j >= 0 else i + 1
+                            continue
+                        loop_stack.append({"mulai": i, "sisa": jumlah,
+                                           "idx": 0})
+                    elif jenis == "LOOP_AKHIR":
+                        if loop_stack:
+                            top = loop_stack[-1]
+                            top["sisa"] -= 1
+                            top["idx"] += 1
+                            if top["sisa"] > 0:
+                                i = top["mulai"] + 1
+                                continue
+                            loop_stack.pop()
+                    elif jenis in JENIS_STUDIO:
+                        # v5.5: mesin langkah Studio kini fungsi modul
+                        # bersama - dipakai juga oleh alur CutMotions
+                        idx = loop_stack[-1]["idx"] if loop_stack else 0
+                        if studio_jalankan_langkah(
+                                self, l, idx, videos, caption,
+                                len(videos) or int(_angka(
+                                    snap.get("jumlah"), 0, 0, 100000)),
+                                str(snap.get("tanggal") or ""),
+                                tanggal_studio=str(
+                                    snap.get("tanggal_studio")
+                                    or "")) == "stop":
+                            return
+                    i += 1
+            if total > 1:
+                self._finish("Makro selesai! {} langkah x {} putaran "
+                             "sudah dijalankan.".format(n, total))
+            else:
+                self._finish("Makro selesai! {} langkah sudah dijalankan."
+                             .format(n))
         except Exception as e:
             self._finish("Terjadi error: {}".format(e), warn=True)
 
@@ -11236,6 +11411,168 @@ def main():
             print("SELFTEST_TEMA_OK")
             root.destroy()
         root.after(3600, _ok15)
+    if "--selftest-putaran" in sys.argv:
+        # v6.7: ULANGI SEMUA (PUTARAN) - helper bersih, box di kedua
+        # tab, snapshot/profil, dan MESIN: alur penuh diulang dari
+        # langkah pertama (simulasi tanpa klik nyata).
+        def _uji_putaran():
+            cek = []
+
+            def ada_entry(induk, var):
+                for c in induk.winfo_children():
+                    if isinstance(c, tk.Entry) and \
+                            str(c.cget("textvariable")) == str(var):
+                        return True
+                    if ada_entry(c, var):
+                        return True
+                return False
+
+            # 1) helper murni
+            cek.append(("PUTARAN_HELPER_ANGKA",
+                        putaran_bersih("3") == 3))
+            cek.append(("PUTARAN_HELPER_KOSONG",
+                        putaran_bersih("", 1) == 1))
+            cek.append(("PUTARAN_HELPER_NOL",
+                        putaran_bersih("0") == 1))
+            cek.append(("PUTARAN_HELPER_MIN",
+                        putaran_bersih("-5") == 1))
+            cek.append(("PUTARAN_HELPER_RUSAK",
+                        putaran_bersih("bukan angka", 1) == 1))
+            cek.append(("PUTARAN_HELPER_MAKS",
+                        putaran_bersih("1000") == 999))
+            cek.append(("PUTARAN_HELPER_KOMA",
+                        putaran_bersih("2,7") == 2))
+            # 2) box ada di kedua tab
+            cek.append(("PUTARAN_VAR_CUT",
+                        "putaran" in app.tab_cut.vars))
+            cek.append(("PUTARAN_VAR_STUDIO",
+                        "putaran" in app.tab_studio.vars))
+            cek.append(("PUTARAN_BOX_CUT",
+                        ada_entry(app.tab_cut.kartu_waktu,
+                                  app.tab_cut.vars["putaran"])))
+            cek.append(("PUTARAN_BOX_STUDIO",
+                        ada_entry(app.tab_studio.kartu_mundur,
+                                  app.tab_studio.vars["putaran"])))
+            # 3) snapshot & profil CutMotions
+            cek.append(("PUTARAN_SNAP_CUT",
+                        "putaran" in app.tab_cut._snapshot()))
+            app.tab_cut.vars["putaran"].set("4")
+            d4 = app.tab_cut._kumpulkan_data()
+            app.tab_cut.vars["putaran"].set("1")
+            app.tab_cut._terapkan_data(d4)
+            cek.append(("PUTARAN_PROFIL_CUT",
+                        app.tab_cut.vars["putaran"].get() == "4"))
+            # 4) muat Studio dengan sanitasi
+            st = app.tab_studio
+            st._pasang_putaran("7")
+            cek.append(("PUTARAN_MUAT_ST1",
+                        st.vars["putaran"].get() == "7"))
+            st._pasang_putaran("0")
+            cek.append(("PUTARAN_MUAT_ST2",
+                        st.vars["putaran"].get() == "1"))
+            st._pasang_putaran("abc")
+            cek.append(("PUTARAN_MUAT_ST3",
+                        st.vars["putaran"].get() == "1"))
+            # 5) mesin CutMotions: pembungkus putaran memanggil alur
+            #    penuh sebanyak N putaran lalu lapor selesai
+            class MesinUji(object):
+                def __init__(self, gagal_di=0):
+                    self.stop_event = threading.Event()
+                    self.log = []
+                    self.akhir = None
+                    self.gagal_di = gagal_di
+
+                def _sleep(self, _s):
+                    pass
+
+                def _set_status(self, _m, _w=None):
+                    pass
+
+                def _finish(self, m, warn=False):
+                    self.akhir = (m, bool(warn))
+
+                def _jalankan_sekali(self, snap, jumlah, mundur,
+                                     jeda_dialog, jeda_langkah, tunggu,
+                                     ke, total):
+                    self.log.append(ke)
+                    if ke == self.gagal_di:
+                        self._finish("uji dihentikan", warn=True)
+                        return None
+                    return ("uji selesai {}".format(ke), 2)
+
+            fk = MesinUji()
+            CutMotionsTab._worker(fk, {}, 1, 0, 1, 1, 1, 3)
+            cek.append(("PUTARAN_MESIN_3X", fk.log == [1, 2, 3]))
+            cek.append(("PUTARAN_MESIN_PESAN",
+                        fk.akhir is not None and not fk.akhir[1]
+                        and "3 putaran penuh" in fk.akhir[0]))
+            fk2 = MesinUji(gagal_di=2)
+            CutMotionsTab._worker(fk2, {}, 1, 0, 1, 1, 1, 3)
+            cek.append(("PUTARAN_MESIN_STOP",
+                        fk2.log == [1, 2] and fk2.akhir is not None
+                        and fk2.akhir[1]))
+            fk3 = MesinUji()
+            CutMotionsTab._worker(fk3, {}, 1, 0, 1, 1, 1, 0)
+            cek.append(("PUTARAN_MESIN_JEPIT", fk3.log == [1]))
+            # 6) mesin Studio: langkah diulang per putaran
+            panggil = []
+
+            def palsu_jalankan(mesin, l, idx=0, videos=None,
+                               caption="", jumlah=0, tanggal="",
+                               tanggal_studio=""):
+                panggil.append(str(l.get("nama")))
+                return None
+
+            asli_jalankan = globals()["studio_jalankan_langkah"]
+            globals()["studio_jalankan_langkah"] = palsu_jalankan
+
+            class MesinStudioUji(object):
+                def __init__(self):
+                    self.stop_event = threading.Event()
+                    self.akhir = None
+
+                def _sleep(self, _s):
+                    pass
+
+                def _set_status(self, _m, _w=None):
+                    pass
+
+                def _set_progress(self, _m):
+                    pass
+
+                def _finish(self, m, warn=False):
+                    self.akhir = (m, bool(warn))
+
+            fk4 = MesinStudioUji()
+            snap_st = {"mundur": 0, "putaran": 3, "videos": [],
+                       "caption": "", "jumlah": 0, "tanggal": "",
+                       "tanggal_studio": "",
+                       "langkah": [
+                           {"uid": "s1", "jenis": "JEDA",
+                            "nama": "uji1", "aktif": True,
+                            "jeda": "0"},
+                           {"uid": "s2", "jenis": "KLIK",
+                            "nama": "uji2", "aktif": True,
+                            "jeda": "0", "posisi": [1, 1]}]}
+            StudioMakroTab._worker(fk4, snap_st)
+            globals()["studio_jalankan_langkah"] = asli_jalankan
+            cek.append(("PUTARAN_STUDIO_3X", len(panggil) == 6))
+            cek.append(("PUTARAN_STUDIO_AKHIR",
+                        fk4.akhir is not None and not fk4.akhir[1]
+                        and "x 3 putaran" in fk4.akhir[0]))
+            # 7) kembalikan nilai bawaan + snapshot Studio siap putaran
+            st._pasang_putaran("1")
+            cek.append(("PUTARAN_SNAP_STUDIO",
+                        st.vars["putaran"].get() == "1"))
+            for tag, ok in cek:
+                print(tag, bool(ok))
+            print("PUTARAN_SEMUA_OK", all(ok for _t, ok in cek))
+        root.after(1100, _uji_putaran)
+
+        def _ok16():
+            print("SELFTEST_PUTARAN_OK")
+            root.destroy()
+        root.after(4200, _ok16)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -11250,7 +11587,8 @@ def main():
             or ("--selftest-kartu" in sys.argv) \
             or ("--selftest-ocr" in sys.argv) \
             or ("--selftest-fokus" in sys.argv) \
-            or ("--selftest-tema" in sys.argv):
+            or ("--selftest-tema" in sys.argv) \
+            or ("--selftest-putaran" in sys.argv):
         print("SELFTEST_DONE")
 
 
