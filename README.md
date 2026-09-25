@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.4)
+# CutUploader Pro — Macro Studio Edition (v6.5)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.4**:
+Dari halaman [Releases](../../releases) rilis **v6.5**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.4.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.5.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,20 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v6.5: perbaikan — mengetik di semua box tidak lagi "keluar" setelah 1 huruf
+
+**Keluhan**: di SEMUA box isian (panel PROPERTI, kartu VIDEO & CAPTION, WAKTU & UNGGAH), setiap mengetik **1 huruf** kursor langsung "keluar otomatis" — tidak bisa menulis panjang.
+
+**Penyebab**: setiap ketikan memperbarui tabel langkah (biar isinya tampil langsung). Proses pembaruannya memulihkan seleksi baris lewat `selection_set`, yang memicu event `<<TreeviewSelect>>` — event itu datang **asinkron dari antrean Tk**, tepat saat kamu masih mengetik — lalu **panel properti dirender ulang**: box yang sedang kamu pakai DIHANCURKAN dan dibuat baru, fokusnya hilang.
+
+**Perbaikan**:
+
+1. Panel properti (kedua tab) **hanya dirender ulang bila baris terpilihnya benar-benar berubah** — event seleksi dengan baris yang sama kini diabaikan.
+2. Pemulihan seleksi setelah tabel diisi ulang dilakukan **senyap** (tanpa memicu event).
+3. Hasil: ketik 2, 3, 10 huruf sekaligus di box mana pun — kursor tetap di tempat. Tabel tetap diperbarui langsung saat mengetik (perilaku lama yang berguna tetap ada).
+
+Uji baru **`--selftest-fokus`** membuktikan: panel/kartu/WAKTU di kedua tab — box tetap hidup, **0 render ulang panel** selama mengetik.
 
 ### Baru v6.4: hasil baca OCR dipotong SAMPAI EKSTENSI FILE saja
 
@@ -184,6 +198,13 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `rapidocr-onnxruntime`, `pyinstaller` (dev).
+
+## Perubahan v6.5
+
+- **Akar masalah fokus hilang**: `_refresh_tabel()` (kedua tab) mengisi ulang tabel pada setiap ketikan (trace variabel → `_terapkan_prop`/`_terapkan_opts`); `tree.delete()` menghapus seleksi → `selection_set` memicu `<<TreeviewSelect>>` yang dikirim **asinkron** oleh antrean Tk → `_render_properti()` menghancurkan panel → fokus box yang sedang diketik hilang (ini pula yang membuat render terjadi 2x per huruf: event dari `delete` dan dari `selection_set`).
+- **Perbaikan 1 — guard `_render_sel`**: `_on_pilih_baris` (kedua tab) kini mencatat seleksi saat panel terakhir dirender dan **melewatkan render ulang bila seleksinya sama** — event buatan pemulihan seleksi tidak lagi menghancurkan panel; klik baris berbeda tetap merender seperti biasa.
+- **Perbaikan 2 — pemulihan senyap**: pengembalian seleksi di akhir `_refresh_tabel` dibungkus bendera `_senyap_pilih` (lapisan kedua), berlaku untuk seleksi tunggal.
+- Selftest baru **`--selftest-fokus`** (5 cek: panel & kartu & WAKTU tab CutMotions + panel & kartu tab Studio): semua box **tetap hidup** dan **0 render ulang panel** selama mengetik; regresi 12 selftest lain hijau (dengan data bersih — catatan: selftest yang menambah langkah mempollute auto-save untuk run berikutnya, perilaku lama).
 
 ## Perubahan v6.4
 

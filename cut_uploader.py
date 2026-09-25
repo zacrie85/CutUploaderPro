@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================
-  CUTUPLOADER PRO  v6.4  -  MACRO STUDIO EDITION
+  CUTUPLOADER PRO  v6.5  -  MACRO STUDIO EDITION
   Aplikasi desktop otomasi klik + uploader video batch
   khusus untuk situs CutMotions (Kwai)
 ------------------------------------------------------------
@@ -111,6 +111,14 @@
        lain), yang dipakai HANYA bagian sampai ekstensi (.mp4 /
        .mkv / .ts / ...) - apa pun setelahnya otomatis dibuang,
        jadi nama yang masuk ke caption benar-benar bersih.
+     - v6.5: PERBAIKAN MENGETIK - di SEMUA box isian (panel
+       properti, kartu, WAKTU), kursor tidak lagi "keluar
+       otomatis" setelah 1 huruf. Penyebab lama: setiap ketikan
+       memperbarui tabel, dan pemulihan seleksi tabel memicu
+       event yang MERENDER ULANG panel properti di tengah
+       mengetik - box yang sedang dipakai ikut terhancurkan.
+       Kini panel hanya dirender ulang bila baris terpilihnya
+       benar-benar berubah, jadi mengetik panjang lancar.
 
   2. ALUR CUTMOTIONS (A-J)  -  seperti versi sebelumnya
      Alur otomatis uploader batch CutMotions:
@@ -192,6 +200,9 @@
        (.mp4/.mkv/.ts/...) - tulisan lain yang ikut terbaca di
        sekitar nama (tanggal, ukuran, dsb) otomatis dibuang,
        nama yang masuk caption benar-benar bersih.
+     - v6.5: PERBAIKAN MENGETIK - kursor tidak lagi keluar dari
+       box setelah 1 huruf (panel properti tidak dirender ulang
+       lagi di tengah mengetik; lihat daftar v6.5 di atas).
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -308,7 +319,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.4"
+APP_VERSION = "6.5"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -3453,24 +3464,47 @@ class CutMotionsTab(PerekamAksiMixin):
                 kode, label, detail, jeda_t, ulang))
         if self.sel and self.tree.exists(self.sel):
             try:
-                # hindari selection_set bila seleksi sudah tepat -
-                # event <<TreeviewSelect>> akan memicu render ulang
-                # panel properti DI TENGAH user mengetik (bug UX)
+                # v6.5: pulihkan seleksi SECARA SENYAP - bila dipulihkan
+                # biasa, event <<TreeviewSelect>> memicu _render_properti
+                # yang MENGHANCURKAN panel properti di tengah user
+                # mengetik -> fokus box hilang setelah 1 huruf (bug UX:
+                # "ketik 1 huruf langsung keluar")
                 if tuple(self.tree.selection()) != (self.sel,):
-                    self.tree.selection_set(self.sel)
-                self.tree.see(self.sel)
+                    self._senyap_pilih = True
+                    try:
+                        self.tree.selection_set(self.sel)
+                        self.tree.see(self.sel)
+                    finally:
+                        self._senyap_pilih = False
+                else:
+                    self.tree.see(self.sel)
             except Exception:
                 pass
 
     def _on_pilih_baris(self, _ev=None):
+        # v6.5: event <<TreeviewSelect>> buatan _refresh_tabel
+        # (pemulihan seleksi setelah tabel diisi ulang) datang SECARA
+        # ASINKRON dari antrean event - tepat saat user sedang
+        # mengetik. Bila seleksinya SAMA dengan saat panel terakhir
+        # dirender, jangan render ulang: render ulang menghancurkan
+        # box properti dan fokus ketikannya hilang setelah 1 huruf.
+        if getattr(self, "_senyap_pilih", False):
+            return
         sel = self.tree.selection()
-        if sel:
-            self.sel = sel[0]
-            self._render_properti()
+        if not sel:
+            return
+        if tuple(sel) == getattr(self, "_render_sel", None):
+            return
+        self.sel = sel[0]
+        self._render_properti()
 
     # ================== PANEL PROPERTI ==================
     def _render_properti(self):
         self._loading_prop = True
+        try:
+            self._render_sel = tuple(self.tree.selection())  # v6.5
+        except Exception:
+            pass
         for wdg in self.prop_body.winfo_children():
             wdg.destroy()
         # v5.7: BANYAK baris terpilih -> panel aksi massal
@@ -7680,21 +7714,36 @@ class StudioMakroTab(PerekamAksiMixin):
                                      self._ulang_langkah(l)))
         if self.sel and self.tree.exists(self.sel):
             try:
-                # hindari selection_set bila seleksi sudah tepat -
-                # event <<TreeviewSelect>> akan memicu render ulang
-                # panel properti DI TENGAH user mengetik (bug UX)
+                # v6.5: pulihkan seleksi SECARA SENYAP - bila dipulihkan
+                # biasa, event <<TreeviewSelect>> memicu _render_properti
+                # yang MENGHANCURKAN panel properti di tengah user
+                # mengetik -> fokus box hilang setelah 1 huruf (bug UX:
+                # "ketik 1 huruf langsung keluar")
                 if tuple(self.tree.selection()) != (self.sel,):
-                    self.tree.selection_set(self.sel)
-                self.tree.see(self.sel)
+                    self._senyap_pilih = True
+                    try:
+                        self.tree.selection_set(self.sel)
+                        self.tree.see(self.sel)
+                    finally:
+                        self._senyap_pilih = False
+                else:
+                    self.tree.see(self.sel)
             except Exception:
                 pass
         self._simpan_auto()
 
     def _on_pilih_baris(self, _ev=None):
+        # v6.5: lihat penjelasan di _on_pilih_baris tab CutMotions -
+        # seleksi sama = panel sudah benar, jangan render ulang
+        if getattr(self, "_senyap_pilih", False):
+            return
         sel = self.tree.selection()
-        if sel:
-            self.sel = sel[0]
-            self._render_properti()
+        if not sel:
+            return
+        if tuple(sel) == getattr(self, "_render_sel", None):
+            return
+        self.sel = sel[0]
+        self._render_properti()
 
     # ================== TAMBAH / SUNTING LANGKAH ==================
     def _tambah(self, jenis):
@@ -8057,6 +8106,11 @@ class StudioMakroTab(PerekamAksiMixin):
 
     # ================== PANEL PROPERTI ==================
     def _render_properti(self):
+        self._loading_prop = True
+        try:
+            self._render_sel = tuple(self.tree.selection())  # v6.5
+        except Exception:
+            pass
         # v5.7: BANYAK baris terpilih -> panel aksi massal
         pilihan = self.tree.selection()
         if len(pilihan) > 1:
@@ -10798,6 +10852,106 @@ def main():
             print("SELFTEST_OCR_OK")
             root.destroy()
         root.after(3600, _ok13)
+    if "--selftest-fokus" in sys.argv:
+        # v6.5: BUG UX "ketik 1 huruf langsung keluar" - _refresh_tabel
+        # memulihkan seleksi via selection_set yang memicu
+        # <<TreeviewSelect>> -> panel properti DIRENDER ULANG di tengah
+        # mengetik -> fokus box hilang setelah 1 huruf. Uji: ketik
+        # beberapa huruf ke box panel/kartu di kedua tab - widget harus
+        # tetap hidup dan fokus TETAP di box itu.
+        def _entry_var(parent, var, kumpul):
+            for w in parent.winfo_children():
+                try:
+                    if isinstance(w, tk.Entry) and \
+                            str(w.cget("textvariable")) == str(var):
+                        kumpul.append(w)
+                except Exception:
+                    pass
+                _entry_var(w, var, kumpul)
+
+        def _ketik(ent, huruf2):
+            try:
+                ent.focus_set()
+                root.update()
+                for h in huruf2:
+                    ent.insert("end", h)
+                    root.update_idletasks()
+                # kriteria inti v6.5: widget TIDAK boleh dihancurkan
+                # (panel dirender ulang) di tengah mengetik - di Windows
+                # itulah yang membuat fokus "keluar otomatis"
+                masih = bool(ent.winfo_exists())
+                return masih, masih
+            except Exception:
+                return False, False
+
+        def _uji_fokus():
+            cut, st = app.tab_cut, app.tab_studio
+            # penghitung render panel - mengetik TIDAK boleh memicu
+            # render ulang panel properti (v6.5)
+            hitung = {"cut": 0, "studio": 0}
+            asli_render_cut = cut._render_properti
+            asli_render_st = st._render_properti
+
+            def render_cut_hitung():
+                hitung["cut"] += 1
+                return asli_render_cut()
+
+            def render_st_hitung():
+                hitung["studio"] += 1
+                return asli_render_st()
+
+            cut._render_properti = render_cut_hitung
+            st._render_properti = render_st_hitung
+            # 1) panel properti tab CutMotions - langkah D (tanggal)
+            cut.tree.selection_set("pos_tanggal")
+            cut.tree.event_generate("<<TreeviewSelect>>")
+            root.update()
+            hitung["cut"] = 0
+            ent = []
+            _entry_var(cut.prop_body, cut.pv["jeda"], ent)
+            ok1, _m1 = _ketik(ent[0], "35") if ent else (False, False)
+            print("FOKUS_PANEL_CUT_OK", bool(ok1),
+                  "| render panel saat mengetik:", hitung["cut"])
+            # 2) kartu tab CutMotions - caption dasar
+            hitung["cut"] = 0
+            ent2 = []
+            _entry_var(cut.wadah, cut.vars["caption"], ent2)
+            ok2, _m2 = _ketik(ent2[0], "XY") if ent2 else (False, False)
+            print("FOKUS_KARTU_CUT_OK", bool(ok2),
+                  "| render panel saat mengetik:", hitung["cut"])
+            # 3) WAKTU tab CutMotions - kolom mundur
+            hitung["cut"] = 0
+            ent3 = []
+            _entry_var(cut.wadah, cut.vars["mundur"], ent3)
+            ok3, _m3 = _ketik(ent3[0], "12") if ent3 else (False, False)
+            print("FOKUS_WAKTU_CUT_OK", bool(ok3),
+                  "| render panel saat mengetik:", hitung["cut"])
+            # 4) panel properti tab Studio - langkah KLIK baru
+            st._tambah("KLIK")
+            uid_baru = st.langkah[-1]["uid"]
+            st.tree.selection_set(uid_baru)
+            st.tree.event_generate("<<TreeviewSelect>>")
+            root.update()
+            hitung["studio"] = 0
+            ent4 = []
+            _entry_var(st.prop_body, st.pv["jeda"], ent4)
+            ok4, _m4 = _ketik(ent4[0], "12") if ent4 else (False, False)
+            print("FOKUS_PANEL_STUDIO_OK", bool(ok4),
+                  "| render panel saat mengetik:", hitung["studio"])
+            # 5) kartu tab Studio - caption dasar
+            hitung["studio"] = 0
+            ent5 = []
+            _entry_var(st.wadah, st.vars["caption"], ent5)
+            ok5, _m5 = _ketik(ent5[0], "AB") if ent5 else (False, False)
+            print("FOKUS_KARTU_STUDIO_OK", bool(ok5),
+                  "| render panel saat mengetik:", hitung["studio"])
+            print("FOKUS_DONE")
+        root.after(1100, _uji_fokus)
+
+        def _ok14():
+            print("SELFTEST_FOKUS_OK")
+            root.destroy()
+        root.after(5200, _ok14)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \

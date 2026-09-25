@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.4 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.5 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -368,6 +368,27 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.5 - PERBAIKAN MENGETIK DI SEMUA BOX:
+  Keluhan: di semua box isian (panel PROPERTI, kartu VIDEO &
+  CAPTION, WAKTU & UNGGAH), setiap mengetik 1 huruf kursor
+  langsung "keluar otomatis" - tidak bisa menulis panjang.
+  Penyebab: setiap ketikan memperbarui tabel langkah (supaya
+  isinya tampil langsung). Pemulihan seleksi baris memicu
+  event <<TreeviewSelect>> yang datang ASINKRON dari antrean
+  Tk - tepat saat Anda masih mengetik - lalu panel properti
+  DIRENDER ULANG: box yang sedang dipakai dihancurkan dan
+  dibuat baru, fokusnya hilang.
+  Perbaikan (tanpa setelan baru):
+  1. Panel properti (kedua tab) hanya dirender ulang bila
+     baris terpilihnya BENAR-BENAR berubah; event seleksi
+     dengan baris yang sama diabaikan.
+  2. Pemulihan seleksi setelah tabel diisi ulang dilakukan
+     senyap (tanpa memicu event).
+  3. Hasil: ketik 2, 3, 10 huruf sekaligus di box mana pun -
+     kursor tetap di tempat. Tabel tetap ter-update langsung
+     saat mengetik seperti biasa.
+  Uji: python cut_uploader.py --selftest-fokus  (5 cek).
 
 BARU DI V6.4 - HASIL BACA OCR DIPOTONG SAMPAI EKSTENSI FILE:
   Umpan balik: OCR sudah berhasil membaca nama video, tapi
