@@ -334,7 +334,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.7"
+APP_VERSION = "6.8"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -1017,11 +1017,14 @@ SLOT_KODE = {
 
 # ---- v4.2: pencarian gambar opsional pada SEMUA langkah ----
 GAMBAR_AKSI_OPSI = ("Klik di gambar", "Pindah saja")
-GAMBAR_GAGAL_OPSI = ("Klik titik X,Y", "Lewati langkah", "Stop alur")
+# v6.8: + "Tunggu sampai ketemu" - cari terus tanpa batas waktu
+# sampai gambar muncul, baru lanjut ke langkah berikutnya.
+GAMBAR_GAGAL_OPSI = ("Klik titik X,Y", "Lewati langkah", "Stop alur",
+                     "Tunggu sampai ketemu")
 
 # v5.3 (Studio): tidak ada lagi titik X,Y - fallback tanpa posisi
 GAMBAR_GAGAL_OPSI_STUDIO = ("Lewati langkah", "Klik tengah area",
-                            "Stop alur")
+                            "Stop alur", "Tunggu sampai ketemu")
 
 
 def gambar_langkah_default():
@@ -1704,13 +1707,34 @@ def studio_gambar_cari(mesin, l):
         desk = "seluruh layar"
     hasil = None
     pesan = ""
-    for percobaan in range(1, 4):
-        mesin._set_status(
-            "Cari gambar '{}' di {} (percobaan {}/3, "
-            "multi-skala)...".format(os.path.basename(path), desk,
-                                     percobaan), C_GREEN)
+    # v6.8: mode "Tunggu sampai ketemu" - pencarian TANPA batas
+    # waktu (tidak lagi 3x percobaan); tetap bisa dihentikan lewat
+    # tombol/hotkey stop karena stop_event dicek tiap putaran.
+    pilihan_gagal = str(g.get("gagal") or "Lewati langkah")
+    tunggu = pilihan_gagal == "Tunggu sampai ketemu"
+    percobaan = 0
+    while True:
+        percobaan += 1
+        if tunggu and mesin.stop_event.is_set():
+            mesin._finish(
+                "Dihentikan saat MENUNGGU gambar '{}' (tidak pernah "
+                "ketemu). {}".format(os.path.basename(path), pesan),
+                warn=True)
+            return "stop"
+        if tunggu:
+            mesin._set_status(
+                "MENUNGGU gambar '{}' di {} (percobaan {}, TANPA "
+                "batas waktu - tekan STOP untuk berhenti)...".format(
+                    os.path.basename(path), desk, percobaan), C_ORANGE)
+        else:
+            mesin._set_status(
+                "Cari gambar '{}' di {} (percobaan {}/3, "
+                "multi-skala)...".format(os.path.basename(path), desk,
+                                         percobaan), C_GREEN)
         hasil, pesan = cari_di_layar_area(path, area, mirip)
         if hasil:
+            break
+        if not tunggu and percobaan >= 3:
             break
         mesin._sleep(1.0)
     if hasil:
@@ -1730,12 +1754,14 @@ def studio_gambar_cari(mesin, l):
             "diklik.".format(nama, x, y, skor), C_GREEN)
         studio_klik_titik(mesin, (x, y))
         return None
-    pilihan = str(g.get("gagal") or "Lewati langkah")
-    if pilihan == "Stop alur":
+    # ---- tidak ketemu setelah 3 percobaan (mode NON-tunggu) ----
+    # (mode "Tunggu sampai ketemu" hanya keluar loop saat ketemu /
+    # dihentikan user, jadi tidak pernah sampai ke sini)
+    if pilihan_gagal == "Stop alur":
         mesin._finish("Dihentikan: gambar '{}' tidak ketemu 3x. {}"
                       .format(os.path.basename(path), pesan), warn=True)
         return "stop"
-    if pilihan == "Klik tengah area" and area:
+    if pilihan_gagal == "Klik tengah area" and area:
         tengah = ((area[0] + area[2]) // 2, (area[1] + area[3]) // 2)
         mesin._set_status(
             "Gambar '{}' tidak ketemu - klik tengah area fokus {}. "
@@ -3928,6 +3954,17 @@ class CutMotionsTab(PerekamAksiMixin):
                  bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
                  wraplength=860, justify="left").pack(
                      fill="x", pady=(4, 0))
+        # v6.8: penjelasan pilihan SAAT TIDAK KETEMU
+        tk.Label(self.prop_body,
+                 text="v6.8 SAAT TIDAK KETEMU: Klik titik X,Y = pakai "
+                      "posisi langkah | Lewati langkah = langsung ke "
+                      "langkah berikutnya | Stop alur = alur berhenti | "
+                      "Tunggu sampai ketemu = dicari TERUS tanpa batas "
+                      "waktu sampai gambarnya muncul, baru lanjut (bisa "
+                      "dihentikan lewat tombol/hotkey STOP kapan saja).",
+                 bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                 wraplength=860, justify="left").pack(
+                     fill="x", pady=(2, 0))
 
         self.lbl_ambil = tk.Label(self.prop_body, text="", bg=C_BG,
                                   fg=C_ORANGE, font=F_XS, anchor="w",
@@ -4081,6 +4118,18 @@ class CutMotionsTab(PerekamAksiMixin):
             r = self._baris_prop("KEMIRIPAN:")
             self._ent_prop(r, self.pv["g_mirip"], 6)
             self._btn_prop(r, "TES CARI LANGKAH INI", self._tes_cari)
+            # v6.8: penjelasan pilihan SAAT TIDAK KETEMU
+            tk.Label(self.prop_body,
+                     text="v6.8 SAAT TIDAK KETEMU: Lewati langkah = "
+                          "langsung ke langkah berikutnya | Klik tengah "
+                          "area = klik tengah AREA FOKUS | Stop alur = "
+                          "alur berhenti | Tunggu sampai ketemu = dicari "
+                          "TERUS tanpa batas waktu sampai gambarnya "
+                          "muncul, baru lanjut (bisa dihentikan lewat "
+                          "tombol/hotkey STOP kapan saja).",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(
+                         fill="x", pady=(2, 0))
         elif jenis == "KETIK":
             self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
             self.pv["ctrl_a"] = tk.BooleanVar(
@@ -6313,14 +6362,36 @@ class CutMotionsTab(PerekamAksiMixin):
             mirip = _angka(cfg.get("mirip"), snap["kemiripan"], 0.5, 0.99)
         hasil = None
         pesan = ""
-        for percobaan in range(1, 4):
-            self._set_status(
-                "Cari gambar '{}' dalam radius {} px (percobaan {}/3, "
-                "multi-skala)...".format(os.path.basename(path), radius,
-                                         percobaan), C_GREEN)
+        # v6.8: mode "Tunggu sampai ketemu" - pencarian TANPA batas
+        # waktu (tidak lagi 3x percobaan); tetap bisa dihentikan
+        # lewat tombol/hotkey stop (stop_event dicek tiap putaran).
+        pilihan = str(cfg.get("gagal") or "Klik titik X,Y")
+        tunggu = pilihan == "Tunggu sampai ketemu"
+        percobaan = 0
+        while True:
+            percobaan += 1
+            if tunggu and self.stop_event.is_set():
+                return "stop", ("Dihentikan saat MENUNGGU gambar {} "
+                                "(tidak pernah ketemu). {}".format(
+                                    nama, pesan))
+            if tunggu:
+                self._set_status(
+                    "MENUNGGU gambar '{}' dalam radius {} px "
+                    "(percobaan {}, TANPA batas waktu - tekan STOP "
+                    "untuk berhenti)...".format(
+                        os.path.basename(path), radius, percobaan),
+                    C_ORANGE)
+            else:
+                self._set_status(
+                    "Cari gambar '{}' dalam radius {} px (percobaan "
+                    "{}/3, multi-skala)...".format(
+                        os.path.basename(path), radius, percobaan),
+                    C_GREEN)
             hasil, pesan = cari_di_layar(path, titik[0], titik[1],
                                          radius, mirip)
             if hasil:
+                break
+            if not tunggu and percobaan >= 3:
                 break
             self._sleep(jeda_dialog)
         if hasil:
@@ -6339,8 +6410,9 @@ class CutMotionsTab(PerekamAksiMixin):
                 "Gambar {} KETEMU di ({}, {}) - kemiripan {:.0%} - "
                 "diklik.".format(nama, x, y, skor), C_GREEN)
             return "klik", (x, y)
-        # ---- gambar tidak ketemu ----
-        pilihan = str(cfg.get("gagal") or "Klik titik X,Y")
+        # ---- gambar tidak ketemu (mode NON-tunggu, 3 percobaan) ----
+        # (mode "Tunggu sampai ketemu" hanya keluar loop saat ketemu /
+        # dihentikan user, jadi tidak pernah sampai ke sini)
         if pilihan == "Stop alur":
             return "stop", ("Dihentikan: gambar referensi {} tidak ketemu "
                             "3x. {}".format(nama, pesan))
@@ -8616,6 +8688,18 @@ class StudioMakroTab(PerekamAksiMixin):
                      bg=C_BG, fg=C_ORANGE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(
                          fill="x", pady=(4, 0))
+            # v6.8: penjelasan pilihan SAAT TIDAK KETEMU
+            tk.Label(self.prop_body,
+                     text="v6.8 SAAT TIDAK KETEMU: Lewati langkah = "
+                          "langsung ke langkah berikutnya | Klik tengah "
+                          "area = klik tengah AREA FOKUS | Stop alur = "
+                          "alur berhenti | Tunggu sampai ketemu = dicari "
+                          "TERUS tanpa batas waktu sampai gambarnya "
+                          "muncul, baru lanjut (bisa dihentikan lewat "
+                          "tombol/hotkey STOP kapan saja).",
+                     bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
+                     wraplength=860, justify="left").pack(
+                         fill="x", pady=(2, 0))
         elif jenis == "KETIK":
             self.pv["teks"] = tk.StringVar(value=str(l.get("teks") or ""))
             self.pv["ctrl_a"] = tk.BooleanVar(
@@ -11573,6 +11657,161 @@ def main():
             print("SELFTEST_PUTARAN_OK")
             root.destroy()
         root.after(4200, _ok16)
+
+    if "--selftest-tunggu" in sys.argv:
+        # v6.8: opsi SAAT TIDAK KETEMU "Tunggu sampai ketemu" -
+        # mesin mencari TANPA batas waktu sampai gambar ketemu lalu
+        # lanjut (simulasi tanpa klik nyata), tetap bisa distop.
+        def _uji_tunggu():
+            cek = []
+            # 1) opsi baru ada di kedua daftar pilihan
+            cek.append(("TUNGGU_OPSI_CUT",
+                        "Tunggu sampai ketemu" in GAMBAR_GAGAL_OPSI))
+            cek.append(("TUNGGU_OPSI_STUDIO",
+                        "Tunggu sampai ketemu"
+                        in GAMBAR_GAGAL_OPSI_STUDIO))
+            # 2) sanitasi makro menyimpan opsi baru apa adanya
+            bersih = studio_bersihkan([{
+                "jenis": "GAMBAR", "uid": "s1",
+                "gambar": {"path": "x.png",
+                           "gagal": "Tunggu sampai ketemu"}}])
+            cek.append(("TUNGGU_SANITASI",
+                        bool(bersih) and bersih[0]["gambar"]["gagal"]
+                        == "Tunggu sampai ketemu"))
+            # file gambar dummy (hanya perlu ADA, isinya tak dibaca)
+            fd_, pth = tempfile.mkstemp(suffix=".png")
+            os.close(fd_)
+            asli_area = globals()["cari_di_layar_area"]
+            asli_layar = globals()["cari_di_layar"]
+            asli_klik = globals()["studio_klik_titik"]
+            asli_cv = globals()["CV_OK"]
+            klik_log = []
+            globals()["CV_OK"] = True
+            globals()["studio_klik_titik"] = (
+                lambda m, t: klik_log.append(tuple(t)))
+
+            class MesinUji(object):
+                def __init__(self):
+                    self.stop_event = threading.Event()
+                    self.akhir = None
+
+                def _sleep(self, _s):
+                    pass
+
+                def _set_status(self, _m, _w=None):
+                    pass
+
+                def _finish(self, m, warn=False):
+                    self.akhir = (m, bool(warn))
+
+            try:
+                # 3) STUDIO: mode tunggu -> dicari terus sampai ketemu
+                #    lalu DIKLIK dan alur lanjut
+                panggil = []
+
+                def palsu_area(path, area, mirip):
+                    panggil.append(1)
+                    if len(panggil) < 3:
+                        return None, "belum ada"
+                    return (123, 456, 0.92), ""
+
+                globals()["cari_di_layar_area"] = palsu_area
+                mu = MesinUji()
+                l_uji = {"jenis": "GAMBAR", "nama": "uji",
+                         "label": "uji",
+                         "gambar": {"path": pth,
+                                    "aksi": "Klik di gambar",
+                                    "gagal": "Tunggu sampai ketemu",
+                                    "mirip": "0.8", "fokus": None}}
+                hasil_s = studio_gambar_cari(mu, l_uji)
+                cek.append(("TUNGGU_STUDIO_KETEMU",
+                            hasil_s is None and len(panggil) == 3
+                            and klik_log == [(123, 456)]))
+                # 4) STUDIO: mode tunggu + STOP user -> keluar "stop"
+                panggil2 = []
+
+                def palsu_area_stop(path, area, mirip):
+                    panggil2.append(1)
+                    if len(panggil2) >= 2:
+                        mu2.stop_event.set()
+                    return None, "belum ada"
+
+                globals()["cari_di_layar_area"] = palsu_area_stop
+                mu2 = MesinUji()
+                hasil_s2 = studio_gambar_cari(mu2, l_uji)
+                cek.append(("TUNGGU_STUDIO_STOP",
+                            hasil_s2 == "stop" and len(panggil2) == 2
+                            and mu2.akhir is not None and mu2.akhir[1]))
+                # 5) CUTMOTIONS: mode tunggu -> ketemu lalu klik
+                panggil3 = []
+
+                def palsu_layar(path, cx, cy, radius, mirip):
+                    panggil3.append(1)
+                    if len(panggil3) < 2:
+                        return None, "belum ada"
+                    return (321, 654, 0.9), ""
+
+                globals()["cari_di_layar"] = palsu_layar
+                fk = MesinUji()
+                snap = {"radius": 300, "kemiripan": 0.8}
+                cfg = {"aktif": True, "path": pth,
+                       "gagal": "Tunggu sampai ketemu",
+                       "radius": "", "mirip": "",
+                       "aksi": "Klik di gambar"}
+                aksi_c, nilai_c = CutMotionsTab._cari_gambar_langkah(
+                    fk, snap, cfg, [100, 100], 0.5, nama="uji")
+                cek.append(("TUNGGU_CUT_KETEMU",
+                            aksi_c == "klik" and nilai_c == (321, 654)
+                            and len(panggil3) == 2))
+                # 6) CUTMOTIONS: mode tunggu + STOP user -> ("stop",...)
+                panggil4 = []
+
+                def palsu_layar_stop(path, cx, cy, radius, mirip):
+                    panggil4.append(1)
+                    if len(panggil4) >= 2:
+                        fk2.stop_event.set()
+                    return None, "belum ada"
+
+                globals()["cari_di_layar"] = palsu_layar_stop
+                fk2 = MesinUji()
+                aksi_d, _pesan_d = CutMotionsTab._cari_gambar_langkah(
+                    fk2, snap, cfg, [100, 100], 0.5, nama="uji")
+                cek.append(("TUNGGU_CUT_STOP",
+                            aksi_d == "stop" and len(panggil4) == 2))
+                # 7) REGRESI: mode lama (Lewati langkah) tetap 3x
+                #    percobaan lalu langkah dilewati
+                panggil5 = []
+
+                def palsu_layar_gagal(path, cx, cy, radius, mirip):
+                    panggil5.append(1)
+                    return None, "tidak ada"
+
+                globals()["cari_di_layar"] = palsu_layar_gagal
+                fk3 = MesinUji()
+                cfg_lama = dict(cfg)
+                cfg_lama["gagal"] = "Lewati langkah"
+                aksi_e, _x = CutMotionsTab._cari_gambar_langkah(
+                    fk3, snap, cfg_lama, [100, 100], 0.5, nama="uji")
+                cek.append(("TUNGGU_REGRESI_3X",
+                            aksi_e == "skip" and len(panggil5) == 3))
+            finally:
+                globals()["cari_di_layar_area"] = asli_area
+                globals()["cari_di_layar"] = asli_layar
+                globals()["studio_klik_titik"] = asli_klik
+                globals()["CV_OK"] = asli_cv
+                try:
+                    os.remove(pth)
+                except OSError:
+                    pass
+            for tag, ok in cek:
+                print(tag, bool(ok))
+            print("TUNGGU_SEMUA_OK", all(ok for _t, ok in cek))
+        root.after(1100, _uji_tunggu)
+
+        def _ok17():
+            print("SELFTEST_TUNGGU_OK")
+            root.destroy()
+        root.after(4200, _ok17)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -11588,7 +11827,8 @@ def main():
             or ("--selftest-ocr" in sys.argv) \
             or ("--selftest-fokus" in sys.argv) \
             or ("--selftest-tema" in sys.argv) \
-            or ("--selftest-putaran" in sys.argv):
+            or ("--selftest-putaran" in sys.argv) \
+            or ("--selftest-tunggu" in sys.argv):
         print("SELFTEST_DONE")
 
 

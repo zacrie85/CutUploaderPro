@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.7 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.8 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -91,7 +91,8 @@ MENUIS LANGKAH DI TOOLBAR ATAS (baris pertama):
                   AREA FOKUS (opsional, diseret di layar) atau
                   seluruh layar, lalu LANGSUNG DIKLIK atau hanya
                   DIPINDAH tanpa klik; kalau tidak ketemu:
-                  klik tengah area / lewati / stop
+                  klik tengah area / lewati / stop / tunggu
+                  sampai ketemu (v6.8 - tanpa batas waktu)
   + KETIK         mengetik teks (opsional Ctrl+A dulu dan
                   Enter setelahnya)
   + TANGGAL-JAM   (v5.2) mengisi kolom TANGGAL & JAM RILIS
@@ -134,7 +135,8 @@ PANEL PROPERTI LANGKAH (menyesuaikan jenis langkah):
                (opsional - PILIH AREA FOKUS = seret kotak di
                layar; kosong = seluruh layar), SAAT KETEMU (Klik
                di gambar / Pindah saja), SAAT TIDAK KETEMU
-               (Klik tengah area / Lewati langkah / Stop alur),
+               (Klik tengah area / Lewati langkah / Stop alur /
+               Tunggu sampai ketemu - v6.8),
                KEMIRIPAN, TES CARI LANGKAH INI. TIDAK ADA lagi
                isian POSISI X,Y - kini otomatis.
   - KETIK    : TEKS YANG DIKETIK + placeholder (lihat di
@@ -355,7 +357,10 @@ GAMBAR" tersendiri:
                         ke gambar, TANPA klik (hover/kalibrasi).
      SAAT TIDAK KETEMU: "Klik titik X,Y" (klik cadangan di
                         titik langkah), "Lewati langkah",
-                        atau "Stop alur".
+                        "Stop alur", atau "Tunggu sampai
+                        ketemu" (v6.8 - dicari terus tanpa
+                        batas waktu sampai ketemu; bisa
+                        dihentikan lewat STOP kapan saja).
   6. RADIUS & KEMIRIPAN boleh dikosongkan (pakai nilai
      global) atau diisi khusus untuk langkah ini.
   7. TES CARI = coba dulu tanpa menjalankan seluruh alur
@@ -368,6 +373,28 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.8 - CARI GAMBAR: OPSI "TUNGGU SAMPAI KETEMU":
+  Pilihan SAAT TIDAK KETEMU pada fitur CARI GAMBAR kini ada
+  4 (tab CutMotions: 5 dengan Klik titik X,Y):
+    Lewati langkah      - langsung lanjut ke langkah
+                          berikutnya (cara lama, 3x coba).
+    Klik tengah area    - klik tengah AREA FOKUS.
+    Stop alur           - seluruh alur berhenti.
+    Tunggu sampai
+    ketemu (BARU)       - gambar dicari TERUS-MENERUS tanpa
+                          batas waktu sampai KETEMU, baru
+                          diklik dan alur lanjut. Cocok untuk
+                          menunggu tombol/halaman yang muncul
+                          belakangan.
+  Cara pakai: pilih langkah CARI GAMBAR -> SAAT TIDAK KETEMU
+  -> "Tunggu sampai ketemu". Saat alur jalan, status bar
+  menunjukkan "MENUNGGU gambar '...' (percobaan N, TANPA
+  batas waktu)" selama gambar belum muncul.
+  Penting: penantian BISA DIHENTIKAN kapan saja lewat tombol
+  STOP / hotkey stop (F7) - alur berhenti rapi.
+  Pilihan tersimpan di profil/makro (file lama aman).
+  Uji: python cut_uploader.py --selftest-tunggu  (9 cek).
 
 BARU DI V6.7 - ULANGI SEMUA (PUTARAN):
   Mau semua proses diulang dari awal? Sekarang cukup isi satu
@@ -767,7 +794,8 @@ BARU DI V5.5 - SEMUA MENU STUDIO MAKRO MASUK ALUR CUTMOTIONS (A-J):
     video).
   - Langkah CARI GAMBAR versi Studio ikut tervalidasi saat
     F6 (file gambar harus ada); kalau tidak ketemu,
-    pilihannya: lewati / klik tengah area / stop alur.
+    pilihannya: lewati / klik tengah area / stop alur /
+    tunggu sampai ketemu (v6.8).
 
   CONTOH: sisipkan "+ KETIK TEKS" setelah langkah I2 dengan
   teks "part {no}" - setiap baris video otomatis dapat
@@ -835,7 +863,8 @@ BARU DI V5.3 - CARI GAMBAR TANPA X,Y + AREA FOKUS:
   dijalankan / dimuat - tidak perlu diubah satu per satu.
   Pilihan SAAT TIDAK KETEMU di Studio kini: Lewati langkah /
   Klik tengah area (pengganti 'Klik titik X,Y' lama) /
-  Stop alur. Gambar referensi yang warnanya rata (polos,
+  Stop alur / Tunggu sampai ketemu (v6.8 - tanpa batas
+  waktu). Gambar referensi yang warnanya rata (polos,
   tanpa tulisan) ditolak dengan pesan - potong ulang bagian
   yang berisi tulisan/tombol.
 
