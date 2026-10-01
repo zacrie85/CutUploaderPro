@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.8)
+# CutUploader Pro — Macro Studio Edition (v6.9)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**, dan **baru v6.6: TAMPILAN BARU MERAH-PUTIH MODERN — tema putih bersih dengan aksen merah, SIDEBAR NAVIGASI merah di kiri (pengganti tab di atas), dan tata letak 2 KOLOM: kartu VIDEO & CAPTION + WAKTU rapi di kolom kiri yang bisa digulir, tabel langkah + panel PROPERTI makin lega di kanan**, dan **baru v6.7: ULANGI SEMUA (PUTARAN) — cukup isi angka di box baru (kartu WAKTU & UNGGAH tab CutMotions / kartu MUNDUR & ULANGI tab Studio) lalu seluruh proses diulang otomatis dari langkah pertama sebanyak N putaran setelah langkah terakhir selesai**, dan **baru v6.8: opsi baru TUNGGU SAMPAI KETEMU di fitur CARI GAMBAR — saat gambar referensi belum muncul, aplikasi mencari TERUS tanpa batas waktu sampai gambarnya ketemu, baru lanjut ke langkah berikutnya (tetap bisa dihentikan lewat tombol/hotkey STOP kapan saja)**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**, dan **baru v6.6: TAMPILAN BARU MERAH-PUTIH MODERN — tema putih bersih dengan aksen merah, SIDEBAR NAVIGASI merah di kiri (pengganti tab di atas), dan tata letak 2 KOLOM: kartu VIDEO & CAPTION + WAKTU rapi di kolom kiri yang bisa digulir, tabel langkah + panel PROPERTI makin lega di kanan**, dan **baru v6.7: ULANGI SEMUA (PUTARAN) — cukup isi angka di box baru (kartu WAKTU & UNGGAH tab CutMotions / kartu MUNDUR & ULANGI tab Studio) lalu seluruh proses diulang otomatis dari langkah pertama sebanyak N putaran setelah langkah terakhir selesai**, dan **baru v6.8: opsi baru TUNGGU SAMPAI KETEMU di fitur CARI GAMBAR — saat gambar referensi belum muncul, aplikasi mencari TERUS tanpa batas waktu sampai gambarnya ketemu, baru lanjut ke langkah berikutnya (tetap bisa dihentikan lewat tombol/hotkey STOP kapan saja)**, dan **baru v6.9: GULIR CEPAT TABEL LANGKAH — 4 tombol baru di bawah tabel (kedua tab): ▲ ATAS / ▼ BAWAH yang cukup DIKLIK DAN DITAHAN untuk menggulir daftar langkah terus-menerus (makin lama makin cepat — cocok untuk ratusan titik), plus ↑ LANGKAH 1 / ↓ LANGKAH TERAKHIR untuk lompat langsung ke titik pertama/terakhir tanpa scroll (tombol keyboard Home/End juga bekerja)**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.8**:
+Dari halaman [Releases](../../releases) rilis **v6.9**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.8.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v6.9.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,26 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v6.9: GULIR CEPAT TABEL LANGKAH — klik & tahan, lompat ke titik 1/terakhir
+
+**Permintaan**: “sudah ada 200an titik; kalau ingin kembali ke posisi satu aku harus scroll sampai ke atas atau pakai panah atas/bawah — buatkan sesuatu yang bisa DIKLIK DAN DITAHAN supaya aku bisa menaikkan dan sampai ke posisi pertama”.
+
+**Cara pakai** (tombolnya ada DI BAWAH tabel langkah, di KEDUA tab — ALUR CUTMOTIONS & STUDIO MAKRO):
+
+1. **▲ ATAS (tahan)** — klik dan TAHAN: tabel menggulir ke atas terus-menerus selama tombol ditahan; makin lama ditahan **makin cepat**. Lepas = langsung berhenti.
+2. **▼ BAWAH (tahan)** — sama, ke bawah.
+3. **↑ LANGKAH 1** — sekali klik: langsung lompat ke titik/langkah PERTAMA (barisnya juga otomatis terpilih, jadi panel PROPERTI langsung menampilkannya).
+4. **↓ LANGKAH TERAKHIR** — sekali klik: langsung ke baris paling bawah.
+5. Bonus: tombol keyboard **Home** = ke langkah 1, **End** = ke langkah terakhir (klik dulu satu baris di tabel supaya fokusnya ke tabel).
+
+Catatan:
+
+- Dibuat untuk daftar langkah yang **ratusan baris** (200an titik): ngebut ±90 baris/detik setelah ditahan sejenak, tapi tetap mulai pelan supaya mudah berhenti di baris yang dituju.
+- Kalau kursor keluar dari tombol saat menahan, pengguliran otomatis berhenti (tidak ada gulir “liar”).
+- Tidak mengubah cara kerja apa pun — murni penambah navigasi.
+
+Uji baru **`--selftest-gulir`** (8 cek): strip terpasang di kedua tab, lompat LANGKAH 1 & TERAKHIR terbukti menampilkan + memilih barisnya, klik-tahan terbukti menggulir sendiri dan berhenti begitu dilepas, dan tombol Home/End bekerja — **semua True**.
 
 ### Baru v6.8: opsi “TUNGGU SAMPAI KETEMU” di fitur CARI GAMBAR
 
@@ -244,6 +264,14 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `rapidocr-onnxruntime`, `pyinstaller` (dev).
+
+## Perubahan v6.9
+
+- **Helper baru (modul)**: `gulir_tahan_mulai()` / `gulir_tahan_stop()` (loop `tree.after` dengan percepatan: jeda 160 ms → minimum 24 ms, 3 baris per putaran, selalu bisa dibatalkan), `lompat_titik_tabel()` (see + focus + selection_set baris pertama/terakhir), dan `buat_strip_gulir()` (memasang 4 tombol di bawah tabel; dipanggil SEBELUM `tree.pack()` supaya strip dapat slot bawah kartu).
+- **Tab CutMotions & Studio**: kartu tabel langkah masing-masing kini memanggil `buat_strip_gulir()` → strip tombol **▲ ATAS (tahan) | ▼ BAWAH (tahan) | ↑ LANGKAH 1 | ↓ LANGKAH TERAKHIR** di bawah tabel. Label diringkas agar keempat tombol muat sampai lebar jendela minimum.
+- **Keyboard**: `Home`/`End` pada tabel = lompat ke langkah pertama/terakhir (binding dipasang di kedua tabel).
+- **Keamanan**: pengguliran berhenti otomatis saat tombol dilepas (`ButtonRelease-1`) ATAU kursor keluar dari tombol (`Leave`); loop dibatalkan via `after_cancel` dan tahan terhadap widget yang sudah hancur (`TclError` ditangkap).
+- Selftest baru **`--selftest-gulir`** (8 cek True: strip di 2 tab, lompat 1 & terakhir menampilkan + memilih baris, klik-tahan menggulir sendiri lalu berhenti saat dilepas, Home/End bekerja; halaman CutMotions diaktifkan dulu karena `event_generate` tidak terkirim ke widget yang tidak ter-map) + regresi selftest dasar/tema/putaran/tunggu/fokus/ocr tetap hijau.
 
 ## Perubahan v6.8
 

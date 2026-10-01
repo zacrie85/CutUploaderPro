@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.8 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v6.9 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -373,6 +373,33 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V6.9 - GULIR CEPAT TABEL LANGKAH (KLIK & TAHAN):
+  Punya ratusan titik/langkah (mis. 200an) dan capek scroll
+  satu-satu pakai roda mouse / panah? Di BAWAH tabel langkah
+  (KEDUA tab) sekarang ada 4 tombol baru:
+
+    [ ▲ ATAS (tahan) ] [ ▼ BAWAH (tahan) ]
+    [ ↑ LANGKAH 1 ]    [ ↓ LANGKAH TERAKHIR ]
+
+  - ▲ ATAS (tahan)  : KLIK dan TAHAN tombolnya - tabel
+                      menggulir ke atas TERUS selama ditahan,
+                      makin lama ditahan MAKIN CEPAT. Lepas
+                      tombol = langsung berhenti. Inilah
+                      cara cepat kembali ke posisi pertama.
+  - ▼ BAWAH (tahan) : sama, untuk turun cepat.
+  - ↑ LANGKAH 1     : sekali klik - langsung lompat ke
+                      titik/langkah PERTAMA (barisnya ikut
+                      terpilih, panel PROPERTI langsung
+                      menampilkan langkah itu).
+  - ↓ LANGKAH TERAKHIR : sekali klik - langsung ke baris
+                      paling bawah.
+  Bonus keyboard: klik dulu satu baris di tabel, lalu tekan
+  HOME = lompat ke langkah 1, END = lompat ke langkah
+  terakhir.
+  Aman: kalau kursor keluar dari tombol saat menahan,
+  pengguliran berhenti sendiri (tidak ada gulir liar).
+  Uji: python cut_uploader.py --selftest-gulir  (8 cek).
 
 BARU DI V6.8 - CARI GAMBAR: OPSI "TUNGGU SAMPAI KETEMU":
   Pilihan SAAT TIDAK KETEMU pada fitur CARI GAMBAR kini ada

@@ -334,7 +334,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.8"
+APP_VERSION = "6.9"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -2613,6 +2613,130 @@ def cari_di_layar_area(gambar_path, area, kemiripan=0.8):
 
 
 # ============================================================
+# v6.9 - GULIR CEPAT TABEL LANGKAH (klik & TAHAN)
+# Daftar langkah bisa ratusan baris (200an titik); menggulir
+# pakai roda mouse / panah satu-satu itu lambat. Empat tombol
+# di bawah tabel: dua tombol klik-TAHAN yang menggulir terus
+# selama ditahan (makin lama makin cepat) + dua tombol lompat
+# yang langsung menampilkan & memilih LANGKAH 1 / langkah
+# TERAKHIR. Dipakai tabel tab CutMotions & tab Studio.
+# ============================================================
+GULIR_JEDA_MULA = 160    # jeda awal antar putaran (ms, pelan dulu)
+GULIR_JEDA_MIN = 24      # jeda tercepat saat tombol lama ditahan
+GULIR_JEDA_LANGKAH = 7   # percepatan tiap putaran (ms)
+GULIR_BARIS = 3          # jumlah baris digulir tiap putaran
+
+
+def gulir_tahan_mulai(tree, arah, state):
+    """Mulai menggulir tabel TERUS selama tombol ditahan.
+
+    arah -1 = ke atas, +1 = ke bawah. Putaran dijadwalkan lewat
+    tree.after dan kapan pun bisa dibatalkan gulir_tahan_stop()
+    (tombol dilepas / kursor keluar / widget hancur).
+    """
+    gulir_tahan_stop(tree, state)
+    state["n"] = 0
+    tree.yview_scroll(arah * GULIR_BARIS, "units")  # respons instan
+
+    def _tick():
+        try:
+            tree.yview_scroll(arah * GULIR_BARIS, "units")
+        except tk.TclError:
+            state["id"] = None
+            return
+        state["n"] += 1
+        jeda = max(GULIR_JEDA_MIN, GULIR_JEDA_MULA
+                   - state["n"] * GULIR_JEDA_LANGKAH)
+        state["id"] = tree.after(jeda, _tick)
+
+    state["id"] = tree.after(GULIR_JEDA_MULA, _tick)
+
+
+def gulir_tahan_stop(tree, state):
+    """Hentikan pengguliran tahan (tombol dilepas/kursor keluar)."""
+    if state.get("id") is not None:
+        try:
+            tree.after_cancel(state["id"])
+        except Exception:
+            pass
+    state["id"] = None
+    state["n"] = 0
+
+
+def lompat_titik_tabel(tree, ke="atas"):
+    """Tampilkan & pilih LANGKAH pertama/terakhir di tabel.
+
+    Mengembalikan True bila ada baris yang dilompati. Barisnya
+    juga DIPILIH supaya panel PROPERTI langsung menampilkannya -
+    persis seperti user mengklik baris itu dengan mouse.
+    """
+    semua = tree.get_children()
+    if not semua:
+        return False
+    iid = semua[0] if ke == "atas" else semua[-1]
+    try:
+        tree.see(iid)
+        tree.focus(iid)
+        tree.selection_set(iid)
+    except tk.TclError:
+        return False
+    return True
+
+
+def buat_strip_gulir(badan, tree):
+    """Baris tombol GULIR CEPAT di bawah tabel langkah (v6.9).
+
+    Dipanggil SEBELUM tree.pack() supaya strip dapat slot bawah
+    kartu, lalu tabel + scrollbar mengisi ruang di atasnya.
+    """
+    state = {"id": None, "n": 0}
+    strip = tk.Frame(badan, bg=C_BG)
+    strip.pack(side="bottom", fill="x", pady=(4, 1))
+
+    def tombol(teks, cmd=None, arah=0, bg=C_PANEL2, fg=C_TEXT):
+        b = tk.Button(strip, text=teks, bg=bg, fg=fg, font=F_XS,
+                      relief="raised", bd=1, cursor="hand2",
+                      activebackground=C_SELROW,
+                      activeforeground=fg)
+        if cmd is not None:
+            b.configure(command=cmd)
+        if arah:
+            b.bind("<ButtonPress-1>",
+                   lambda _e: gulir_tahan_mulai(tree, arah, state))
+            b.bind("<ButtonRelease-1>",
+                   lambda _e: gulir_tahan_stop(tree, state))
+            # kursor keluar dari tombol = dianggap dilepas
+            b.bind("<Leave>",
+                   lambda _e: gulir_tahan_stop(tree, state))
+        b.pack(side="left", padx=(0, 4), ipadx=6, ipady=2)
+        return b
+
+    # label ringkas agar 4 tombol muat sampai lebar jendela minimum
+    b_atas = tombol("▲ ATAS (tahan)", arah=-1)
+    b_bawah = tombol("▼ BAWAH (tahan)", arah=+1)
+    tk.Frame(strip, bg=C_LINE, width=2).pack(side="left", fill="y",
+                                             padx=5, pady=2)
+    b_l1 = tombol("↑ LANGKAH 1",
+                  cmd=lambda: lompat_titik_tabel(tree, "atas"),
+                  bg=C_BLUE_L, fg=C_BLUE_D)
+    b_la = tombol("↓ LANGKAH TERAKHIR",
+                  cmd=lambda: lompat_titik_tabel(tree, "bawah"),
+                  bg=C_BLUE_L, fg=C_BLUE_D)
+    # bonus: tombol keyboard Home/End = lompat seperti tombolnya
+    tree.bind("<Home>",
+              lambda _e: (lompat_titik_tabel(tree, "atas"),
+                         "break")[1])
+    tree.bind("<End>",
+              lambda _e: (lompat_titik_tabel(tree, "bawah"),
+                         "break")[1])
+    # referensi untuk selftest & penyetelan kecepatan
+    strip._gulir_tombol = {"atas": b_atas, "bawah": b_bawah,
+                           "lompat1": b_l1, "lompatakhir": b_la,
+                           "state": state}
+    return strip
+
+
+# ============================================================
 # v5.6 - MESIN REKAM AKSI BERSAMA (mixin untuk 2 tab)
 # Sebelumnya hanya ada di tab STUDIO MAKRO. Kini mesinnya jadi
 # mixin yang dipakai tab STUDIO MAKRO dan tab ALUR CUTMOTIONS
@@ -3419,6 +3543,10 @@ class CutMotionsTab(PerekamAksiMixin):
         vsb = ttk.Scrollbar(f_tb.badan, orient="vertical",
                             command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
+        # v6.9: tombol GULIR CEPAT (klik & tahan) + lompat LANGKAH 1
+        # / TERAKHIR - dipack SEBELUM tabel agar slot bawah kartunya
+        # pasti (tabel + scrollbar mengisi ruang di atas strip ini)
+        self.strip_gulir = buat_strip_gulir(f_tb.badan, self.tree)
         self.tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="left", fill="y")
         self.tree.tag_configure("genap", background=C_STRIPE)
@@ -7946,6 +8074,10 @@ class StudioMakroTab(PerekamAksiMixin):
         vsb = ttk.Scrollbar(f_tb.badan, orient="vertical",
                             command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
+        # v6.9: tombol GULIR CEPAT (klik & tahan) + lompat LANGKAH 1
+        # / TERAKHIR - dipack SEBELUM tabel agar slot bawah kartunya
+        # pasti (tabel + scrollbar mengisi ruang di atas strip ini)
+        self.strip_gulir = buat_strip_gulir(f_tb.badan, self.tree)
         self.tree.pack(side="left", fill="both", expand=True)
         # warna per jenis langkah
         self.tree.tag_configure("genap", background=C_STRIPE)
@@ -11812,6 +11944,102 @@ def main():
             print("SELFTEST_TUNGGU_OK")
             root.destroy()
         root.after(4200, _ok17)
+    if "--selftest-gulir" in sys.argv:
+        # v6.9: tombol GULIR CEPAT (klik & tahan) + lompat LANGKAH
+        # 1/TERAKHIR di bawah tabel - terpasang di dua tab, tahan =
+        # menggulir sendiri (makin cepat), lepas = berhenti, dan
+        # tombol keyboard Home/End ikut lompat.
+        def _uji_gulir():
+            cek = []
+            cut = app.tab_cut
+            st = app.tab_studio
+            # tabel yang diuji ada di halaman CutMotions - tampilkan
+            # dulu (event_generate tidak terkirim ke widget yang
+            # tidak ter-map/pack_forget)
+            app._pilih_halaman(1)
+            root.update()
+            tmb_c = getattr(cut.strip_gulir, "_gulir_tombol", None)
+            tmb_s = getattr(st.strip_gulir, "_gulir_tombol", None)
+            # 1) strip terpasang di kedua tab (4 tombol + state)
+            cek.append(("GULIR_STRIP_CUT",
+                        tmb_c is not None and len(tmb_c) == 5))
+            cek.append(("GULIR_STRIP_STUDIO",
+                        tmb_s is not None and len(tmb_s) == 5))
+            if not tmb_c:
+                for tag, ok in cek:
+                    print(tag, bool(ok))
+                print("GULIR_SEMUA_OK", False)
+                return
+            baris_pertama = cut.tree.get_children()[0]
+            # 2) isi 60 baris sementara -> tabel bisa digulir
+            dummy = []
+            for i in range(60):
+                iid = "__uji_gulir_{}".format(i)
+                cut.tree.insert("", "end", iid=iid,
+                                values=(str(i + 14), "UJI {}".format(i),
+                                        "", "", ""))
+                dummy.append(iid)
+            # 3) tombol KE LANGKAH 1 -> baris PERTAMA (asli) terlihat
+            #    dan terpilih
+            cut.tree.see(dummy[-1])
+            cut.tree.update()
+            tmb_c["lompat1"].invoke()
+            cut.tree.update()
+            cek.append(("GULIR_LOMPAT_1",
+                        cut.tree.focus() == baris_pertama
+                        and baris_pertama in cut.tree.selection()
+                        and cut.tree.bbox(baris_pertama) != ""))
+            # 4) tombol KE LANGKAH TERAKHIR
+            tmb_c["lompatakhir"].invoke()
+            cut.tree.update()
+            cek.append(("GULIR_LOMPAT_AKHIR",
+                        cut.tree.focus() == dummy[-1]
+                        and cut.tree.bbox(dummy[-1]) != ""))
+            # 5) klik & TAHAN tombol BAWAH -> menggulir sendiri
+            cut.tree.see(dummy[0])
+            cut.tree.update()
+            y0 = cut.tree.yview()[0]
+            tmb_c["bawah"].event_generate("<ButtonPress-1>")
+            cut.tree.update()
+
+            def _cek_tahan():
+                cut.tree.update()
+                y1 = cut.tree.yview()[0]
+                cek.append(("GULIR_TAHAN_GULIR", y1 > y0))
+                tmb_c["bawah"].event_generate("<ButtonRelease-1>")
+                cut.tree.update()
+                y2 = cut.tree.yview()[0]
+
+                def _cek_stop():
+                    cut.tree.update()
+                    y3 = cut.tree.yview()[0]
+                    cek.append(("GULIR_TAHAN_BERHENTI",
+                                abs(y3 - y2) < 1e-9
+                                and tmb_c["state"]["id"] is None))
+                    # 6) tombol keyboard Home/End lompat juga
+                    cut.tree.focus_set()
+                    cut.tree.event_generate("<Home>")
+                    cut.tree.update()
+                    cek.append(("GULIR_HOME",
+                                cut.tree.focus() == baris_pertama))
+                    cut.tree.event_generate("<End>")
+                    cut.tree.update()
+                    cek.append(("GULIR_END",
+                                cut.tree.focus() == dummy[-1]))
+                    for iid in dummy:
+                        cut.tree.delete(iid)
+                    for tag, ok in cek:
+                        print(tag, bool(ok))
+                    print("GULIR_SEMUA_OK",
+                          all(ok for _t, ok in cek))
+                root.after(450, _cek_stop)
+            root.after(600, _cek_tahan)
+        root.after(900, _uji_gulir)
+
+        def _ok18():
+            print("SELFTEST_GULIR_OK")
+            root.destroy()
+        root.after(6000, _ok18)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -11828,7 +12056,8 @@ def main():
             or ("--selftest-fokus" in sys.argv) \
             or ("--selftest-tema" in sys.argv) \
             or ("--selftest-putaran" in sys.argv) \
-            or ("--selftest-tunggu" in sys.argv):
+            or ("--selftest-tunggu" in sys.argv) \
+            or ("--selftest-gulir" in sys.argv):
         print("SELFTEST_DONE")
 
 
