@@ -237,6 +237,33 @@
        sendiri), isi form properti yang lebih lebar dari
        panel bisa digeser lewat bilah di bawah panel, dan
        Shift+roda mouse menggeser panel ke samping.
+     - v7.3: tiga peningkatan sekaligus:
+       (1) URUTAN CAPTION bisa DIBALIK di kartu VIDEO &
+           CAPTION (kedua tab): pilihan 'Caption - Video'
+           (cara lama: #dangdut - melati) atau 'Video -
+           Caption' (judul video di depan: melati -
+           #dangdut, dipisah 1 spasi + tanda minus + 1
+           spasi). Berlaku untuk caption daftar & hasil
+           OCR baca nama di layar, ikut tersimpan di
+           profil/makro, pratinjau langsung berubah.
+       (2) CTRL+C / CTRL+V kini JALAN DI SEMUA TITIK
+           aplikasi: di luar tabel = salin/tempel LANGKAH
+           (tidak lagi hanya saat tabel aktif - dulu
+           itulah sebabnya kadang terasa mati), di dalam
+           kotak isian = salin/tempel teks seperti biasa;
+           varian CapsLock/Shift (Ctrl+C besar) juga
+           ditangkap. Ditambah UNDO: Ctrl+Z membatalkan
+           operasi langkah terakhir (tempel/hapus/tambah/
+           geser/buka/reset) di tab aktif, Ctrl+Y
+           mengulanginya lagi; di kotak isian Ctrl+Z
+           mengembalikan isi kotak saat terakhir
+           difokuskan. Tersedia juga di menu klik kanan
+           tabel & menubar menu Studio.
+       (3) Menu BERKAS kini punya SIMPAN (Ctrl+S) -
+           menyimpan tab aktif tanpa dialog ke file yang
+           sama - dan SIMPAN SEBAGAI (Ctrl+Shift+S) -
+           memilih file baru; Studio menyimpan makro,
+           CutMotions menyimpan profil.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -353,7 +380,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "7.2"
+APP_VERSION = "7.3"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -2289,15 +2316,43 @@ def jeda_klik_default_per():
     return d
 
 
-def compose_caption(caption, filename):
+# v7.3: URUTAN CAPTION - pilihan penulisan di kartu VIDEO & CAPTION.
+# "Caption - Video" = cara lama: '#dangdut - melati'
+# "Video - Caption" = baru v7.3: 'melati - #dangdut' (judul video di
+# depan, spasi, minus, spasi, lalu caption dasar).
+CAPTION_URUTAN_OPSI = ("Caption - Video", "Video - Caption")
+
+# Nilai global yang dibaca mesin eksekusi (di-set saat tombol MULAI
+# ditekan dari kartu tab aktif, jadi ikut pola snapshot seperti
+# pengaturan lain - perubahan di tengah jalan tidak mengubah alur).
+_URUTAN_CAPTION = {"video_dulu": False}
+
+
+def set_urutan_caption(video_dulu):
+    """v7.3: pasang urutan caption untuk mesin eksekusi."""
+    _URUTAN_CAPTION["video_dulu"] = bool(video_dulu)
+
+
+def caption_video_dulu_aktif():
+    """v7.3: True bila mesin menulis 'video - caption'."""
+    return bool(_URUTAN_CAPTION["video_dulu"])
+
+
+def compose_caption(caption, filename, video_dulu=None):
     """Gabungkan caption dasar + nama file.
 
     Contoh: caption '#dangdut', file 'melati.mp4' -> '#dangdut - melati'
+    v7.3: bila urutan 'Video - Caption' dipilih (video_dulu=True)
+    hasilnya 'melati - #dangdut'.
     Jika caption kosong, cukup nama file saja.
     """
+    if video_dulu is None:
+        video_dulu = _URUTAN_CAPTION["video_dulu"]
     name = os.path.splitext(os.path.basename(filename))[0]
     caption = (caption or "").strip()
     if caption:
+        if video_dulu:
+            return "{} - {}".format(name, caption)
         return "{} - {}".format(caption, name)
     return name
 
@@ -3276,6 +3331,10 @@ class CutMotionsTab(PerekamAksiMixin):
         # v4.2: salinan langkah (hasil SALIN/TEMPEL)
         self.langkah_extra = []       # list of dict (lihat _tempel_langkah)
         self.papan_klip = None        # langkah yang sedang disalin
+        # v7.3: UNDO (Ctrl+Z) - tumpukan keadaan langkah + path SIMPAN
+        self._tumpukan_undo = []
+        self._tumpukan_redo = []
+        self.profil_terakhir = ""     # file profil terakhir SIMPAN/BUKA
         self._extra_counter = 0
         # v5.9: slot bawaan A-J yang DIHAPUS user (bisa dikembalikan);
         # langkah mati = tak tampil di tabel & dilewati mesin saat F6
@@ -3304,7 +3363,11 @@ class CutMotionsTab(PerekamAksiMixin):
         # ---- variabel isian (StringVar agar mudah disimpan/muat) ----
         V = self.vars = {}
         for kunci, bawaan in [
-            ("jumlah", "5"), ("caption", "#dangdut"),
+            ("jumlah", "5"),
+            # v7.3: URUTAN CAPTION - "Caption - Video" (cara lama) atau
+            # "Video - Caption" (judul video di depan, baru v7.3)
+            ("caption", "#dangdut"),
+            ("urutan_caption", CAPTION_URUTAN_OPSI[0]),
             ("mundur", "5"), ("jeda_dialog", "2"), ("jeda_langkah", "1"),
             ("tunggu", "60"), ("tanggal", "2026-09-10 02:05:01"),
             # v6.7: ULANGI SEMUA (PUTARAN) - seluruh alur diulang dari
@@ -3624,6 +3687,25 @@ class CutMotionsTab(PerekamAksiMixin):
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
                  highlightthickness=0).pack(side="left", padx=(4, 0),
                                             ipady=3)
+        # v7.3: URUTAN CAPTION - bisa dibalik: judul video dulu,
+        # spasi, minus, spasi, lalu caption (contoh: melati - #dangdut)
+        ru = tk.Frame(v, bg=C_BG)
+        ru.pack(fill="x", pady=(0, 2))
+        tk.Label(ru, text="URUTAN CAPTION:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        om_u = tk.OptionMenu(ru, self.vars["urutan_caption"],
+                             *CAPTION_URUTAN_OPSI)
+        om_u.configure(bg=C_PANEL2, fg=C_TEXT, font=F_XS,
+                       activebackground=C_SELROW, relief="raised", bd=1,
+                       highlightthickness=0)
+        om_u.pack(side="left", padx=(4, 0))
+        tk.Label(
+            v, text="'Caption - Video' = #dangdut - melati (cara lama) "
+                    "| 'Video - Caption' = melati - #dangdut (judul di "
+                    "depan). Nama video diambil dari daftar/OCR nama "
+                    "di layar.",
+            bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+            justify="left", wraplength=352).pack(fill="x", pady=(0, 2))
         self.lbl_preview = tk.Label(v, text="-", bg=C_BG, fg=C_GREEN,
                                     font=F_MONO, anchor="w",
                                     wraplength=352, justify="left")
@@ -3760,8 +3842,13 @@ class CutMotionsTab(PerekamAksiMixin):
         self.tree.tag_configure("salinan", foreground=C_BLUE)
         self.tree.tag_configure("studio", foreground=C_UNGU)
         self.tree.bind("<<TreeviewSelect>>", self._on_pilih_baris)
-        self.tree.bind("<Control-c>", lambda _e: self._salin_langkah())
-        self.tree.bind("<Control-v>", lambda _e: self._tempel_langkah())
+        # v7.3: Ctrl+C/V di tabel kini "break" - diproses di sini SAJA
+        # (di luar tabel otomatis oleh penangan global ShellApp,
+        # jadi tidak pernah dobel tempel)
+        self.tree.bind("<Control-c>",
+                       lambda _e: (self._salin_langkah(), "break")[1])
+        self.tree.bind("<Control-v>",
+                       lambda _e: (self._tempel_langkah(), "break")[1])
         self.tree.bind("<Delete>", lambda _e: self._hapus_langkah())
         self.tree.bind("<Control-a>", self._pilih_semua)
         self.tree.bind("<Button-3>", self._menu_klik_kanan)
@@ -5181,6 +5268,11 @@ class CutMotionsTab(PerekamAksiMixin):
                       command=self._salin_langkah)
         m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
                       command=self._tempel_langkah)
+        # v7.3: undo/redo juga bisa dari klik kanan
+        m.add_command(label="Undo (batalkan perubahan terakhir)  "
+                            "(Ctrl+Z)", command=self._undo)
+        m.add_command(label="Ulangi yang di-undo  (Ctrl+Y)",
+                      command=self._undo_redo)
         # v5.9: semua langkah (termasuk bawaan A-J) bisa dihapus;
         # bawaan A-J yang terhapus bisa dikembalikan dari sini
         if self.slot_mati:
@@ -5213,12 +5305,77 @@ class CutMotionsTab(PerekamAksiMixin):
         finally:
             m.grab_release()
 
-    def _salin_langkah(self):
+    # ================== UNDO v7.3 ==================
+    def _keadaan_langkah(self):
+        """v7.3: salinan seluruh keadaan langkah tab CutMotions."""
+        return {
+            "langkah_extra": json.loads(json.dumps(self.langkah_extra)),
+            "posisi": {k: (list(v) if v else None)
+                       for k, v in self.posisi.items()},
+            "gambar_langkah": json.loads(
+                json.dumps(self.gambar_langkah)),
+            "jeda_per": dict(self.jeda_per),
+            "jeda_klik_per": dict(self.jeda_klik_per),
+            "slot_mati": set(self.slot_mati),
+            "sel": self.sel,
+        }
+
+    def _undo_push(self):
+        """v7.3: simpan keadaan SEKARANG sebelum operasi yang mengubah
+        langkah (tempel/hapus/tambah/geser/reset/buka profil)."""
+        try:
+            self._tumpukan_undo.append(self._keadaan_langkah())
+            if len(self._tumpukan_undo) > 60:
+                self._tumpukan_undo.pop(0)
+            self._tumpukan_redo.clear()
+        except Exception:
+            pass
+
+    def _undo_pulihkan(self, keadaan):
+        """v7.3: pasang kembali keadaan langkah lalu segarkan UI."""
+        if not keadaan:
+            return
+        self.langkah_extra = keadaan["langkah_extra"]
+        self.posisi = keadaan["posisi"]
+        self.gambar_langkah = keadaan["gambar_langkah"]
+        self.jeda_per = keadaan["jeda_per"]
+        self.jeda_klik_per = keadaan["jeda_klik_per"]
+        self.slot_mati = keadaan["slot_mati"]
+        self.sel = keadaan["sel"]
+        self._refresh_tabel()
+        self._render_properti()
+
+    def _undo(self):
+        """v7.3: Ctrl+Z - batalkan operasi langkah terakhir."""
+        if not self._tumpukan_undo:
+            self._set_status("Tidak ada yang bisa di-undo.", C_MUTED)
+            return
+        self._tumpukan_redo.append(self._keadaan_langkah())
+        keadaan = self._tumpukan_undo.pop()
+        self._undo_pulihkan(keadaan)
+        self._set_status("UNDO berhasil - alur kembali seperti "
+                         "sebelumnya (Ctrl+Y = ulangi lagi).", C_GREEN)
+
+    def _undo_redo(self):
+        """v7.3: Ctrl+Y - pasang lagi yang tadi di-undo."""
+        if not self._tumpukan_redo:
+            self._set_status("Tidak ada yang bisa di-ulangi (redo).",
+                             C_MUTED)
+            return
+        self._tumpukan_undo.append(self._keadaan_langkah())
+        keadaan = self._tumpukan_redo.pop()
+        self._undo_pulihkan(keadaan)
+        self._set_status("REDO berhasil - perubahan undo dipasang lagi.",
+                         C_GREEN)
+
+    def _salin_langkah(self, diam=False):
         """v5.7: salin SEMUA langkah terpilih ke papan klip.
 
         Pilihan banyak didapat dengan menahan CTRL / SHIFT saat
         mengklik baris (atau Ctrl+A untuk semua). Urutan salinan
         mengikuti urutan tampil di tabel.
+        v7.3: `diam=True` (panggilan global Ctrl+C di luar tabel)
+        -> tidak ada jendela pesan, cukup status bar.
         """
         pilih = list(self.tree.selection())
         if not pilih and self.sel:
@@ -5259,6 +5416,11 @@ class CutMotionsTab(PerekamAksiMixin):
                     "jeda_klik": float(ek.get("jeda_klik", 0.3)),
                 })
         if not klip:
+            if diam:   # v7.3: panggilan global -> cukup status bar
+                self._set_status(
+                    "Klik dulu baris langkah yang mau disalin "
+                    "(Ctrl/SHIFT = banyak, Ctrl+A = semua).", C_ORANGE)
+                return
             messagebox.showinfo(
                 APP_NAME,
                 "Klik dulu satu baris langkah di tabel yang mau "
@@ -5270,20 +5432,29 @@ class CutMotionsTab(PerekamAksiMixin):
             "{} langkah disalin. Klik baris acuan lalu TEMPEL "
             "LANGKAH (Ctrl+V).".format(len(klip)), C_GREEN)
 
-    def _tempel_langkah(self):
+    def _tempel_langkah(self, diam=False):
         """v5.7: tempel 1 ATAU BANYAK salinan berurutan setelah acuan.
 
         Urutan tempel = urutan saat disalin; langkah kedua dst
         dirantai setelah hasil tempel sebelumnya.
+        v7.3: `diam=True` (panggilan global Ctrl+V di luar tabel)
+        -> tidak ada jendela pesan, cukup status bar; keadaan lama
+        disimpan dulu supaya bisa di-undo (Ctrl+Z).
         """
         klip = self.papan_klip
         if not klip:
+            if diam:   # v7.3: panggilan global -> cukup status bar
+                self._set_status(
+                    "Belum ada langkah yang disalin - tekan Ctrl+C "
+                    "dulu di tabel.", C_ORANGE)
+                return
             messagebox.showinfo(
                 APP_NAME,
                 "Belum ada langkah yang disalin.\n\nKlik satu baris di "
                 "tabel, lalu klik SALIN LANGKAH dulu.\n(Tahan CTRL/SHIFT "
                 "saat mengklik untuk menyalin banyak sekaligus.)")
             return
+        self._undo_push()   # v7.3: bisa di-undo dengan Ctrl+Z
         items = klip.get("banyak") or [klip]
         anchor = self.sel if (
             self.sel and (self.sel in POS_KUNCI
@@ -5389,6 +5560,7 @@ class CutMotionsTab(PerekamAksiMixin):
                               n_slot, daftar))
         if not messagebox.askyesno(APP_NAME, pesan):
             return
+        self._undo_push()   # v7.3: hapus bisa di-undo (Ctrl+Z)
         for iid in slot_mati_baru:
             self.slot_mati.add(iid)
         for ek in terhapus:
@@ -5503,6 +5675,7 @@ class CutMotionsTab(PerekamAksiMixin):
         """
         if jenis not in JENIS_STUDIO:
             return
+        self._undo_push()   # v7.3: tambah langkah bisa di-undo
         anchor = self.sel if (
             self.sel and (self.sel in POS_KUNCI
                           or self._iid_ekstra(self.sel))) else POS_KUNCI[-1]
@@ -6164,7 +6337,11 @@ class CutMotionsTab(PerekamAksiMixin):
             contoh = os.path.basename(semua[0])
         else:
             contoh = "melati"
-        teks = compose_caption(self.vars["caption"].get(), contoh)
+        # v7.3: urutan ikut pilihan URUTAN CAPTION di kartu ini
+        teks = compose_caption(
+            self.vars["caption"].get(), contoh,
+            video_dulu=(self.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1]))
         n = len(teks)
         self.lbl_preview.config(
             text="Pratinjau caption:  {}   ({}{}/{} kar)".format(
@@ -6215,6 +6392,7 @@ class CutMotionsTab(PerekamAksiMixin):
         if messagebox.askyesno(APP_NAME,
                                "Hapus SEMUA posisi klik (A-J)?\n"
                                "Pengaturan lain tidak ikut terhapus."):
+            self._undo_push()   # v7.3: reset posisi bisa di-undo
             self.posisi = {k: None for k in POS_KUNCI}
             self._refresh_tabel()
             self._render_properti()
@@ -6279,23 +6457,7 @@ class CutMotionsTab(PerekamAksiMixin):
 
     # ================== SIMPAN / BUKA PROFIL ==================
     def _simpan_profil(self):
-        self._save_settings()
-        f = filedialog.asksaveasfilename(
-            title="Simpan profil makro (posisi + pengaturan)",
-            defaultextension=".json",
-            initialfile="profil_{}.json".format(
-                datetime.datetime.now().strftime("%Y%m%d")),
-            filetypes=[("Profil makro", "*.json")])
-        if f:
-            try:
-                with open(SETTINGS_FILE, "r", encoding="utf-8") as s:
-                    data = json.load(s)
-                with open(f, "w", encoding="utf-8") as d:
-                    json.dump(data, d, indent=2, ensure_ascii=False)
-                self._set_status("Profil tersimpan: {}".format(f), C_GREEN)
-            except Exception as e:
-                messagebox.showerror(APP_NAME,
-                                     "Gagal menyimpan profil:\n" + str(e))
+        self._simpan_sebagai()
 
     def _buka_profil(self):
         f = filedialog.askopenfilename(
@@ -6310,9 +6472,51 @@ class CutMotionsTab(PerekamAksiMixin):
             messagebox.showerror(APP_NAME,
                                  "Gagal membaca profil:\n" + str(e))
             return
+        self._undo_push()   # v7.3: isi lama bisa di-undo bila beda
         self._terapkan_data(data)
         self._save_settings()
+        self.profil_terakhir = f   # v7.3: ingat path utk SIMPAN (Ctrl+S)
         self._set_status("Profil dimuat: {}".format(f), C_GREEN)
+
+    # ================== SIMPAN / SIMPAN SEBAGAI v7.3 ==================
+    def _simpan_cepat(self):
+        """v7.3: SIMPAN (Ctrl+S) - tulis langsung ke file profil
+        terakhir tanpa dialog; bila belum pernah simpan/buka, otomatis
+        beralih ke SIMPAN SEBAGAI."""
+        if not self.profil_terakhir:
+            return self._simpan_sebagai()
+        try:
+            with open(self.profil_terakhir, "w", encoding="utf-8") as d:
+                json.dump(self._kumpulkan_data(), d, indent=2,
+                          ensure_ascii=False)
+            self._set_status("Profil tersimpan: {}".format(
+                self.profil_terakhir), C_GREEN)
+        except Exception as e:
+            messagebox.showerror(APP_NAME,
+                                 "Gagal menyimpan profil:\n" + str(e))
+
+    def _simpan_sebagai(self):
+        """v7.3: SIMPAN SEBAGAI (Ctrl+Shift+S) - pilih file baru lalu
+        tulis seluruh pengaturan + langkah tab ini ke sana."""
+        self._save_settings()
+        f = filedialog.asksaveasfilename(
+            title="Simpan profil makro (posisi + pengaturan)",
+            defaultextension=".json",
+            initialfile="profil_{}.json".format(
+                datetime.datetime.now().strftime("%Y%m%d")),
+            filetypes=[("Profil makro", "*.json")])
+        if f:
+            try:
+                with open(SETTINGS_FILE, "r", encoding="utf-8") as s:
+                    data = json.load(s)
+                with open(f, "w", encoding="utf-8") as d:
+                    json.dump(data, d, indent=2, ensure_ascii=False)
+                self.profil_terakhir = f   # v7.3: ingat utk Ctrl+S
+                self._set_status("Profil tersimpan: {}".format(f),
+                                 C_GREEN)
+            except Exception as e:
+                messagebox.showerror(APP_NAME,
+                                     "Gagal menyimpan profil:\n" + str(e))
 
     # ================== BANTUAN UI (THREAD-SAFE) ==================
     def _set_status(self, msg, color=C_GREEN):
@@ -6348,6 +6552,9 @@ class CutMotionsTab(PerekamAksiMixin):
             "videos": list(self.video_terpilih),   # v6.1: path lengkap
             "jumlah": V["jumlah"].get().strip(),
             "caption": V["caption"].get(),
+            # v7.3: URUTAN CAPTION ikut snapshot (True = Video - Caption)
+            "caption_video_dulu": (V["urutan_caption"].get()
+                                   == CAPTION_URUTAN_OPSI[1]),
             "mundur": V["mundur"].get().strip(),
             "jeda_dialog": V["jeda_dialog"].get().strip(),
             "jeda_langkah": V["jeda_langkah"].get().strip(),
@@ -6400,6 +6607,8 @@ class CutMotionsTab(PerekamAksiMixin):
                     "Tunggu sampai selesai atau tekan F7 dulu.")
                 return
         snap = self._snapshot()
+        # v7.3: pasang URUTAN CAPTION utk mesin (dari snapshot tab ini)
+        set_urutan_caption(bool(snap.get("caption_video_dulu")))
         # v5.9: validasi PER KOLOM - pesan error menunjuk kolom yang
         # salah; kolom kosong otomatis dipakai nilai standarnya; koma
         # diterima sebagai desimal. Dulu: 1 kolom salah/kosong (mis.
@@ -7604,6 +7813,8 @@ class CutMotionsTab(PerekamAksiMixin):
             "video_dir": self.video_dir_ingat,             # v6.1
             "jumlah": V["jumlah"].get(),
             "caption": V["caption"].get(),
+            # v7.3: URUTAN CAPTION ikut tersimpan di profil/settings
+            "urutan_caption": V["urutan_caption"].get(),
             "mundur": V["mundur"].get(),
             "jeda_dialog": V["jeda_dialog"].get(),
             "jeda_langkah": V["jeda_langkah"].get(),
@@ -7804,6 +8015,10 @@ class CutMotionsTab(PerekamAksiMixin):
         vd = str(data.get("video_dir") or "")
         if os.path.isdir(vd):
             self.video_dir_ingat = vd
+        # v7.3: URUTAN CAPTION dipulihkan (nilai tak dikenal -> diabaikan)
+        uc = data.get("urutan_caption")
+        if uc is not None and str(uc) in CAPTION_URUTAN_OPSI:
+            V["urutan_caption"].set(str(uc))
         pasangan = [
             ("jumlah", V["jumlah"]),
             ("caption", V["caption"]), ("mundur", V["mundur"]),
@@ -8018,6 +8233,10 @@ class StudioMakroTab(PerekamAksiMixin):
         self.running = False
         self.langkah = []          # daftar langkah generik (dict)
         self.papan_klip = None
+        # v7.3: UNDO (Ctrl+Z) - tumpukan keadaan alur + path SIMPAN
+        self._tumpukan_undo = []
+        self._tumpukan_redo = []
+        self.makro_terakhir = ""      # file makro terakhir SIMPAN/BUKA
         self._uid = 0
         self.sel = None
         self.makro_path = os.path.join(data_dir(), "makro_terakhir.json")
@@ -8040,6 +8259,8 @@ class StudioMakroTab(PerekamAksiMixin):
             # v6.2: kartu VIDEO & CAPTION
             "jumlah": tk.StringVar(value=""),
             "caption": tk.StringVar(value=""),
+            # v7.3: URUTAN CAPTION kartu Studio (Caption - Video / Video)
+            "urutan_caption": tk.StringVar(value=CAPTION_URUTAN_OPSI[0]),
             "tanggal": tk.StringVar(value=""),
             "sumber_data": tk.StringVar(value=SUMBER_DATA_OPSI[0]),
         }
@@ -8260,6 +8481,25 @@ class StudioMakroTab(PerekamAksiMixin):
                  bg=C_PANEL, fg=C_TEXT, relief="solid", bd=1, font=F_N,
                  highlightthickness=0).pack(side="left", padx=(4, 0),
                                             ipady=3)
+        # v7.3: URUTAN CAPTION - bisa dibalik: judul video dulu,
+        # spasi, minus, spasi, lalu caption (contoh: melati - #dangdut)
+        ru = tk.Frame(v, bg=C_BG)
+        ru.pack(fill="x", pady=(0, 2))
+        tk.Label(ru, text="URUTAN CAPTION:", bg=C_BG, fg=C_MUTED,
+                 font=F_XS).pack(side="left")
+        om_u = tk.OptionMenu(ru, self.vars["urutan_caption"],
+                             *CAPTION_URUTAN_OPSI)
+        om_u.configure(bg=C_PANEL2, fg=C_TEXT, font=F_XS,
+                       activebackground=C_SELROW, relief="raised", bd=1,
+                       highlightthickness=0)
+        om_u.pack(side="left", padx=(4, 0))
+        tk.Label(
+            v, text="'Caption - Video' = #dangdut - melati (cara lama) "
+                    "| 'Video - Caption' = melati - #dangdut (judul di "
+                    "depan). Nama video diambil dari daftar/OCR nama "
+                    "di layar.",
+            bg=C_BG, fg=C_MUTED, font=F_XS, anchor="w",
+            justify="left", wraplength=352).pack(fill="x", pady=(0, 2))
         self.lbl_preview = tk.Label(v, text="-", bg=C_BG, fg=C_GREEN,
                                     font=F_MONO, anchor="w",
                                     wraplength=352, justify="left")
@@ -8282,6 +8522,9 @@ class StudioMakroTab(PerekamAksiMixin):
                  justify="left", wraplength=352).pack(fill="x",
                                                       pady=(0, 4))
         self.vars["caption"].trace_add("write", self._update_preview)
+        # v7.3: ganti URUTAN CAPTION -> pratinjau ikut berubah
+        self.vars["urutan_caption"].trace_add("write",
+                                              self._update_preview)
         self.vars["jumlah"].trace_add("write", self._update_count)
 
         # ----- Area tengah: tabel alur kerja + panel properti -----
@@ -8353,8 +8596,13 @@ class StudioMakroTab(PerekamAksiMixin):
         self.tree.tag_configure("tloop", foreground=C_UNGU, font=F_H)
         self.tree.tag_configure("off", foreground="#A4A8AE")
         self.tree.bind("<<TreeviewSelect>>", self._on_pilih_baris)
-        self.tree.bind("<Control-c>", lambda _e: self._salin())
-        self.tree.bind("<Control-v>", lambda _e: self._tempel())
+        # v7.3: Ctrl+C/V di tabel kini "break" - diproses di sini SAJA
+        # (di luar tabel otomatis oleh penangan global ShellApp,
+        # jadi tidak pernah dobel tempel)
+        self.tree.bind("<Control-c>",
+                       lambda _e: (self._salin(), "break")[1])
+        self.tree.bind("<Control-v>",
+                       lambda _e: (self._tempel(), "break")[1])
         self.tree.bind("<Delete>", lambda _e: self._hapus())
         self.tree.bind("<Control-a>", self._pilih_semua)
         self.tree.bind("<Button-3>", self._menu_klik_kanan)
@@ -8571,6 +8819,7 @@ class StudioMakroTab(PerekamAksiMixin):
 
     # ================== TAMBAH / SUNTING LANGKAH ==================
     def _tambah(self, jenis):
+        self._undo_push()   # v7.3: tambah langkah bisa di-undo
         l = studio_langkah_baru(jenis, self._uid_baru())
         # v6.2: langkah ISI TANGGAL-JAM yang dibuat di tab Studio
         # bawaan mengambil nilai dari kartu VIDEO & CAPTION tab ini
@@ -8717,7 +8966,11 @@ class StudioMakroTab(PerekamAksiMixin):
             contoh = os.path.basename(self.video_terpilih[0])
         else:
             contoh = "melati"
-        teks = compose_caption(self.vars["caption"].get(), contoh)
+        # v7.3: urutan ikut pilihan URUTAN CAPTION di kartu ini
+        teks = compose_caption(
+            self.vars["caption"].get(), contoh,
+            video_dulu=(self.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1]))
         n = len(teks)
         self.lbl_preview.config(
             text="Pratinjau caption Studio:  {}   ({}{}/{} kar)".format(
@@ -8738,6 +8991,9 @@ class StudioMakroTab(PerekamAksiMixin):
         s_videos = self._nama_video_studio()
         s_caption = self.vars["caption"].get().strip()
         s_tanggal = self.vars["tanggal"].get().strip()
+        # v7.3: URUTAN CAPTION kartu Studio (True = Video - Caption)
+        s_video_dulu = (self.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1])
         try:
             s_jumlah = int(_angka(self.vars["jumlah"].get(), 0, 0,
                                   MAX_BATCH))
@@ -8747,31 +9003,95 @@ class StudioMakroTab(PerekamAksiMixin):
         c_caption = cut.vars["caption"].get() if cut is not None else ""
         c_tanggal = cut.vars["tanggal"].get().strip() \
             if cut is not None else ""
+        c_video_dulu = (cut.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1]) if cut is not None \
+            else False
         c_jumlah = int(_angka(cut.vars["jumlah"].get(), 0, 0, MAX_BATCH)) \
             if cut is not None else 0
         if pilihan == "Studio Makro (tab ini)":
             videos, caption, tanggal, jumlah = (
                 s_videos, s_caption, s_tanggal, s_jumlah)
+            video_dulu = s_video_dulu
         elif pilihan == "Tab CutMotions":
             videos, caption, tanggal, jumlah = (
                 c_videos, c_caption, c_tanggal, c_jumlah)
+            video_dulu = c_video_dulu
         else:  # Otomatis: Studio dulu, CutMotions untuk yang kosong
             videos = s_videos or c_videos
             caption = s_caption or c_caption
             tanggal = s_tanggal or c_tanggal
             jumlah = s_jumlah or c_jumlah
+            # v7.3: urutan ikut caption yang terpilih (yang tidak kosong)
+            video_dulu = s_video_dulu if s_caption else c_video_dulu
         return {"videos": list(videos), "caption": caption,
                 "tanggal": tanggal, "jumlah": jumlah,
+                "video_dulu": bool(video_dulu),
                 "sumber": pilihan}
 
-    def _salin(self):
-        """v5.7: salin SEMUA langkah terpilih (urut tampil)."""
+    # ================== UNDO v7.3 ==================
+    def _keadaan_langkah(self):
+        """v7.3: salinan seluruh alur kerja tab Studio."""
+        return {"langkah": json.loads(json.dumps(self.langkah)),
+                "sel": self.sel}
+
+    def _undo_push(self):
+        """v7.3: simpan keadaan SEKARANG sebelum operasi yang mengubah
+        alur (tambah/tempel/hapus/geser/template/buka/makro baru)."""
+        try:
+            self._tumpukan_undo.append(self._keadaan_langkah())
+            if len(self._tumpukan_undo) > 60:
+                self._tumpukan_undo.pop(0)
+            self._tumpukan_redo.clear()
+        except Exception:
+            pass
+
+    def _undo_pulihkan(self, keadaan):
+        """v7.3: pasang kembali alur lama lalu segarkan UI."""
+        if not keadaan:
+            return
+        self.langkah = keadaan["langkah"]
+        self.sel = keadaan["sel"]
+        self._refresh_tabel()
+        self._render_properti()
+
+    def _undo(self):
+        """v7.3: Ctrl+Z - batalkan operasi alur terakhir."""
+        if not self._tumpukan_undo:
+            self._set_status("Tidak ada yang bisa di-undo.", C_MUTED)
+            return
+        self._tumpukan_redo.append(self._keadaan_langkah())
+        keadaan = self._tumpukan_undo.pop()
+        self._undo_pulihkan(keadaan)
+        self._set_status("UNDO berhasil - alur kembali seperti "
+                         "sebelumnya (Ctrl+Y = ulangi lagi).", C_GREEN)
+
+    def _undo_redo(self):
+        """v7.3: Ctrl+Y - pasang lagi yang tadi di-undo."""
+        if not self._tumpukan_redo:
+            self._set_status("Tidak ada yang bisa di-ulangi (redo).",
+                             C_MUTED)
+            return
+        self._tumpukan_undo.append(self._keadaan_langkah())
+        keadaan = self._tumpukan_redo.pop()
+        self._undo_pulihkan(keadaan)
+        self._set_status("REDO berhasil - perubahan undo dipasang lagi.",
+                         C_GREEN)
+
+    def _salin(self, diam=False):
+        """v5.7: salin SEMUA langkah terpilih (urut tampil).
+        v7.3: `diam=True` (panggilan global Ctrl+C) -> tanpa jendela
+        pesan, cukup status bar."""
         pilih = [self._get(u) for u in self.tree.selection()]
         pilih = [l for l in pilih if l]
         if not pilih:
             l = self._get(self.sel)
             pilih = [l] if l else []
         if not pilih:
+            if diam:   # v7.3: panggilan global -> cukup status bar
+                self._set_status(
+                    "Klik dulu baris langkah yang mau disalin "
+                    "(Ctrl/SHIFT = banyak, Ctrl+A = semua).", C_ORANGE)
+                return
             messagebox.showinfo(
                 APP_NAME,
                 "Klik dulu satu baris langkah yang mau disalin.\n\n"
@@ -8783,14 +9103,22 @@ class StudioMakroTab(PerekamAksiMixin):
         self._set_status("{} langkah disalin - klik baris tujuan lalu "
                          "TEMPEL (Ctrl+V).".format(len(pilih)), C_GREEN)
 
-    def _tempel(self):
-        """v5.7: tempel 1 ATAU BANYAK salinan berurutan setelah acuan."""
+    def _tempel(self, diam=False):
+        """v5.7: tempel 1 ATAU BANYAK salinan berurutan setelah acuan.
+        v7.3: `diam=True` (panggilan global Ctrl+V) -> tanpa jendela
+        pesan; keadaan lama disimpan dulu utk undo (Ctrl+Z)."""
         klip = self.papan_klip
         if not klip:
+            if diam:   # v7.3: panggilan global -> cukup status bar
+                self._set_status(
+                    "Belum ada langkah yang disalin - tekan Ctrl+C "
+                    "dulu di tabel.", C_ORANGE)
+                return
             messagebox.showinfo(APP_NAME, "Belum ada langkah yang "
                                           "disalin.\n\nKlik satu baris "
                                           "lalu SALIN (Ctrl+C) dulu.")
             return
+        self._undo_push()   # v7.3: tempel bisa di-undo (Ctrl+Z)
         items = klip.get("banyak") or [klip]
         i = self._idx_of(self.sel)
         dipaste = []
@@ -8837,6 +9165,7 @@ class StudioMakroTab(PerekamAksiMixin):
                 len(pilih)))
         if not messagebox.askyesno(APP_NAME, pesan):
             return
+        self._undo_push()   # v7.3: hapus bisa di-undo (Ctrl+Z)
         i0 = self._idx_of(pilih[0]["uid"])
         for l in pilih:
             try:
@@ -8860,6 +9189,7 @@ class StudioMakroTab(PerekamAksiMixin):
         j = i + delta
         if j < 0 or j >= len(self.langkah):
             return
+        self._undo_push()   # v7.3: geser bisa di-undo (Ctrl+Z)
         self.langkah[i], self.langkah[j] = self.langkah[j], \
             self.langkah[i]
         self._refresh_tabel()
@@ -8913,6 +9243,11 @@ class StudioMakroTab(PerekamAksiMixin):
                       command=self._salin)
         m.add_command(label="Tempel salinan di sini  (Ctrl+V)",
                       command=self._tempel)
+        # v7.3: undo/redo juga bisa dari klik kanan
+        m.add_command(label="Undo (batalkan perubahan terakhir)  "
+                            "(Ctrl+Z)", command=self._undo)
+        m.add_command(label="Ulangi yang di-undo  (Ctrl+Y)",
+                      command=self._undo_redo)
         m.add_separator()
         m.add_command(label="Naikkan", command=self._naik)
         m.add_command(label="Turunkan", command=self._turun)
@@ -10052,6 +10387,8 @@ class StudioMakroTab(PerekamAksiMixin):
         return {"videos": list(self.video_terpilih),
                 "jumlah": self.vars["jumlah"].get(),
                 "caption": self.vars["caption"].get(),
+                # v7.3: URUTAN CAPTION ikut kartu tersimpan
+                "urutan_caption": self.vars["urutan_caption"].get(),
                 "tanggal": self.vars["tanggal"].get(),
                 "sumber_data": self.vars["sumber_data"].get()}
 
@@ -10067,11 +10404,16 @@ class StudioMakroTab(PerekamAksiMixin):
                            ("tanggal", "tanggal"),
                            ("sumber_data", "sumber_data")):
             val = kartu.get(kunci)
-            if val is not None:
-                if kunci == "sumber_data" and \
-                        str(val) not in SUMBER_DATA_OPSI:
-                    continue
-                self.vars[var].set(str(val))
+            if val is None:
+                continue
+            if kunci == "sumber_data" and \
+                    str(val) not in SUMBER_DATA_OPSI:
+                continue
+            self.vars[var].set(str(val))
+        # v7.3: URUTAN CAPTION dipulihkan (nilai tak dikenal -> diabaikan)
+        ucap = kartu.get("urutan_caption")
+        if ucap is not None and str(ucap) in CAPTION_URUTAN_OPSI:
+            self.vars["urutan_caption"].set(str(ucap))
         self._refresh_video_list()
         self._update_count()
         self._update_preview()
@@ -10111,6 +10453,7 @@ class StudioMakroTab(PerekamAksiMixin):
                 "Kosongkan alur kerja sekarang?\n\nAlur saat ini akan "
                 "hilang - simpan dulu (SIMPAN MAKRO) bila perlu."):
             return
+        self._undo_push()   # v7.3: kosongkan bisa di-undo (Ctrl+Z)
         self.langkah = []
         self.sel = None
         self._refresh_tabel()
@@ -10118,7 +10461,29 @@ class StudioMakroTab(PerekamAksiMixin):
         self._set_status("Makro baru dibuat - alur kerja kosong. Pilih "
                          "tombol + untuk menambah langkah.", C_GREEN)
 
+    # ================== SIMPAN / SIMPAN SEBAGAI v7.3 ==================
+    def _simpan_cepat(self):
+        """v7.3: SIMPAN (Ctrl+S) - tulis langsung ke file makro
+        terakhir tanpa dialog; bila belum pernah simpan/buka, otomatis
+        beralih ke SIMPAN SEBAGAI."""
+        if not self.makro_terakhir:
+            return self._simpan_makro()
+        try:
+            with open(self.makro_terakhir, "w", encoding="utf-8") as d:
+                json.dump({"app": APP_NAME, "versi": APP_VERSION,
+                           "jenis": "studio", "langkah": self.langkah,
+                           "kartu": self._kartu_data(),
+                           "putaran": self.vars["putaran"].get()},
+                          d, indent=2, ensure_ascii=False)
+            self._set_status("Makro tersimpan: {}".format(
+                self.makro_terakhir), C_GREEN)
+        except Exception as e:
+            messagebox.showerror(APP_NAME,
+                                 "Gagal menyimpan makro:\n" + str(e))
+
     def _simpan_makro(self):
+        """v7.3: SIMPAN SEBAGAI (Ctrl+Shift+S) - pilih file baru untuk
+        alur kerja Studio; path diingat utk SIMPAN (Ctrl+S)."""
         f = filedialog.asksaveasfilename(
             title="Simpan makro Studio",
             defaultextension=".json",
@@ -10136,6 +10501,7 @@ class StudioMakroTab(PerekamAksiMixin):
                            # v6.7: ULANGI SEMUA (PUTARAN) ikut makro
                            "putaran": self.vars["putaran"].get()},
                           d, indent=2, ensure_ascii=False)
+            self.makro_terakhir = f   # v7.3: ingat utk Ctrl+S
             self._set_status("Makro tersimpan: {}".format(f), C_GREEN)
         except Exception as e:
             messagebox.showerror(APP_NAME,
@@ -10160,6 +10526,7 @@ class StudioMakroTab(PerekamAksiMixin):
             messagebox.showwarning(APP_NAME, "File makro tidak berisi "
                                              "langkah yang sah.")
             return
+        self._undo_push()   # v7.3: alur lama bisa di-undo (Ctrl+Z)
         self.langkah = ls
         maks = 0
         for l in ls:
@@ -10178,6 +10545,7 @@ class StudioMakroTab(PerekamAksiMixin):
         # file lama tanpa kunci ini -> nilai sekarang dipertahankan)
         if data.get("putaran") is not None:
             self._pasang_putaran(data.get("putaran"))
+        self.makro_terakhir = f   # v7.3: ingat path utk SIMPAN (Ctrl+S)
         self._set_status("Makro dimuat: {} langkah dari {}".format(
             len(ls), f), C_GREEN)
 
@@ -10198,6 +10566,7 @@ class StudioMakroTab(PerekamAksiMixin):
                 "semua langkah bebas disunting, disalin, dihapus, atau "
                 "ditambah."):
             return
+        self._undo_push()   # v7.3: alur lama bisa di-undo (Ctrl+Z)
         V = cut.vars
         cfg = {
             "posisi": cut.posisi,
@@ -10303,6 +10672,8 @@ class StudioMakroTab(PerekamAksiMixin):
         tanggal = d["tanggal"]
         jumlah_total = len(videos) or d["jumlah"]
         sumber_data = d["sumber"]
+        # v7.3: pasang URUTAN CAPTION utk mesin (dari sumber data kartu)
+        set_urutan_caption(bool(d.get("video_dulu")))
         # v6.3: langkah ISI VIDEO & CAPTION mode BACA NAMA DI LAYAR
         ada_ocr = any(
             l.get("aktif", True) and l["jenis"] == "VIDEO_CAPTION"
@@ -10335,6 +10706,8 @@ class StudioMakroTab(PerekamAksiMixin):
             # 'Studio Makro (tab ini)'
             "tanggal_studio": self.vars["tanggal"].get().strip(),
             "sumber_data": sumber_data,
+            # v7.3: urutan caption (True = Video - Caption) utk catatan
+            "caption_video_dulu": bool(d.get("video_dulu")),
         }
         self._simpan_auto()
         self.stop_event.clear()
@@ -10817,8 +11190,113 @@ class ShellApp:
         self.tab_studio = StudioMakroTab(f_studio, self)
         self.tab_cut = CutMotionsTab(f_cut, self)
         self._pilih_halaman(0)
+        self._pasang_pintasan_global()   # v7.3: Ctrl+C/V/Z + Ctrl+S
         self._build_menubar()
         root.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # ---------- v7.3: PINTASAN GLOBAL (Ctrl+C/V/Z/X, Ctrl+S) ----------
+    def _pasang_pintasan_global(self):
+        """v7.3: Ctrl+C / Ctrl+V / Ctrl+Z / Ctrl+Y / Ctrl+S kini berlaku
+        DI SEMUA TITIK aplikasi:
+        - fokus di kotak isian (Entry/Combobox/Text) -> perilaku bawaan
+          (salin/tempel TEKS; Ctrl+Z = kembalikan isi kotak saat
+          terakhir difokuskan);
+        - fokus di tempat lain (termasuk tabel) -> salin/tempel/undo
+          LANGKAH di tab aktif.
+        Varian huruf KAPITAL (<Control-C> dll) menutup kondisi
+        CAPSLOCK nyala / Shift ditahan yang dulu membuat pintasan
+        terasa "tidak bisa dipakai".
+        """
+        r = self.root
+        for urutan, aksi in (("c", "c"), ("C", "c"),
+                             ("v", "v"), ("V", "v"),
+                             ("z", "z"), ("Z", "y"),
+                             ("y", "y"), ("Y", "y")):
+            r.bind_all("<Control-{}>".format(urutan),
+                       lambda _e, a=aksi: self._klip_global(a), add="+")
+        r.bind_all("<Control-s>",
+                   lambda _e: self._berkas_simpan() or "break", add="+")
+        r.bind_all("<Control-S>",
+                   lambda _e: self._berkas_simpan_sebagai() or "break",
+                   add="+")
+        # pengingat nilai awal kotak isian untuk Ctrl+Z sederhana
+        r.bind_all("<FocusIn>", self._fokus_masuk, add="+")
+
+    @staticmethod
+    def _field_teks(w):
+        """v7.3: True bila widget fokus adalah kotak isian teks."""
+        try:
+            return isinstance(w, (_EntryAsli, tk.Text, ttk.Combobox,
+                                  ttk.Spinbox))
+        except Exception:
+            return False
+
+    def _fokus_masuk(self, _e=None):
+        """v7.3: catat isi kotak Entry saat fokus masuk (bahan Ctrl+Z)."""
+        try:
+            w = self.root.focus_get()
+            if isinstance(w, _EntryAsli) and \
+                    str(w.cget("state")) != "readonly" and \
+                    str(w.cget("state")) != "disabled":
+                w._nilai_fokus_awal = w.get()
+        except Exception:
+            pass
+
+    def _klip_global(self, aksi, _w=None):
+        """v7.3: otak pintasan global (lihat _pasang_pintasan_global).
+        `_w` untuk pengujian (bila None = widget fokus sekarang)."""
+        try:
+            w = self.root.focus_get() if _w is None else _w
+        except Exception:
+            w = None
+        if self._field_teks(w):
+            if aksi == "z":
+                # Ctrl+Z di kotak isian: kembalikan nilai saat fokus
+                # masuk (tk.Entry tidak punya undo bawaan)
+                try:
+                    awal = getattr(w, "_nilai_fokus_awal", None)
+                    if awal is not None and str(w.get()) != str(awal) \
+                            and str(w.cget("state")) == "normal":
+                        w.delete(0, "end")
+                        w.insert(0, awal)
+                        return "break"
+                except Exception:
+                    pass
+            return None   # biarkan salin/tempel teks bawaan berjalan
+        tab = self.tab_studio if self._halaman == 0 else self.tab_cut
+        try:
+            if aksi == "c":
+                if self._halaman == 0:
+                    tab._salin(diam=True)
+                else:
+                    tab._salin_langkah(diam=True)
+            elif aksi == "v":
+                if self._halaman == 0:
+                    tab._tempel(diam=True)
+                else:
+                    tab._tempel_langkah(diam=True)
+            elif aksi == "z":
+                tab._undo()
+            elif aksi == "y":
+                tab._undo_redo()
+        except Exception:
+            pass
+        return "break"
+
+    # ---------- v7.3: SIMPAN / SIMPAN SEBAGAI tab aktif ----------
+    def _berkas_simpan(self):
+        """v7.3: menu SIMPAN / Ctrl+S - simpan tab yang sedang aktif."""
+        if self._halaman == 0:
+            self.tab_studio._simpan_cepat()
+        else:
+            self.tab_cut._simpan_cepat()
+
+    def _berkas_simpan_sebagai(self):
+        """v7.3: menu SIMPAN SEBAGAI / Ctrl+Shift+S - tab aktif."""
+        if self._halaman == 0:
+            self.tab_studio._simpan_makro()
+        else:
+            self.tab_cut._simpan_sebagai()
 
     # ---------- navigasi halaman v6.6 ----------
     def _pilih_halaman(self, i):
@@ -10841,14 +11319,23 @@ class ShellApp:
         menubar = tk.Menu(self.root)
 
         m_berkas = tk.Menu(menubar, tearoff=0)
+        # v7.3: SIMPAN & SIMPAN SEBAGAI utk TAB AKTIF (Studio/CutMotions)
+        m_berkas.add_command(
+            label="SIMPAN - simpan tab aktif (Ctrl+S)",
+            accelerator="Ctrl+S", command=self._berkas_simpan)
+        m_berkas.add_command(
+            label="SIMPAN SEBAGAI - tab aktif, pilih file...",
+            accelerator="Ctrl+Shift+S",
+            command=self._berkas_simpan_sebagai)
+        m_berkas.add_separator()
         m_berkas.add_command(label="Makro Baru (kosongkan Studio)",
                              command=self.tab_studio._makro_baru)
         m_berkas.add_command(label="Buka Makro Studio...",
                              command=self.tab_studio._buka_makro)
-        m_berkas.add_command(label="Simpan Makro Studio...",
+        m_berkas.add_command(label="Simpan Makro Studio... (sebagai)",
                              command=self.tab_studio._simpan_makro)
         m_berkas.add_separator()
-        m_berkas.add_command(label="Simpan Profil CutMotions...",
+        m_berkas.add_command(label="Simpan Profil CutMotions... (sebagai)",
                              command=self.tab_cut._simpan_profil)
         m_berkas.add_command(label="Buka Profil CutMotions...",
                              command=self.tab_cut._buka_profil)
@@ -10891,6 +11378,11 @@ class ShellApp:
                            command=self.tab_studio._tempel)
         m_lang.add_command(label="Hapus Langkah  (Del)",
                            command=self.tab_studio._hapus)
+        # v7.3: UNDO/REDO alur kerja
+        m_lang.add_command(label="Undo Langkah  (Ctrl+Z)",
+                           command=self.tab_studio._undo)
+        m_lang.add_command(label="Ulangi yang Di-undo  (Ctrl+Y)",
+                           command=self.tab_studio._undo_redo)
         menubar.add_cascade(label="Studio", menu=m_lang)
 
         m_alat = tk.Menu(menubar, tearoff=0)
@@ -12622,6 +13114,195 @@ def main():
             print("SELFTEST_HSB_OK")
             root.destroy()
         root.after(4500, _ok21)
+    if "--selftest-klip" in sys.argv:
+        # v7.3: URUTAN CAPTION (Video - Caption) + Ctrl+C/V GLOBAL +
+        # UNDO/REDO langkah + SIMPAN/SIMPAN SEBAGAI tab aktif.
+        def _uji_klip():
+            cek = []
+            cut = app.tab_cut
+            st = app.tab_studio
+            app._pilih_halaman(1)
+            root.update()
+            # === A. compose_caption urutan ===
+            set_urutan_caption(False)
+            cek.append(("KLIP_CAPTION_LAMA",
+                        compose_caption("#dangdut", "melati.mp4")
+                        == "#dangdut - melati"))
+            set_urutan_caption(True)
+            cek.append(("KLIP_CAPTION_BARU",
+                        compose_caption("#dangdut", "melati.mp4")
+                        == "melati - #dangdut"))
+            cek.append(("KLIP_CAPTION_TANPA_CAP",
+                        compose_caption("", "melati.mp4") == "melati"))
+            cek.append(("KLIP_CAPSIONAL_PARAM",
+                        compose_caption("#dangdut", "melati.mp4",
+                                        video_dulu=False)
+                        == "#dangdut - melati"))
+            set_urutan_caption(False)
+            # === B. kartu CutMotions: var + simpan/muat ===
+            cek.append(("KLIP_VAR_CUT",
+                        cut.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[0]))
+            cek.append(("KLIP_KUMPUL_CUT",
+                        cut._kumpulkan_data().get("urutan_caption")
+                        == CAPTION_URUTAN_OPSI[0]))
+            cut._loading = True   # matikan trace sambil uji
+            cut._terapkan_data({"urutan_caption": "Video - Caption"})
+            cek.append(("KLIP_TERAPKAN_CUT",
+                        cut.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1]))
+            cut._terapkan_data({"urutan_caption": "aneh"})
+            cek.append(("KLIP_TERAPKAN_CUT_BUKAN_OPSI",
+                        cut.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1]))
+            cut.vars["urutan_caption"].set(CAPTION_URUTAN_OPSI[0])
+            cut._loading = False
+            # === C. kartu Studio: kartu_data/pasang_kartu ===
+            cek.append(("KLIP_KARTU_ST",
+                        "urutan_caption" in st._kartu_data()))
+            st._pasang_kartu({"urutan_caption": "Video - Caption"})
+            cek.append(("KLIP_PASANG_KARTU_ST",
+                        st.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1]))
+            st._pasang_kartu({"urutan_caption": "aneh"})
+            cek.append(("KLIP_PASANG_KARTU_ST_BUKAN_OPSI",
+                        st.vars["urutan_caption"].get()
+                        == CAPTION_URUTAN_OPSI[1]))
+            # === D. pratinjau ikut urutan ===
+            st.vars["caption"].set("#dangdut")
+            st._update_preview()
+            cek.append(("KLIP_PREVIEW_ST_VIDEO_DULU",
+                        "melati - #dangdut"
+                        in st.lbl_preview.cget("text")))
+            st.vars["urutan_caption"].set(CAPTION_URUTAN_OPSI[0])
+            cek.append(("KLIP_PREVIEW_ST_CAPTION_DULU",
+                        "#dangdut - melati"
+                        in st.lbl_preview.cget("text")))
+            app._pilih_halaman(1)
+            root.update()
+            cut.vars["urutan_caption"].set(CAPTION_URUTAN_OPSI[1])
+            cut._update_preview()
+            cek.append(("KLIP_PREVIEW_CUT_VIDEO_DULU",
+                        "melati - #dangdut"
+                        in cut.lbl_preview.cget("text")))
+            cut.vars["urutan_caption"].set(CAPTION_URUTAN_OPSI[0])
+            # === E. _data_sumber membawa video_dulu ===
+            app._pilih_halaman(0)
+            root.update()
+            st.vars["sumber_data"].set("Studio Makro (tab ini)")
+            st.vars["urutan_caption"].set(CAPTION_URUTAN_OPSI[1])
+            cek.append(("KLIP_SUMBER_VIDEO_DULU",
+                        st._data_sumber().get("video_dulu") is True))
+            st.vars["urutan_caption"].set(CAPTION_URUTAN_OPSI[0])
+            st.vars["sumber_data"].set(SUMBER_DATA_OPSI[0])
+            # === F. UNDO/REDO Studio ===
+            app._pilih_halaman(0)
+            root.update()
+            n0 = len(st.langkah)
+            st._tambah("KLIK")
+            root.update()
+            cek.append(("KLIP_UNDO_ST_TAMBAH",
+                        len(st.langkah) == n0 + 1))
+            st._undo()
+            root.update()
+            cek.append(("KLIP_UNDO_ST_KEMBALI",
+                        len(st.langkah) == n0))
+            st._undo_redo()
+            root.update()
+            cek.append(("KLIP_REDO_ST",
+                        len(st.langkah) == n0 + 1))
+            st._undo()
+            root.update()
+            # === G. UNDO/REDO CutMotions ===
+            app._pilih_halaman(1)
+            root.update()
+            e0 = len(cut.langkah_extra)
+            cut._tambah_studio("KLIK")
+            root.update()
+            cek.append(("KLIP_UNDO_CUT_TAMBAH",
+                        len(cut.langkah_extra) == e0 + 1))
+            cut._undo()
+            root.update()
+            cek.append(("KLIP_UNDO_CUT_KEMBALI",
+                        len(cut.langkah_extra) == e0))
+            cut._undo_redo()
+            root.update()
+            cek.append(("KLIP_REDO_CUT",
+                        len(cut.langkah_extra) == e0 + 1))
+            cut._undo()
+            root.update()
+            # === H. dispatcher global: salin/tempel/undo langkah ===
+            cut.tree.selection_set("pos_jadwal")
+            cut.tree.focus_set()
+            root.update()
+            cek.append(("KLIP_FIELD_TEKS_TREE",
+                        app._field_teks(cut.tree) is False))
+            hasil = app._klip_global("c")
+            cek.append(("KLIP_GLOBAL_SALIN",
+                        hasil == "break" and cut.papan_klip is not None
+                        and "banyak" in cut.papan_klip))
+            hasil_v = app._klip_global("v")
+            root.update()
+            cek.append(("KLIP_GLOBAL_TEMPEL",
+                        hasil_v == "break"
+                        and len(cut.langkah_extra) == e0 + 1))
+            app._klip_global("z")
+            root.update()
+            cek.append(("KLIP_GLOBAL_UNDO",
+                        len(cut.langkah_extra) == e0))
+            # fokus Entry -> salin teks bawaan (handler tidak break)
+            ent = tk.Entry(root)
+            ent.insert(0, "uji")
+            ent.pack()
+            ent.focus_set()
+            root.update()
+            cek.append(("KLIP_FIELD_TEKS_ENTRY",
+                        app._field_teks(ent) is True))
+            cek.append(("KLIP_GLOBAL_ENTRY_JURU_KACA",
+                        app._klip_global("c", _w=ent) is None))
+            ent.destroy()
+            root.update()
+            # === I. SIMPAN / SIMPAN SEBAGAI tanpa dialog ===
+            import tempfile
+            f_pro = os.path.join(tempfile.gettempdir(),
+                                 "cu73_profil_uji.json")
+            f_mak = os.path.join(tempfile.gettempdir(),
+                                 "cu73_makro_uji.json")
+            for hh in (f_pro, f_mak):
+                try:
+                    if os.path.exists(hh):
+                        os.remove(hh)
+                except OSError:
+                    pass
+            cut.profil_terakhir = f_pro
+            cut._simpan_cepat()
+            ok_pro = False
+            try:
+                with open(f_pro, "r", encoding="utf-8") as s:
+                    ok_pro = "urutan_caption" in json.load(s)
+            except Exception:
+                pass
+            cek.append(("KLIP_SIMPAN_CUT", ok_pro))
+            st.makro_terakhir = f_mak
+            st._simpan_cepat()
+            ok_mak = False
+            try:
+                with open(f_mak, "r", encoding="utf-8") as s:
+                    isi_mak = json.load(s)
+                ok_mak = ("kartu" in isi_mak
+                          and "urutan_caption" in isi_mak["kartu"])
+            except Exception:
+                pass
+            cek.append(("KLIP_SIMPAN_ST", ok_mak))
+            for tag, ok in cek:
+                print(tag, bool(ok))
+            print("KLIP_SEMUA_OK", all(ok for _t, ok in cek))
+        root.after(900, _uji_klip)
+
+        def _ok22():
+            print("SELFTEST_KLIP_OK")
+            root.destroy()
+        root.after(6000, _ok22)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -12642,7 +13323,8 @@ def main():
             or ("--selftest-gulir" in sys.argv) \
             or ("--selftest-panel" in sys.argv) \
             or ("--selftest-vsbtb" in sys.argv) \
-            or ("--selftest-hsb" in sys.argv):
+            or ("--selftest-hsb" in sys.argv) \
+            or ("--selftest-klip" in sys.argv):
         print("SELFTEST_DONE")
 
 

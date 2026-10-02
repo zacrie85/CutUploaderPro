@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v7.2 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v7.3 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -424,6 +424,55 @@ BARU DI V7.1 - SCROLLBAR JUGA DI BOX ALUR KERJA MAKRO:
   dulu punya bilah gulir tetap; yang dulu terlewat baru box
   Studio ini. Uji:
   python cut_uploader.py --selftest-vsbtb  (5 cek).
+
+BARU DI V7.3 - URUTAN CAPTION + CTRL+C/V SEMUA TITIK + UNDO +
+SIMPAN/SIMPAN SEBAGAI:
+
+  1. URUTAN CAPTION (kartu VIDEO & CAPTION, KEDUA tab):
+     Di bawah kotak CAPTION DASAR ada pilihan baru
+     "URUTAN CAPTION" dengan 2 pilihan:
+       - Caption - Video  : #dangdut - melati  (cara lama)
+       - Video - Caption  : melati - #dangdut  (judul video
+         dulu di depan, lalu SPASI - MINUS - SPASI, lalu
+         caption yang sudah kamu tentukan)
+     - Pratinjau caption langsung berubah sesuai pilihan.
+     - Berlaku juga untuk nama video hasil BACA NAMA DI
+       LAYAR (OCR) - caption tetap mengikuti nama yang
+       terbaca, hanya urutannya yang dibalik.
+     - Pilihan ikut tersimpan di profil CutMotions & makro
+       Studio (file lama aman - tetap pakai cara lama).
+
+  2. CTRL+C / CTRL+V / CTRL+Z kini JALAN DI SEMUA TITIK:
+     - Dulu pintasan salin/tempel LANGKAH hanya hidup saat
+       fokus ada di tabel - itulah kenapa kadang terasa
+       tidak bisa dipakai. Kini di mana pun (selama tidak
+       sedang mengetik di kotak isian):
+         CTRL+C = salin langkah terpilih
+         CTRL+V = tempel langkah
+         CTRL+Z = UNDO - batalkan operasi langkah
+                  terakhir (tempel/hapus/tambah/geser/
+                  template/buka makro/makro baru/reset
+                  posisi)
+         CTRL+Y = ulangi lagi yang tadi di-undo (redo)
+     - Di dalam kotak isian: CTRL+C/CTRL+V tetap salin/
+       tempel TEKS seperti biasa, dan CTRL+Z mengembalikan
+       isi kotak seperti saat kamu terakhir klik kotak itu.
+     - CAPSLOCK nyala pun pintasannya tetap jalan.
+     - Ada juga di menu klik-kanan tabel dan menubar menu
+       Studio (Undo Langkah / Ulangi yang Di-undo).
+
+  3. Menu BERKAS kini punya SIMPAN dan SIMPAN SEBAGAI
+     (untuk tab yang sedang aktif):
+       - SIMPAN (CTRL+S)      : simpan TANPA dialog ke file
+                                yang sama/terakhir (Studio =
+                                makro, CutMotions = profil).
+                                Belum pernah simpan? Otomatis
+                                beralih ke SIMPAN SEBAGAI.
+       - SIMPAN SEBAGAI       : pilih file baru lalu simpan
+         (CTRL+SHIFT+S)         ke sana; file itu jadi
+                                target SIMPAN berikutnya.
+
+  Uji: python cut_uploader.py --selftest-klip  (29 cek).
 
 BARU DI V7.2 - SCROLLBAR HORIZONTAL (GESER KIRI/KANAN):
   Bilah gulir MENDATAR kini terpasang di dua tempat, gaya
