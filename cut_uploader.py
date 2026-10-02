@@ -230,6 +230,13 @@
        tabel begitu daftar langkah lebih tinggi dari box-nya,
        bisa ditarik naik-turun, dan hilang sendiri saat daftar
        muat. Roda mouse & tombol GULIR CEPAT tetap berfungsi.
+     - v7.2: SCROLLBAR HORIZONTAL (geser ke kiri/ke kanan) di
+       kedua tabel langkah & panel PROPERTI LANGKAH: kolom
+       tabel yang terpotong di jendela sempit kini bisa
+       digeser lewat bilah di bawah tabel (muncul-hilang
+       sendiri), isi form properti yang lebih lebar dari
+       panel bisa digeser lewat bilah di bawah panel, dan
+       Shift+roda mouse menggeser panel ke samping.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -346,7 +353,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "7.1"
+APP_VERSION = "7.2"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -371,7 +378,20 @@ def data_dir():
     aplikasi - settings, riwayat, gambar referensi hasil
     potongan - wajib disimpan di folder data ini, BUKAN di
     folder aplikasi.
+
+    v7.2: bila variabel lingkungan CUTUPLOADER_DATA_DIR diisi,
+    folder itu yang dipakai - dipakai selftest supaya tes tidak
+    membaca/mencemari data asli (tiap tes mulai dari kondisi
+    bersih dan deterministik). Perilaku pengguna normal tidak
+    berubah sedikit pun.
     """
+    env = os.getenv("CUTUPLOADER_DATA_DIR")
+    if env:
+        try:
+            os.makedirs(env, exist_ok=True)
+            return env
+        except Exception:
+            pass
     base = os.getenv("LOCALAPPDATA") or os.getenv("APPDATA")
     if base:
         d = os.path.join(base, "CutUploaderPro")
@@ -972,18 +992,23 @@ class PanelGulir(tk.Frame):
                              bd=0)
         self.vsb = ttk.Scrollbar(self, orient="vertical",
                                  command=self.cvs.yview)
-        self.cvs.configure(yscrollcommand=self._sinkron)
+        # v7.2: scrollbar HORIZONTAL (geser ke kiri/kanan) - gaya
+        # sama: muncul kalau isi lebih lebar dari panel, hilang
+        # kalau muat
+        self.hsb = ttk.Scrollbar(self, orient="horizontal",
+                                 command=self.cvs.xview)
+        self.cvs.configure(yscrollcommand=self._sinkron,
+                           xscrollcommand=self._sinkron_h)
         self.vsb.pack(side="right", fill="y")
+        self.hsb.pack(side="bottom", fill="x")
         self.cvs.pack(side="left", fill="both", expand=True)
         self.badan = tk.Frame(self.cvs, bg=C_BG)
         self._win = self.cvs.create_window(
             (0, 0), window=self.badan, anchor="nw")
         self.cvs.bind("<Configure>", self._atur_lebar)
-        self.badan.bind(
-            "<Configure>",
-            lambda _e: self.cvs.configure(
-                scrollregion=self.cvs.bbox("all")))
+        self.badan.bind("<Configure>", self._atur_isi)
         self._vsb_tampil = True
+        self._hsb_tampil = True
         # satu listener roda mouse global; HANYA aktif kalau pointer
         # sedang berada di dalam panel ini (jadi dua halaman yang
         # sama-sama memakai PanelGulir tidak saling berebut)
@@ -995,9 +1020,22 @@ class PanelGulir(tk.Frame):
         except Exception:
             pass
 
+    def _atur_isi(self, _e=None):
+        # v7.2: digabung - update scrollregion + lebar isi setiap
+        # kali ukuran alami konten berubah
+        self.cvs.configure(scrollregion=self.cvs.bbox("all"))
+        self._atur_lebar()
+
     def _atur_lebar(self, _e=None):
-        self.cvs.itemconfigure(self._win,
-                               width=self.cvs.winfo_width())
+        # v7.2: lebar isi = maks(lebar canvas, lebar alami konten)
+        # - kalau konten lebih lebar dari panel, isi TIDAK dipaksa
+        # menyempit lagi, tapi bisa digeser ke kanan lewat scrollbar
+        try:
+            w = max(self.cvs.winfo_width(),
+                    self.badan.winfo_reqwidth())
+        except Exception:
+            w = self.cvs.winfo_width()
+        self.cvs.itemconfigure(self._win, width=w)
 
     def _sinkron(self, awal, akhir):
         self.vsb.set(awal, akhir)
@@ -1039,6 +1077,12 @@ class PanelGulir(tk.Frame):
 
     def _gulir(self, e):
         try:
+            # v7.2: Shift + roda mouse = geser ke KIRI/KANAN
+            if getattr(e, "state", 0) & 0x0001:
+                ke_kiri = (getattr(e, "num", None) == 4
+                           or getattr(e, "delta", 0) > 0)
+                self.cvs.xview_scroll(-3 if ke_kiri else 3, "units")
+                return
             num = getattr(e, "num", None)
             if num == 4:
                 self.cvs.yview_scroll(-3, "units")
@@ -1051,10 +1095,30 @@ class PanelGulir(tk.Frame):
         except Exception:
             pass
 
+    def _sinkron_h(self, awal, akhir):
+        # v7.2: scrollbar horizontal gaya obrolan - muncul saat isi
+        # lebih lebar dari panel, hilang sendiri saat muat
+        self.hsb.set(awal, akhir)
+        try:
+            muat = (float(akhir) - float(awal)) >= 0.999
+        except Exception:
+            muat = True
+        if muat and self._hsb_tampil:
+            self.hsb.pack_forget()
+            self._hsb_tampil = False
+        elif not muat and not self._hsb_tampil:
+            try:
+                self.hsb.pack(side="bottom", fill="x",
+                              before=self.cvs)
+                self._hsb_tampil = True
+            except Exception:
+                pass
+
     def ke_atas(self):
-        """Kembalikan guliran panel ke posisi paling atas."""
+        """Kembalikan guliran panel ke paling atas & tepi kiri."""
         try:
             self.cvs.yview_moveto(0)
+            self.cvs.xview_moveto(0)  # v7.2
         except Exception:
             pass
 
@@ -3671,6 +3735,10 @@ class CutMotionsTab(PerekamAksiMixin):
         ]:
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w_, anchor=a, stretch=(k == "detail"))
+        # v7.2: kolom DETAIL tidak boleh menyempit di bawah 240 -
+        # di jendela sempit tabel jadi lebih lebar dari kartunya
+        # sehingga scrollbar HORIZONTAL (geser kiri/kanan) aktif
+        self.tree.column("detail", minwidth=240)
         vsb = ttk.Scrollbar(f_tb.badan, orient="vertical",
                             command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
@@ -3680,6 +3748,13 @@ class CutMotionsTab(PerekamAksiMixin):
         self.strip_gulir = buat_strip_gulir(f_tb.badan, self.tree)
         self.tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="left", fill="y")
+        # v7.2: scrollbar HORIZONTAL gaya obrolan (spt tab Studio) -
+        # muncul saat kolom lebih lebar dari kartu, hilang saat muat
+        hsb = ttk.Scrollbar(f_tb.badan, orient="horizontal",
+                            command=self.tree.xview)
+        self._hsb_tb = hsb
+        self._hsb_tb_tampil = False
+        self.tree.configure(xscrollcommand=self._sinkron_hsb_tb)
         self.tree.tag_configure("genap", background=C_STRIPE)
         self.tree.tag_configure("ganjil", background=C_PANEL)
         self.tree.tag_configure("salinan", foreground=C_BLUE)
@@ -3722,6 +3797,28 @@ class CutMotionsTab(PerekamAksiMixin):
     def _tb_pemisah(self, parent):
         tk.Frame(parent, bg=C_LINE, width=2).pack(side="left", fill="y",
                                                   padx=4, pady=4)
+
+    def _sinkron_hsb_tb(self, awal, akhir):
+        """v7.2: scrollbar HORIZONTAL tabel gaya obrolan - muncul
+        saat kolom lebih lebar dari kartunya (geser ke kiri/kanan),
+        hilang sendiri saat semua kolom muat."""
+        hsb = self._hsb_tb
+        try:
+            hsb.set(awal, akhir)
+            muat = (float(akhir) - float(awal)) >= 0.999
+        except Exception:
+            return
+        if muat and self._hsb_tb_tampil:
+            hsb.pack_forget()
+            self._hsb_tb_tampil = False
+        elif not muat and not self._hsb_tb_tampil:
+            try:
+                if self.tree.winfo_manager() == "pack":
+                    hsb.pack(side="bottom", fill="x",
+                             before=self.tree)
+                    self._hsb_tb_tampil = True
+            except Exception:
+                pass
 
     def _baris_prop(self, label, lebar_label=30):
         """Satu baris kontrol di panel properti."""
@@ -8215,6 +8312,11 @@ class StudioMakroTab(PerekamAksiMixin):
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w_, anchor=a,
                              stretch=(k == "detail"))
+        # v7.2: kolom PARAMETER tidak boleh menyempit di bawah 240 -
+        # di jendela sempit tabel jadi lebih lebar dari kartunya
+        # sehingga scrollbar HORIZONTAL (geser kiri/kanan) aktif;
+        # di jendela lebar kolom tetap meregang seperti biasa
+        self.tree.column("detail", minwidth=240)
         # v7.1: scrollbar tabel ALUR KERJA MAKRO gaya obrolan -
         # dibuat TERSEMBUNYI dulu, otomatis MUNCUL di sisi kanan
         # begitu baris melebihi tinggi kartu & HILANG sendiri saat
@@ -8230,6 +8332,14 @@ class StudioMakroTab(PerekamAksiMixin):
         # pasti (tabel + scrollbar mengisi ruang di atas strip ini)
         self.strip_gulir = buat_strip_gulir(f_tb.badan, self.tree)
         self.tree.pack(side="left", fill="both", expand=True)
+        # v7.2: scrollbar HORIZONTAL gaya obrolan - muncul saat
+        # kolom tabel lebih lebar dari kartunya (mis. jendela
+        # disempitkan), bisa digeser ke kiri/kanan, hilang saat muat
+        hsb = ttk.Scrollbar(f_tb.badan, orient="horizontal",
+                            command=self.tree.xview)
+        self._hsb_tb = hsb
+        self._hsb_tb_tampil = False
+        self.tree.configure(xscrollcommand=self._sinkron_hsb_tb)
         # warna per jenis langkah
         self.tree.tag_configure("genap", background=C_STRIPE)
         self.tree.tag_configure("ganjil", background=C_PANEL)
@@ -8280,6 +8390,28 @@ class StudioMakroTab(PerekamAksiMixin):
                 if self.tree.winfo_manager() == "pack":
                     vsb.pack(side="right", fill="y", before=self.tree)
                     self._vsb_tb_tampil = True
+            except Exception:
+                pass
+
+    def _sinkron_hsb_tb(self, awal, akhir):
+        """v7.2: scrollbar HORIZONTAL tabel gaya obrolan - muncul
+        saat kolom lebih lebar dari kartunya (geser ke kiri/kanan),
+        hilang sendiri saat semua kolom muat."""
+        hsb = self._hsb_tb
+        try:
+            hsb.set(awal, akhir)
+            muat = (float(akhir) - float(awal)) >= 0.999
+        except Exception:
+            return
+        if muat and self._hsb_tb_tampil:
+            hsb.pack_forget()
+            self._hsb_tb_tampil = False
+        elif not muat and not self._hsb_tb_tampil:
+            try:
+                if self.tree.winfo_manager() == "pack":
+                    hsb.pack(side="bottom", fill="x",
+                             before=self.tree)
+                    self._hsb_tb_tampil = True
             except Exception:
                 pass
 
@@ -11438,8 +11570,12 @@ def main():
                       dts["videos"] == ["cut Satu.mp4"]
                       and dts["tanggal"] == "2026-01-01 00:00:00")
                 # 7) langkah TANGGAL-JAM baru di Studio -> sumber Studio
+                # (v7.2: ambil lewat uid - _tambah menyisipkan SETELAH
+                # baris terpilih, jadi langkah[-1] belum tentu barunya,
+                # apalagi saat aplikasi memuat template/makro tersimpan)
                 st._tambah("TANGGAL_JAM")
-                l_baru = st.langkah[-1]
+                l_baru = [l for l in st.langkah
+                          if l["uid"] == st.sel][0]
                 print("KARTU_LANGKAH_STUDIO_OK",
                       l_baru["sumber"] == "Studio Makro (tab ini)")
                 # langkah di tab CutMotions tetap sumber CutMotions
@@ -12373,6 +12509,119 @@ def main():
             print("SELFTEST_VSBTB_OK")
             root.destroy()
         root.after(4500, _ok20)
+
+    if "--selftest-hsb" in sys.argv:
+        # v7.2: scrollbar HORIZONTAL (geser kiri/kanan) di panel
+        # PROPERTI (PanelGulir, 2 tab) & tabel langkah (2 tab) -
+        # muncul saat isi lebih lebar, hilang saat muat.
+        def _uji_hsb():
+            cek = []
+            cut = app.tab_cut
+            st = app.tab_studio
+            app._pilih_halaman(1)
+            root.update()
+            # === A. PANEL PROPERTI (PanelGulir) ===
+            pp = cut.panel_prop
+            hsb = getattr(pp, "hsb", None)
+            # kosongkan isi -> muat -> hsb hilang
+            for _w in list(cut.prop_body.winfo_children()):
+                _w.destroy()
+            pp.mulai_isi()
+            pp.cvs.update_idletasks()
+            root.update()
+            cek.append(("HSB_PANEL_PASANG",
+                        hsb is not None
+                        and isinstance(hsb, ttk.Scrollbar)
+                        and pp._hsb_tampil is False))
+            # isi lebar 900px -> hsb MUNCUL
+            leb = tk.Frame(cut.prop_body, bg=C_BG, width=900,
+                           height=40)
+            leb.pack(fill="y")
+            pp.cvs.update_idletasks()
+            root.update()
+            cek.append(("HSB_PANEL_MUNCUL",
+                        pp._hsb_tampil is True
+                        and hsb.winfo_ismapped()))
+            # geser ke kanan lewat scrollbar (xview)
+            pp.cvs.xview_moveto(0.5)
+            root.update()
+            cek.append(("HSB_PANEL_GESER",
+                        pp.cvs.xview()[0] > 0.0))
+            # ke_atas() kembali ke kiri & atas
+            pp.ke_atas()
+            root.update()
+            cek.append(("HSB_KE_ATAS_KIRI",
+                        pp.cvs.xview()[0] == 0.0))
+            # Shift + roda mouse = geser horizontal
+            class _EvH:
+                widget = None
+                num = None
+                delta = -120
+                state = 0x0001
+            pp._gulir(_EvH())
+            root.update()
+            cek.append(("HSB_SHIFT_RODA",
+                        pp.cvs.xview()[0] > 0.0))
+            pp.ke_atas()
+            # isi dikembalikan kecil -> hsb HILANG sendiri
+            leb.destroy()
+            pp.mulai_isi()
+            pp.cvs.update_idletasks()
+            root.update()
+            cek.append(("HSB_PANEL_HILANG",
+                        pp._hsb_tampil is False
+                        and not hsb.winfo_ismapped()))
+            # === B. TABEL STUDIO ===
+            app._pilih_halaman(0)
+            root.update()
+            # paksa overflow: stretch dimatikan sementara (kolom
+            # stretch normalnya menyempit sendiri agar muat)
+            st.tree.column("detail", width=1400, stretch=False)
+            root.update()
+            cek.append(("HSB_TABEL_STUDIO_MUNCUL",
+                        st._hsb_tb_tampil is True
+                        and st._hsb_tb.winfo_ismapped()))
+            st.tree.xview_moveto(0.5)
+            root.update()
+            cek.append(("HSB_TABEL_STUDIO_GESER",
+                        st.tree.xview()[0] > 0.0))
+            st.tree.column("detail", width=100, minwidth=20,
+                           stretch=True)
+            root.update()
+            cek.append(("HSB_TABEL_STUDIO_HILANG",
+                        st._hsb_tb_tampil is False
+                        and not st._hsb_tb.winfo_ismapped()))
+            st.tree.column("detail", width=240, minwidth=240,
+                           stretch=True)
+            # === C. TABEL CUTMOTIONS ===
+            app._pilih_halaman(1)
+            root.update()
+            cut.tree.column("detail", width=1400, stretch=False)
+            root.update()
+            cek.append(("HSB_TABEL_CUT_MUNCUL",
+                        cut._hsb_tb_tampil is True
+                        and cut._hsb_tb.winfo_ismapped()))
+            cut.tree.xview_moveto(0.5)
+            root.update()
+            cek.append(("HSB_TABEL_CUT_GESER",
+                        cut.tree.xview()[0] > 0.0))
+            cut.tree.column("detail", width=100, minwidth=20,
+                            stretch=True)
+            root.update()
+            cek.append(("HSB_TABEL_CUT_HILANG",
+                        cut._hsb_tb_tampil is False
+                        and not cut._hsb_tb.winfo_ismapped()))
+            cut.tree.column("detail", width=240, minwidth=240,
+                            stretch=True)
+            for tag, ok in cek:
+                print(tag, bool(ok))
+            print("HSB_SEMUA_OK", all(ok for _t, ok in cek))
+        root.after(900, _uji_hsb)
+
+        def _ok21():
+            print("SELFTEST_HSB_OK")
+            root.destroy()
+        root.after(4500, _ok21)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -12392,7 +12641,8 @@ def main():
             or ("--selftest-tunggu" in sys.argv) \
             or ("--selftest-gulir" in sys.argv) \
             or ("--selftest-panel" in sys.argv) \
-            or ("--selftest-vsbtb" in sys.argv):
+            or ("--selftest-vsbtb" in sys.argv) \
+            or ("--selftest-hsb" in sys.argv):
         print("SELFTEST_DONE")
 
 
