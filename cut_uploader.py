@@ -218,6 +218,13 @@
        dan PROPERTI yang lebih luas di kanan. Semua fitur
        tetap ada di tempat logisnya; profil & makro lama
        tetap terbaca persis seperti sebelumnya.
+     - v7.0: PANEL PROPERTI BISA DIGULIR - begitu isi form
+       properti lebih tinggi dari panelnya, bilah gulir kecil
+       OTOMATIS muncul di sisi kanan panel PROPERTI LANGKAH
+       (persis seperti bilah gulir di aplikasi obrolan); bisa
+       ditarik naik-turun, roda mouse ikut menggulir, dan
+       bilah menghilang sendiri saat isinya muat. Tidak ada
+       lagi bagian form properti yang terpotong.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -334,7 +341,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "6.9"
+APP_VERSION = "7.0"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -945,11 +952,130 @@ class KolomGulir(tk.Frame):
             pass
 
 
+class PanelGulir(tk.Frame):
+    """v7.0: wadah yang BISA DIGULIR utk panel PROPERTI LANGKAH.
+
+    Persis seperti bilah gulir pada aplikasi obrolan: kalau isi
+    panel (form properti) melebihi tinggi kartunya, OTOMATIS muncul
+    scrollbar kecil di sisi kanan yang bisa ditarik naik-turun;
+    kalau isinya muat, scrollbar menghilang sendiri. Roda mouse di
+    atas panel (termasuk di atas kolom isian) ikut menggulir."""
+
+    def __init__(self, parent):
+        super().__init__(parent, bg=C_BG)
+        self.cvs = tk.Canvas(self, bg=C_BG, highlightthickness=0,
+                             bd=0)
+        self.vsb = ttk.Scrollbar(self, orient="vertical",
+                                 command=self.cvs.yview)
+        self.cvs.configure(yscrollcommand=self._sinkron)
+        self.vsb.pack(side="right", fill="y")
+        self.cvs.pack(side="left", fill="both", expand=True)
+        self.badan = tk.Frame(self.cvs, bg=C_BG)
+        self._win = self.cvs.create_window(
+            (0, 0), window=self.badan, anchor="nw")
+        self.cvs.bind("<Configure>", self._atur_lebar)
+        self.badan.bind(
+            "<Configure>",
+            lambda _e: self.cvs.configure(
+                scrollregion=self.cvs.bbox("all")))
+        self._vsb_tampil = True
+        # satu listener roda mouse global; HANYA aktif kalau pointer
+        # sedang berada di dalam panel ini (jadi dua halaman yang
+        # sama-sama memakai PanelGulir tidak saling berebut)
+        try:
+            top = self.winfo_toplevel()
+            top.bind_all("<MouseWheel>", self._roda, add="+")
+            top.bind_all("<Button-4>", self._roda, add="+")
+            top.bind_all("<Button-5>", self._roda, add="+")
+        except Exception:
+            pass
+
+    def _atur_lebar(self, _e=None):
+        self.cvs.itemconfigure(self._win,
+                               width=self.cvs.winfo_width())
+
+    def _sinkron(self, awal, akhir):
+        self.vsb.set(awal, akhir)
+        try:
+            muat = (float(akhir) - float(awal)) >= 0.999
+        except Exception:
+            muat = True
+        if muat and self._vsb_tampil:
+            # isi muat -> scrollbar kecil menghilang sendiri
+            self.vsb.pack_forget()
+            self._vsb_tampil = False
+        elif not muat and not self._vsb_tampil:
+            # isi penuh -> muncul lagi di sisi kanan (urutan pack
+            # dipulihkan dengan before= supaya tetap di slot kanan)
+            self.vsb.pack(side="right", fill="y", before=self.cvs)
+            self._vsb_tampil = True
+
+    def _pointer_di_dalam(self):
+        try:
+            if not self.winfo_ismapped():
+                return False
+            x, y = self.winfo_pointerxy()
+            wx, wy = self.winfo_rootx(), self.winfo_rooty()
+            return (wx <= x < wx + self.winfo_width()
+                    and wy <= y < wy + self.winfo_height())
+        except Exception:
+            return False
+
+    def _roda(self, e):
+        w = getattr(e, "widget", None)
+        # widget yang punya guliran sendiri (dropdown, kotak teks
+        # panjang, tabel) biarkan mengatur dirinya sendiri
+        if isinstance(w, (ttk.Combobox, tk.Spinbox, tk.Listbox,
+                          tk.Text, ttk.Treeview)):
+            return
+        if not self._pointer_di_dalam():
+            return
+        self._gulir(e)
+
+    def _gulir(self, e):
+        try:
+            num = getattr(e, "num", None)
+            if num == 4:
+                self.cvs.yview_scroll(-3, "units")
+            elif num == 5:
+                self.cvs.yview_scroll(3, "units")
+            else:
+                self.cvs.yview_scroll(
+                    -3 if getattr(e, "delta", 0) > 0 else 3,
+                    "units")
+        except Exception:
+            pass
+
+    def ke_atas(self):
+        """Kembalikan guliran panel ke posisi paling atas."""
+        try:
+            self.cvs.yview_moveto(0)
+        except Exception:
+            pass
+
+    def mulai_isi(self):
+        """Panggil SETELAH isi lama dikosongkan & SEBELUM isi baru
+        ditaruh. Tk tidak pernah menyusutkan 'requested size'
+        secara otomatis, jadi tanpa reset ini tinggi konten lama
+        'nyangkut' dan scrollbar tetap muncul padahal isi baru
+        sudah pendek."""
+        try:
+            self.badan.configure(height=1)
+            for w in self.badan.winfo_children():
+                w.configure(height=1)
+        except Exception:
+            pass
+
+
 def render_properti_multi(tab, pilihan, catatan=""):
     """v5.7: isi panel PROPERTI saat BANYAK baris terpilih."""
     tab._loading_prop = True
     for wdg in tab.prop_body.winfo_children():
         wdg.destroy()
+    try:
+        tab.panel_prop.mulai_isi()  # v7.0: reset tinggi konten
+    except Exception:
+        pass
     tab.lbl_ambil = None
     kotak = tk.Frame(tab.prop_body, bg=C_BG)
     kotak.pack(fill="both", expand=True)
@@ -3564,7 +3690,12 @@ class CutMotionsTab(PerekamAksiMixin):
         self.f_prop = KartuBulat(paned, judul="PROPERTI LANGKAH",
                                  padding=(8, 5, 8, 6))
         paned.add(self.f_prop, minsize=230, height=280, stretch="always")
-        self.prop_body = tk.Frame(self.f_prop.badan, bg=C_BG)
+        # v7.0: isi panel properti BISA DIGULIR - kalau form lebih
+        # tinggi dari kartunya, scrollbar kecil otomatis muncul di
+        # sisi kanan (seperti bilah gulir aplikasi obrolan)
+        self.panel_prop = PanelGulir(self.f_prop.badan)
+        self.panel_prop.pack(fill="both", expand=True)
+        self.prop_body = tk.Frame(self.panel_prop.badan, bg=C_BG)
         self.prop_body.pack(fill="both", expand=True)
 
     # ---------- pembantu tampilan ----------
@@ -3850,11 +3981,19 @@ class CutMotionsTab(PerekamAksiMixin):
     def _render_properti(self):
         self._loading_prop = True
         try:
+            self.panel_prop.ke_atas()  # v7.0: mulai selalu dari atas
+        except Exception:
+            pass
+        try:
             self._render_sel = tuple(self.tree.selection())  # v6.5
         except Exception:
             pass
         for wdg in self.prop_body.winfo_children():
             wdg.destroy()
+        try:
+            self.panel_prop.mulai_isi()  # v7.0: reset tinggi konten
+        except Exception:
+            pass
         # v5.7: BANYAK baris terpilih -> panel aksi massal
         pilihan = self.tree.selection()
         if len(pilihan) > 1:
@@ -8101,7 +8240,10 @@ class StudioMakroTab(PerekamAksiMixin):
         self.f_prop = KartuBulat(paned, judul="PROPERTI LANGKAH",
                                  padding=(8, 5, 8, 6))
         paned.add(self.f_prop, minsize=220, height=250, stretch="always")
-        self.prop_body = tk.Frame(self.f_prop.badan, bg=C_BG)
+        # v7.0: isi panel properti BISA DIGULIR (lihat CutMotions)
+        self.panel_prop = PanelGulir(self.f_prop.badan)
+        self.panel_prop.pack(fill="both", expand=True)
+        self.prop_body = tk.Frame(self.panel_prop.badan, bg=C_BG)
         self.prop_body.pack(fill="both", expand=True)
 
     # ---------- pembantu tampilan ----------
@@ -8622,6 +8764,10 @@ class StudioMakroTab(PerekamAksiMixin):
     def _render_properti(self):
         self._loading_prop = True
         try:
+            self.panel_prop.ke_atas()  # v7.0: mulai selalu dari atas
+        except Exception:
+            pass
+        try:
             self._render_sel = tuple(self.tree.selection())  # v6.5
         except Exception:
             pass
@@ -8636,6 +8782,10 @@ class StudioMakroTab(PerekamAksiMixin):
         self._loading_prop = True
         for wdg in self.prop_body.winfo_children():
             wdg.destroy()
+        try:
+            self.panel_prop.mulai_isi()  # v7.0: reset tinggi konten
+        except Exception:
+            pass
         self.lbl_ambil = None
         l = self._get(self.sel)
         if not l:
@@ -12040,6 +12190,96 @@ def main():
             print("SELFTEST_GULIR_OK")
             root.destroy()
         root.after(6000, _ok18)
+
+    if "--selftest-panel" in sys.argv:
+        # v7.0: panel PROPERTI LANGKAH bisa digulir - scrollbar kecil
+        # OTOMATIS muncul saat isi melebihi kartu, menghilang saat
+        # isinya muat, roda mouse menggulir, ke_atas() kembali ke
+        # atas, dan roda di atas tabel/dropdown tidak ikut dipakai.
+        def _uji_panel():
+            cek = []
+            cut = app.tab_cut
+            st = app.tab_studio
+            app._pilih_halaman(1)
+            root.update()
+            # 1) terpasang di kedua tab + prop_body menempel di
+            #    badan panel gulir
+            def _pasang(tab):
+                pp = getattr(tab, "panel_prop", None)
+                pb = getattr(tab, "prop_body", None)
+                return (pp is not None and isinstance(pp, PanelGulir)
+                        and pb is not None and pb.master is pp.badan)
+            cek.append(("PANEL_PASANG_CUT", _pasang(cut)))
+            cek.append(("PANEL_PASANG_STUDIO", _pasang(st)))
+            # kosongkan panel properti dulu supaya kondisi awal
+            # pasti "muat" (persis pola render: destroy lalu reset)
+            for _w in list(cut.prop_body.winfo_children()):
+                _w.destroy()
+            cut.panel_prop.mulai_isi()
+            root.update()
+            cek.append(("PANEL_AWAL_MUAT",
+                        cut.panel_prop._vsb_tampil is False))
+            # 2) isi sangat tinggi -> scrollbar otomatis MUNCUL
+            leb = tk.Frame(cut.prop_body, bg=C_BG, height=900)
+            leb.pack(fill="x")
+            cut.panel_prop.cvs.update_idletasks()
+            root.update()
+            cek.append(("PANEL_VSB_MUNCUL",
+                        cut.panel_prop._vsb_tampil is True
+                        and cut.panel_prop.vsb.winfo_ismapped()))
+            # 3) isi dikembalikan kecil -> scrollbar HILANG sendiri
+            leb.destroy()
+            cut.panel_prop.mulai_isi()
+            cut.panel_prop.cvs.update_idletasks()
+            root.update()
+            cek.append(("PANEL_VSB_HILANG",
+                        cut.panel_prop._vsb_tampil is False
+                        and not cut.panel_prop.vsb.winfo_ismapped()))
+            # 4) roda mouse (event uji) menggulir, ke_atas() reset
+            leb2 = tk.Frame(cut.prop_body, bg=C_BG, height=900)
+            leb2.pack(fill="x")
+            root.update()
+
+            class _Ev:
+                widget = None
+                num = None
+                delta = -120
+
+            cut.panel_prop._gulir(_Ev())
+            root.update()
+            cek.append(("PANEL_RODA_GULIR",
+                        cut.panel_prop.cvs.yview()[0] > 0.0))
+            cut.panel_prop.ke_atas()
+            root.update()
+            cek.append(("PANEL_KE_ATAS",
+                        cut.panel_prop.cvs.yview()[0] == 0.0))
+            # 5) roda di atas tabel (punya guliran sendiri) tidak
+            #    memindahkan panel properti
+            class _EvTbl:
+                widget = cut.tree
+                num = None
+                delta = -120
+
+            cut.panel_prop._roda(_EvTbl())
+            root.update()
+            cek.append(("PANEL_RODA_TABEL_AMAN",
+                        cut.panel_prop.cvs.yview()[0] == 0.0))
+            # 6) pointer di luar panel -> roda global diabaikan
+            cut.panel_prop._roda(_Ev())
+            root.update()
+            cek.append(("PANEL_RODA_LUAR_AMAN",
+                        cut.panel_prop.cvs.yview()[0] == 0.0))
+            leb2.destroy()
+            root.update()
+            for tag, ok in cek:
+                print(tag, bool(ok))
+            print("PANEL_SEMUA_OK", all(ok for _t, ok in cek))
+        root.after(900, _uji_panel)
+
+        def _ok19():
+            print("SELFTEST_PANEL_OK")
+            root.destroy()
+        root.after(4500, _ok19)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -12057,7 +12297,8 @@ def main():
             or ("--selftest-tema" in sys.argv) \
             or ("--selftest-putaran" in sys.argv) \
             or ("--selftest-tunggu" in sys.argv) \
-            or ("--selftest-gulir" in sys.argv):
+            or ("--selftest-gulir" in sys.argv) \
+            or ("--selftest-panel" in sys.argv):
         print("SELFTEST_DONE")
 
 

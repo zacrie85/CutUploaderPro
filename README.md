@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v6.9)
+# CutUploader Pro — Macro Studio Edition (v7.0)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**, dan **baru v6.6: TAMPILAN BARU MERAH-PUTIH MODERN — tema putih bersih dengan aksen merah, SIDEBAR NAVIGASI merah di kiri (pengganti tab di atas), dan tata letak 2 KOLOM: kartu VIDEO & CAPTION + WAKTU rapi di kolom kiri yang bisa digulir, tabel langkah + panel PROPERTI makin lega di kanan**, dan **baru v6.7: ULANGI SEMUA (PUTARAN) — cukup isi angka di box baru (kartu WAKTU & UNGGAH tab CutMotions / kartu MUNDUR & ULANGI tab Studio) lalu seluruh proses diulang otomatis dari langkah pertama sebanyak N putaran setelah langkah terakhir selesai**, dan **baru v6.8: opsi baru TUNGGU SAMPAI KETEMU di fitur CARI GAMBAR — saat gambar referensi belum muncul, aplikasi mencari TERUS tanpa batas waktu sampai gambarnya ketemu, baru lanjut ke langkah berikutnya (tetap bisa dihentikan lewat tombol/hotkey STOP kapan saja)**, dan **baru v6.9: GULIR CEPAT TABEL LANGKAH — 4 tombol baru di bawah tabel (kedua tab): ▲ ATAS / ▼ BAWAH yang cukup DIKLIK DAN DITAHAN untuk menggulir daftar langkah terus-menerus (makin lama makin cepat — cocok untuk ratusan titik), plus ↑ LANGKAH 1 / ↓ LANGKAH TERAKHIR untuk lompat langsung ke titik pertama/terakhir tanpa scroll (tombol keyboard Home/End juga bekerja)**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**, dan **baru v6.6: TAMPILAN BARU MERAH-PUTIH MODERN — tema putih bersih dengan aksen merah, SIDEBAR NAVIGASI merah di kiri (pengganti tab di atas), dan tata letak 2 KOLOM: kartu VIDEO & CAPTION + WAKTU rapi di kolom kiri yang bisa digulir, tabel langkah + panel PROPERTI makin lega di kanan**, dan **baru v6.7: ULANGI SEMUA (PUTARAN) — cukup isi angka di box baru (kartu WAKTU & UNGGAH tab CutMotions / kartu MUNDUR & ULANGI tab Studio) lalu seluruh proses diulang otomatis dari langkah pertama sebanyak N putaran setelah langkah terakhir selesai**, dan **baru v6.8: opsi baru TUNGGU SAMPAI KETEMU di fitur CARI GAMBAR — saat gambar referensi belum muncul, aplikasi mencari TERUS tanpa batas waktu sampai gambarnya ketemu, baru lanjut ke langkah berikutnya (tetap bisa dihentikan lewat tombol/hotkey STOP kapan saja)**, dan **baru v6.9: GULIR CEPAT TABEL LANGKAH — 4 tombol baru di bawah tabel (kedua tab): ▲ ATAS / ▼ BAWAH yang cukup DIKLIK DAN DITAHAN untuk menggulir daftar langkah terus-menerus (makin lama makin cepat — cocok untuk ratusan titik), plus ↑ LANGKAH 1 / ↓ LANGKAH TERAKHIR untuk lompat langsung ke titik pertama/terakhir tanpa scroll (tombol keyboard Home/End juga bekerja)**, dan **baru v7.0: SCROLLBAR OTOMATIS PANEL PROPERTI — begitu isi form PROPERTI LANGKAH (di bawah tabel, kedua tab) lebih tinggi dari panelnya, bilah gulir kecil OTOMATIS muncul di sisi kanan panel (persis seperti bilah gulir di aplikasi obrolan/pesan) yang bisa ditarik naik-turun; roda mouse di atas panel (termasuk di atas kolom isian) ikut menggulir, bilah menghilang sendiri saat isinya muat, dan panel selalu mulai dari posisi teratas setiap ganti langkah — tidak ada lagi bagian form properti yang terpotong**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v6.9**:
+Dari halaman [Releases](../../releases) rilis **v7.0**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v6.9.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v7.0.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,22 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v7.0: SCROLLBAR OTOMATIS di panel PROPERTI LANGKAH
+
+**Permintaan**: “aku ingin ada tombol yang bisa digerakkan naik-turun di sebelah kanan box — seperti yang ada pada sebuah obrolan: jika terlalu penuh dan melebihi batas box yang ada maka otomatis akan ada tombol kecil yang bisa dinaikkan dan diturunkan”.
+
+Namanya **SCROLLBAR** (bilah gulir) — dan kini terpasang di **panel PROPERTI LANGKAH** (panel di bawah tabel langkah, di KEDUA tab):
+
+1. **Otomatis muncul** — begitu isi form properti lebih tinggi dari panelnya (mis. langkah CARI GAMBAR yang kolomnya banyak), bilah gulir kecil langsung tampil di sisi kanan panel. Tidak perlu mengatur apa-apa.
+2. **Tarik naik-turun** — seret batangnya, klik panah ▲▼, atau klik area kosongnya — semua cara gulir standar bekerja.
+3. **Roda mouse ikut** — gerakkan roda mouse di mana saja di atas panel (termasuk di atas kolom isian/textarea) dan panelnya ikut bergulir.
+4. **Menghilang sendiri** — kalau isinya muat di panel (form yang pendek), bilahnya sembunyi otomatis supaya tampilan tetap bersih.
+5. **Selalu mulai dari atas** — setiap kali langkah lain dipilih, panel dikembalikan ke posisi paling atas (tidak “nyangkut” di bawah).
+
+Hasilnya: tidak ada lagi bagian form properti yang **terpotong/tak terjangkau** saat panel dibuat pendek atau formnya panjang. Tidak mengubah cara kerja fitur lain sama sekali.
+
+Uji baru **`--selftest-panel`** (9 cek): panel terpasang di kedua tab, scrollbar otomatis MUNCUL saat konten tinggi & HILANG saat muat (termasuk reset tinggi konten — Tk tidak menyusutkan ukuran konten otomatis, diatasi lewat `mulai_isi()`), roda mouse menggulir, `ke_atas()` kembali ke puncak, dan roda di atas tabel/dropdown/pointer di luar panel TIDAK ikut memindahkan panel — **semua True**.
 
 ### Baru v6.9: GULIR CEPAT TABEL LANGKAH — klik & tahan, lompat ke titik 1/terakhir
 
@@ -264,6 +280,15 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `rapidocr-onnxruntime`, `pyinstaller` (dev).
+
+## Perubahan v7.0
+
+- **Class baru `PanelGulir`** (modul): wadah yang bisa digulir — `tk.Canvas` + `ttk.Scrollbar` vertikal di sisi kanan + frame konten. Scrollbar **auto-hide**: callback `yscrollcommand` (`_sinkron`) menyembunyikan scrollbar (metode `pack_forget`) saat fraksi tampilan ≈ penuh (isi muat) dan menampilkannya kembali (`pack(before=canvas)`) saat isi melebihi panel — urutan pack dipulihkan supaya posisinya tetap di slot kanan.
+- **Roda mouse pintar**: satu listener global (`bind_all` MouseWheel/Button-4/5, `add="+"`) yang hanya aktif bila pointer berada di dalam area panel (`_pointer_di_dalam()` — cek `winfo_ismapped` + koordinat pointer); widget yang punya guliran sendiri (Combobox/Spinbox/Listbox/Text/Treeview) di-skip supaya perilakunya tidak berubah; dua halaman yang sama-sama memakai PanelGulir tidak saling berebut.
+- **Panel PROPERTI LANGKAH kedua tab** (CutMotions & Studio): `prop_body` kini menempel di `PanelGulir` (`panel_prop`) di dalam kartu — isi form yang panjang kini bisa digulir sampai bawah.
+- **`ke_atas()`** — panel dikembalikan ke posisi teratas tiap awal `_render_properti()` (kedua tab).
+- **`mulai_isi()`** — dipanggil di semua jalur render (`_render_properti` kedua tab + `render_properti_multi`): Tk tidak pernah menyusutkan *requested size* secara otomatis (terverifikasi empiris: destroy/forget anak TIDAK menyusutkan induk), jadi tinggi konten lama di-reset ke 1 px sebelum konten baru dirender — kalau tidak, scrollbar akan tetap muncul padahal form baru sudah pendek (dan bisa menggulir area kosong).
+- Selftest baru **`--selftest-panel`** (9 cek True) + regresi 11 selftest lain (dasar/prop/studio-terkait/pilih/kartu/ocr/fokus/tema/putaran/tunggu/gulir/ketik) tetap hijau.
 
 ## Perubahan v6.9
 

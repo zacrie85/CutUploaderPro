@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v6.9 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v7.0 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -373,6 +373,33 @@ dari titik acuan, lalu mencari gambar referensi (mis.
 potongan tulisan "Indonesia") dengan OpenCV (multi-skala,
 tahan beda zoom 70-125%). Kalau ketemu, pusat temu yang
 diklik/dituju - jadi posisi target boleh bergeser sedikit.
+
+BARU DI V7.0 - SCROLLBAR OTOMATIS DI PANEL PROPERTI LANGKAH:
+  Yang kamu maksud itu namanya SCROLLBAR (bilah gulir) -
+  batang kecil di sisi kanan box yang bisa ditarik naik-turun
+  seperti di aplikasi obrolan/pesan kalau isinya penuh. Kini
+  terpasang di panel PROPERTI LANGKAH (panel di bawah tabel
+  langkah, KEDUA tab):
+
+  - OTOMATIS MUNCUL    : begitu isi form properti lebih
+                         tinggi dari panelnya (mis. langkah
+                         CARI GAMBAR yang kolomnya banyak),
+                         bilah kecil langsung tampil di sisi
+                         kanan panel.
+  - TARIK NAIK-TURUN  : seret batangnya, klik panah naik/
+                         turun, atau klik area kosongnya.
+  - RODA MOUSE IKUT   : gerakkan roda mouse di mana saja di
+                         atas panel (termasuk di atas kolom
+                         isian) - panel ikut bergulir.
+  - MENGHILANG SENDIRI: kalau isinya muat (form pendek),
+                         bilahnya sembunyi otomatis.
+  - SELALU MULAI ATAS : setiap ganti langkah terpilih,
+                         panel kembali ke posisi teratas -
+                         tidak nyangkut di bawah.
+
+  Hasilnya: tidak ada lagi bagian form properti yang
+  terpotong / tidak bisa dijangkau. Uji:
+  python cut_uploader.py --selftest-panel  (9 cek).
 
 BARU DI V6.9 - GULIR CEPAT TABEL LANGKAH (KLIK & TAHAN):
   Punya ratusan titik/langkah (mis. 200an) dan capek scroll
