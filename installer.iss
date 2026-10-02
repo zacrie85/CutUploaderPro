@@ -8,8 +8,8 @@
 
 [Setup]
 AppName=CutUploader Pro
-AppVersion=7.0
-AppVerName=CutUploader Pro v7.0 (Macro Studio Edition)
+AppVersion=7.1
+AppVerName=CutUploader Pro v7.1 (Macro Studio Edition)
 AppPublisher=zacrie85
 AppPublisherURL=https://github.com/zacrie85/CutUploaderPro
 AppSupportURL=https://github.com/zacrie85/CutUploaderPro

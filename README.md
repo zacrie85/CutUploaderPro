@@ -1,16 +1,16 @@
-# CutUploader Pro — Macro Studio Edition (v7.0)
+# CutUploader Pro — Macro Studio Edition (v7.1)
 
-Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**, dan **baru v6.6: TAMPILAN BARU MERAH-PUTIH MODERN — tema putih bersih dengan aksen merah, SIDEBAR NAVIGASI merah di kiri (pengganti tab di atas), dan tata letak 2 KOLOM: kartu VIDEO & CAPTION + WAKTU rapi di kolom kiri yang bisa digulir, tabel langkah + panel PROPERTI makin lega di kanan**, dan **baru v6.7: ULANGI SEMUA (PUTARAN) — cukup isi angka di box baru (kartu WAKTU & UNGGAH tab CutMotions / kartu MUNDUR & ULANGI tab Studio) lalu seluruh proses diulang otomatis dari langkah pertama sebanyak N putaran setelah langkah terakhir selesai**, dan **baru v6.8: opsi baru TUNGGU SAMPAI KETEMU di fitur CARI GAMBAR — saat gambar referensi belum muncul, aplikasi mencari TERUS tanpa batas waktu sampai gambarnya ketemu, baru lanjut ke langkah berikutnya (tetap bisa dihentikan lewat tombol/hotkey STOP kapan saja)**, dan **baru v6.9: GULIR CEPAT TABEL LANGKAH — 4 tombol baru di bawah tabel (kedua tab): ▲ ATAS / ▼ BAWAH yang cukup DIKLIK DAN DITAHAN untuk menggulir daftar langkah terus-menerus (makin lama makin cepat — cocok untuk ratusan titik), plus ↑ LANGKAH 1 / ↓ LANGKAH TERAKHIR untuk lompat langsung ke titik pertama/terakhir tanpa scroll (tombol keyboard Home/End juga bekerja)**, dan **baru v7.0: SCROLLBAR OTOMATIS PANEL PROPERTI — begitu isi form PROPERTI LANGKAH (di bawah tabel, kedua tab) lebih tinggi dari panelnya, bilah gulir kecil OTOMATIS muncul di sisi kanan panel (persis seperti bilah gulir di aplikasi obrolan/pesan) yang bisa ditarik naik-turun; roda mouse di atas panel (termasuk di atas kolom isian) ikut menggulir, bilah menghilang sendiri saat isinya muat, dan panel selalu mulai dari posisi teratas setiap ganti langkah — tidak ada lagi bagian form properti yang terpotong**.
+Otomasi klik **bebas ala Jitbit Macro Recorder** + uploader video **batch otomatis** untuk situs **CutMotions (Kwai)** — dalam satu aplikasi. Dibundel jadi **installer Windows** (tanpa Python), **REKAM AKSI — klik/ketikan/scrollmu direkam otomatis jadi langkah makro (di kedua tab!)**, **PILIH BANYAK LANGKAH (Ctrl/Shift+Klik) untuk salin/tempel/hapus massal**, pencarian gambar **tanpa X,Y — langsung diklik begitu ketemu** dengan **AREA FOKUS** opsional (seret kotak di layar), salin-tempel langkah, **editor alur kerja kosong** untuk menyusun klik-per-klik sendiri, **potong gambar referensi langsung di layar**, menu pintar **ISI TANGGAL-JAM** + **ISI VIDEO & CAPTION**, semua menu Studio bisa disisipkan ke alur CutMotions (A-J), **v6.1: TANPA PILIH FOLDER — cukup PILIH VIDEO; nama tersimpan otomatis, dipakai di caption, hilang sendiri setelah selesai**, dan **baru v6.2: KARTU VIDEO & CAPTION kini juga di tab STUDIO MAKRO — pilih video, caption dasar, dan tanggal-jam rilis untuk langkah ISI TANGGAL-JAM & ISI VIDEO & CAPTION di alur bebas (sumber data: Otomatis / Studio / CutMotions)**, dan **baru v6.3: BACA NAMA VIDEO DI LAYAR (OCR) — aplikasi membaca sendiri nama video yang tertera di layar (AI/OCR) lalu mengetiknya ke caption, sehingga caption SELALU sama dengan video yang sedang diupload berapapun urutan seleksinya**, dan **baru v6.4: hasil baca OCR dipotong otomatis SAMPAI EKSTENSI FILE (.mp4/.mkv/.ts) — tulisan lain yang ikut terbaca di sekitar nama (tanggal, ukuran, tulisan UI) dibuang, nama yang masuk caption benar-benar bersih**, dan **baru v6.5: PERBAIKAN MENGETIK — kursor tidak lagi "keluar otomatis" setelah 1 huruf di semua box isian (panel properti, kartu, WAKTU) — mengetik panjang kini lancar**, dan **baru v6.6: TAMPILAN BARU MERAH-PUTIH MODERN — tema putih bersih dengan aksen merah, SIDEBAR NAVIGASI merah di kiri (pengganti tab di atas), dan tata letak 2 KOLOM: kartu VIDEO & CAPTION + WAKTU rapi di kolom kiri yang bisa digulir, tabel langkah + panel PROPERTI makin lega di kanan**, dan **baru v6.7: ULANGI SEMUA (PUTARAN) — cukup isi angka di box baru (kartu WAKTU & UNGGAH tab CutMotions / kartu MUNDUR & ULANGI tab Studio) lalu seluruh proses diulang otomatis dari langkah pertama sebanyak N putaran setelah langkah terakhir selesai**, dan **baru v6.8: opsi baru TUNGGU SAMPAI KETEMU di fitur CARI GAMBAR — saat gambar referensi belum muncul, aplikasi mencari TERUS tanpa batas waktu sampai gambarnya ketemu, baru lanjut ke langkah berikutnya (tetap bisa dihentikan lewat tombol/hotkey STOP kapan saja)**, dan **baru v6.9: GULIR CEPAT TABEL LANGKAH — 4 tombol baru di bawah tabel (kedua tab): ▲ ATAS / ▼ BAWAH yang cukup DIKLIK DAN DITAHAN untuk menggulir daftar langkah terus-menerus (makin lama makin cepat — cocok untuk ratusan titik), plus ↑ LANGKAH 1 / ↓ LANGKAH TERAKHIR untuk lompat langsung ke titik pertama/terakhir tanpa scroll (tombol keyboard Home/End juga bekerja)**, dan **baru v7.0: SCROLLBAR OTOMATIS PANEL PROPERTI — begitu isi form PROPERTI LANGKAH (di bawah tabel, kedua tab) lebih tinggi dari panelnya, bilah gulir kecil OTOMATIS muncul di sisi kanan panel (persis seperti bilah gulir di aplikasi obrolan/pesan) yang bisa ditarik naik-turun; roda mouse di atas panel (termasuk di atas kolom isian) ikut menggulir, bilah menghilang sendiri saat isinya muat, dan panel selalu mulai dari posisi teratas setiap ganti langkah — tidak ada lagi bagian form properti yang terpotong**, dan **baru v7.1: bilah gulir (SCROLLBAR) yang sama kini juga terpasang di box ALUR KERJA MAKRO (tab Studio) — muncul otomatis di sisi kanan tabel begitu daftar langkah lebih tinggi dari box-nya, bisa ditarik naik-turun, dan menghilang sendiri saat daftarnya muat; roda mouse & tombol GULIR CEPAT tetap bekerja seperti biasa**.
 
 ## Unduh (tanpa install Python)
 
-Dari halaman [Releases](../../releases) rilis **v7.0**:
+Dari halaman [Releases](../../releases) rilis **v7.1**:
 
 | File | Untuk apa |
 |---|---|
 | `CutUploaderPro-Setup.exe` | **Installer** — Next-Next-Install, shortcut otomatis, bisa di-uninstall |
 | `CutUploaderPro.exe` | EXE portabel, tinggal double-click |
-| `CutUploaderPro-v7.0.zip` | Source + skrip build (untuk pengguna Python) |
+| `CutUploaderPro-v7.1.zip` | Source + skrip build (untuk pengguna Python) |
 
 > Catatan: Windows SmartScreen bisa tampil karena aplikasi tanpa tanda tangan digital — klik *More info → Run anyway*.
 
@@ -61,6 +61,21 @@ E  Klik "OKE"                   I  Edit → caption → Konfirmasi
 ```
 
 Maksimal **20 video** sekali jalan (aturan situs). Caption = `#dangdut - namafile` (atur sendiri awalannya). Klik kanan langkah = salin/tempel jadi titik klik tambahan; pencarian gambar bisa diaktifkan di semua langkah.
+
+### Baru v7.1: SCROLLBAR juga di box ALUR KERJA MAKRO (tab Studio)
+
+**Permintaan**: “berhasil kawan SCROLLBAR sudah ada di properti langkah — bisakah kamu tambah juga SCROLLBAR pada box KERJA MAKRO”.
+
+Bisa! Kini **box ALUR KERJA MAKRO** (tabel daftar langkah di tab STUDIO MAKRO) memakai bilah gulir gaya obrolan yang sama:
+
+1. **Muncul otomatis** — begitu jumlah langkah melebihi tinggi box (daftarmu yang 200an titik pasti langsung memunculkannya), bilah gulir tampil di **sisi kanan tabel**.
+2. **Tarik naik-turun** — seret batangnya, klik panah ▲▼, atau klik area kosongnya — semua cara standar bekerja, posisi daftar langsung mengikuti.
+3. **Hilang sendiri** — kalau daftar langkahnya masih pendek (muat dalam box), bilahnya sembunyi supaya tampilan tetap bersih.
+4. **Tetap serasi fitur lama** — roda mouse, tombol **▲ ATAS / ▼ BAWAH (tahan)**, **↑ LANGKAH 1 / ↓ LANGKAH TERAKHIR**, serta Home/End tetap bekerja seperti biasa.
+
+(Untuk informasi: tabel di tab ALUR CUTMOTIONS memang sudah lebih dulu punya bilah gulir tetap — yang dulu terlewat baru box Studio ini.)
+
+Uji baru **`--selftest-vsbtb`** (5 cek): scrollbar terpasang & tersembunyi saat kosong, MUNCUL saat diisi 60 baris, menggulir saat ditarik, HILANG sendiri saat daftar dikosongkan, dan strip GULIR CEPAT v6.9 tetap utuh — **semua True**.
 
 ### Baru v7.0: SCROLLBAR OTOMATIS di panel PROPERTI LANGKAH
 
@@ -280,6 +295,13 @@ BANGUN-INSTALLER.bat  :: bangun dist\CutUploaderPro-Setup.exe (butuh Inno Setup 
 ```
 
 `requirements.txt`: `pynput`, `pillow`, `opencv-python`, `rapidocr-onnxruntime`, `pyinstaller` (dev).
+
+## Perubahan v7.1
+
+- **Perbaikan akar masalah**: di tab Studio, scrollbar tabel ALUR KERJA MAKRO sebenarnya **sudah dibuat** sejak lama tetapi **tidak pernah di-`pack()`** — sehingga tidak pernah tampil di box. Kini dipasang dengan perilaku **gaya obrolan** (auto muncul/hilang), konsisten dengan PanelGulir v7.0.
+- **Callback `_sinkron_vsb_tb()`** (tab Studio): scrollbar dibuat tersembunyi (`_vsb_tb_tampil = False`), lalu `yscrollcommand` tabel menggerakkan `vsb.set()` + menghitung fraksi tampilan — bila isi muat (≥ 0.999) scrollbar di-`pack_forget()`, bila melebihi box di-`pack(side="right", fill="y", before=tree)` supaya slot kanannya pasti; aman terhadap tabel yang belum ter-map (cek `winfo_manager()`) dan kesalahan Tcl.
+- **Tabel kini bisa digulir penuh**: dengan ratusan langkah, drag scrollbar/panah/roda mouse menggerakkan daftar sampai baris terakhir — melengkapi strip GULIR CEPAT v6.9.
+- Selftest baru **`--selftest-vsbtb`** (5 cek True) + regresi selftest dasar/gulir/panel/tema/studio/multi/pilih/kartu tetap hijau; verifikasi visual kedua kondisi (penuh → muncul, kosong → hilang) lewat screenshot.
 
 ## Perubahan v7.0
 

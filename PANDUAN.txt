@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v7.0 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v7.1 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -400,6 +400,30 @@ BARU DI V7.0 - SCROLLBAR OTOMATIS DI PANEL PROPERTI LANGKAH:
   Hasilnya: tidak ada lagi bagian form properti yang
   terpotong / tidak bisa dijangkau. Uji:
   python cut_uploader.py --selftest-panel  (9 cek).
+
+BARU DI V7.1 - SCROLLBAR JUGA DI BOX ALUR KERJA MAKRO:
+  Lanjutan v7.0: box ALUR KERJA MAKRO (tabel daftar langkah
+  di tab STUDIO MAKRO) kini juga punya bilah gulir gaya
+  obrolan yang sama:
+
+  - OTOMATIS MUNCUL    : begitu jumlah langkah melebihi
+                         tinggi box (daftar 200an titikmu
+                         pasti langsung memunculkannya),
+                         bilah tampil di sisi KANAN tabel.
+  - TARIK NAIK-TURUN  : seret batangnya, klik panah naik/
+                         turun, atau klik area kosongnya -
+                         daftar langsung mengikuti.
+  - MENGHILANG SENDIRI: kalau daftarnya masih pendek
+                         (muat dalam box), bilahnya sembunyi
+                         supaya tampilan tetap bersih.
+  - SERASI FITUR LAMA : roda mouse, tombol GULIR CEPAT
+                         (tahan) & LANGKAH 1/TERAKHIR, serta
+                         Home/End tetap bekerja seperti biasa.
+
+  Catatan: tabel di tab ALUR CUTMOTIONS memang sudah lebih
+  dulu punya bilah gulir tetap; yang dulu terlewat baru box
+  Studio ini. Uji:
+  python cut_uploader.py --selftest-vsbtb  (5 cek).
 
 BARU DI V6.9 - GULIR CEPAT TABEL LANGKAH (KLIK & TAHAN):
   Punya ratusan titik/langkah (mis. 200an) dan capek scroll

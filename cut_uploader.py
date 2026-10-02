@@ -225,6 +225,11 @@
        ditarik naik-turun, roda mouse ikut menggulir, dan
        bilah menghilang sendiri saat isinya muat. Tidak ada
        lagi bagian form properti yang terpotong.
+     - v7.1: bilah gulir yang sama kini juga ada di box ALUR
+       KERJA MAKRO (tab Studio): muncul otomatis di sisi kanan
+       tabel begitu daftar langkah lebih tinggi dari box-nya,
+       bisa ditarik naik-turun, dan hilang sendiri saat daftar
+       muat. Roda mouse & tombol GULIR CEPAT tetap berfungsi.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -341,7 +346,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "7.0"
+APP_VERSION = "7.1"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -8210,9 +8215,16 @@ class StudioMakroTab(PerekamAksiMixin):
             self.tree.heading(k, text=t)
             self.tree.column(k, width=w_, anchor=a,
                              stretch=(k == "detail"))
+        # v7.1: scrollbar tabel ALUR KERJA MAKRO gaya obrolan -
+        # dibuat TERSEMBUNYI dulu, otomatis MUNCUL di sisi kanan
+        # begitu baris melebihi tinggi kartu & HILANG sendiri saat
+        # isinya muat. (Dulu scrollbar dibuat tapi tak pernah
+        # dipack sehingga tidak pernah tampil di box ini.)
         vsb = ttk.Scrollbar(f_tb.badan, orient="vertical",
                             command=self.tree.yview)
-        self.tree.configure(yscrollcommand=vsb.set)
+        self._vsb_tb = vsb
+        self._vsb_tb_tampil = False
+        self.tree.configure(yscrollcommand=self._sinkron_vsb_tb)
         # v6.9: tombol GULIR CEPAT (klik & tahan) + lompat LANGKAH 1
         # / TERAKHIR - dipack SEBELUM tabel agar slot bawah kartunya
         # pasti (tabel + scrollbar mengisi ruang di atas strip ini)
@@ -8247,6 +8259,30 @@ class StudioMakroTab(PerekamAksiMixin):
         self.prop_body.pack(fill="both", expand=True)
 
     # ---------- pembantu tampilan ----------
+    def _sinkron_vsb_tb(self, awal, akhir):
+        """v7.1: bilah gulir tabel ALUR KERJA MAKRO gaya obrolan -
+        muncul otomatis saat baris melebihi tinggi kartunya dan
+        menghilang sendiri saat semua baris sudah muat (pola sama
+        dengan PanelGulir di panel properti)."""
+        vsb = self._vsb_tb
+        try:
+            vsb.set(awal, akhir)
+            muat = (float(akhir) - float(awal)) >= 0.999
+        except Exception:
+            return
+        if muat and self._vsb_tb_tampil:
+            # semua baris muat -> scrollbar menghilang sendiri
+            vsb.pack_forget()
+            self._vsb_tb_tampil = False
+        elif not muat and not self._vsb_tb_tampil:
+            # baris penuh -> muncul lagi di sisi kanan tabel
+            try:
+                if self.tree.winfo_manager() == "pack":
+                    vsb.pack(side="right", fill="y", before=self.tree)
+                    self._vsb_tb_tampil = True
+            except Exception:
+                pass
+
     def _tb_btn(self, parent, teks, cmd, bg=None, fg=None, aktif=None,
                 font=None):
         # v5.7: tombol kapsul membulat menggantikan tk.Button datar
@@ -12280,6 +12316,63 @@ def main():
             print("SELFTEST_PANEL_OK")
             root.destroy()
         root.after(4500, _ok19)
+
+    if "--selftest-vsbtb" in sys.argv:
+        # v7.1: scrollbar tabel ALUR KERJA MAKRO (tab Studio) gaya
+        # obrolan - tersembunyi saat kosong/muat, MUNCUL saat baris
+        # melebihi tinggi kartu, bisa menggulir, HILANG saat muat.
+        def _uji_vsbtb():
+            cek = []
+            st = app.tab_studio
+            app._pilih_halaman(0)
+            root.update()
+            vsb = getattr(st, "_vsb_tb", None)
+            # 1) kosongkan tabel dulu (Studio memuat template ±10
+            #    langkah saat mulai - di jendela uji itu bisa
+            #    overflow sehingga scrollbar SEMPAT muncul; itu
+            #    perilaku benar gaya obrolan) -> harus TERSEMBUNYI
+            for iid in list(st.tree.get_children()):
+                st.tree.delete(iid)
+            root.update()
+            cek.append(("VSBTB_PASANG",
+                        vsb is not None
+                        and isinstance(vsb, ttk.Scrollbar)
+                        and st._vsb_tb_tampil is False
+                        and not vsb.winfo_ismapped()))
+            # 2) isi 60 baris dummy -> scrollbar otomatis MUNCUL
+            for i in range(60):
+                st.tree.insert("", "end", values=(
+                    i + 1, "UJI GULIR %d" % (i + 1), "-", "0", "-"))
+            root.update()
+            cek.append(("VSBTB_MUNCUL",
+                        st._vsb_tb_tampil is True
+                        and vsb.winfo_ismapped()))
+            # 3) tarik scrollbar (yview) menggulir daftar
+            st.tree.yview_moveto(0.5)
+            root.update()
+            cek.append(("VSBTB_GULIR", st.tree.yview()[0] > 0.0))
+            st.tree.yview_moveto(0.0)
+            root.update()
+            # 4) daftar dikosongkan -> scrollbar HILANG sendiri
+            for iid in st.tree.get_children():
+                st.tree.delete(iid)
+            root.update()
+            cek.append(("VSBTB_HILANG",
+                        st._vsb_tb_tampil is False
+                        and not vsb.winfo_ismapped()))
+            # 5) strip GULIR CEPAT v6.9 tetap menempel di kartu
+            cek.append(("VSBTB_STRIP_AMAN",
+                        getattr(st, "strip_gulir", None) is not None
+                        and st.strip_gulir.winfo_exists()))
+            for tag, ok in cek:
+                print(tag, bool(ok))
+            print("VSBTB_SEMUA_OK", all(ok for _t, ok in cek))
+        root.after(900, _uji_vsbtb)
+
+        def _ok20():
+            print("SELFTEST_VSBTB_OK")
+            root.destroy()
+        root.after(4500, _ok20)
     root.mainloop()
     if ("--selftest" in sys.argv) or ("--selftest-prop" in sys.argv) \
             or ("--selftest-studio" in sys.argv) \
@@ -12298,7 +12391,8 @@ def main():
             or ("--selftest-putaran" in sys.argv) \
             or ("--selftest-tunggu" in sys.argv) \
             or ("--selftest-gulir" in sys.argv) \
-            or ("--selftest-panel" in sys.argv):
+            or ("--selftest-panel" in sys.argv) \
+            or ("--selftest-vsbtb" in sys.argv):
         print("SELFTEST_DONE")
 
 
