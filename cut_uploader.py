@@ -264,6 +264,17 @@
            sama - dan SIMPAN SEBAGAI (Ctrl+Shift+S) -
            memilih file baru; Studio menyimpan makro,
            CutMotions menyimpan profil.
+     - v7.4: pilihan BARU 'Nama video + caption dasar'
+           di langkah VIDEO+CAPTION (panel PROPERTI
+           LANGKAH, daftar 'YANG DIKETIK OTOMATIS'):
+           judul video ditulis DI DEPAN, spasi - minus -
+           spasi, lalu caption dasar (mis. 'melati -
+           #dangdut'). Pelengkap 'Caption dasar + nama
+           video' (#dangdut - melati) yang lama. Pilihan
+           ini tetap judul di depan walau kartu VIDEO &
+           CAPTION memakai urutan 'Caption - Video', ikut
+           mode OCR baca nama di layar, dan tersimpan
+           di profil/makro.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -380,7 +391,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "7.3"
+APP_VERSION = "7.4"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -1306,8 +1317,13 @@ SUMBER_DATA_OPSI = ("Otomatis (Studio dulu, CutMotions kalau kosong)",
                     "Tab CutMotions")
 
 # v5.2: pilihan isi langkah ISI VIDEO & CAPTION
+# v7.4: tambah "Nama video + caption dasar" - judul video DI DEPAN,
+#       spasi - minus - spasi, lalu caption dasar (mis. 'melati -
+#       #dangdut'). Pilihan ini TETAP video di depan walau kartu
+#       VIDEO & CAPTION memakai urutan 'Caption - Video'.
 ISI_VIDEO_OPSI = ("Jumlah video",
                   "Caption dasar + nama video",
+                  "Nama video + caption dasar",
                   "Nama video saja",
                   "Teks sendiri + placeholder")
 
@@ -2115,6 +2131,21 @@ def studio_jalankan_langkah(mesin, l, idx=0, videos=None, caption="",
         elif isi == "Nama video saja":
             teks = nama_layar if nama_layar else isi_placeholder(
                 "{video}", idx, caption, videos, jumlah_total)
+        elif isi == "Nama video + caption dasar":
+            # v7.4: judul video SELALU di depan (spasi - minus -
+            # spasi lalu caption), TIDAK terpengaruh pilihan URUTAN
+            # CAPTION di kartu VIDEO & CAPTION. Ikut mode OCR baca
+            # nama di layar; tanpa OCR pakai urutan daftar video.
+            if nama_layar:
+                teks = compose_caption(caption, nama_layar,
+                                       video_dulu=True)
+            elif videos:
+                nm = videos[idx] if 0 <= idx < len(videos) \
+                    else videos[0]
+                nm = os.path.splitext(os.path.basename(nm))[0]
+                teks = compose_caption(caption, nm, video_dulu=True)
+            else:
+                teks = (caption or "").strip()
         elif isi == "Teks sendiri + placeholder":
             if nama_layar:
                 teks = str(l.get("teks") or "")
@@ -4670,8 +4701,12 @@ class CutMotionsTab(PerekamAksiMixin):
                      text="Jumlah video = angka di kolom JUMLAH VIDEO.  "
                           "Caption dasar + nama video = mis. '#dangdut - "
                           "melati' (nama video baris yang sedang "
-                          "diproses di fase caption).  Nama video saja = "
-                          "mis. 'melati'.",
+                          "diproses di fase caption).  Nama video + "
+                          "caption dasar = sebaliknya, mis. 'melati - "
+                          "#dangdut' (judul video DI DEPAN, spasi - "
+                          "minus - spasi, lalu caption; tetap begitu "
+                          "walau kartu pilih urutan lain).  Nama video "
+                          "saja = mis. 'melati'.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             # v6.3: ASAL NAMA VIDEO - anti salah urutan di fase caption
@@ -9578,7 +9613,11 @@ class StudioMakroTab(PerekamAksiMixin):
                           "di kolom JUMLAH VIDEO sumbernya.  Caption dasar "
                           "+ nama video = mis. '#dangdut - melati' (nama "
                           "video ke-i kalau di dalam blok ULANGI).  Nama "
-                          "video saja = mis. 'melati'.",
+                          "video + caption dasar = sebaliknya, mis. "
+                          "'melati - #dangdut' (judul DI DEPAN, spasi - "
+                          "minus - spasi, lalu caption; tetap begitu walau "
+                          "kartu pilih urutan lain).  Nama video saja = "
+                          "mis. 'melati'.",
                      bg=C_BG, fg=C_BLUE, font=F_XS, anchor="w",
                      wraplength=860, justify="left").pack(fill="x")
             # v6.3: ASAL NAMA VIDEO - urutan daftar ATAU baca layar (OCR)
@@ -13117,6 +13156,7 @@ def main():
     if "--selftest-klip" in sys.argv:
         # v7.3: URUTAN CAPTION (Video - Caption) + Ctrl+C/V GLOBAL +
         # UNDO/REDO langkah + SIMPAN/SIMPAN SEBAGAI tab aktif.
+        # v7.4: + ISI 'Nama video + caption dasar' (judul di depan).
         def _uji_klip():
             cek = []
             cut = app.tab_cut
@@ -13294,6 +13334,76 @@ def main():
             except Exception:
                 pass
             cek.append(("KLIP_SIMPAN_ST", ok_mak))
+            # === J. v7.4: ISI 'Nama video + caption dasar' ===
+            cek.append(("KLIP_ISI74_OPSI",
+                        "Nama video + caption dasar" in ISI_VIDEO_OPSI
+                        and ISI_VIDEO_OPSI[2]
+                        == "Nama video + caption dasar"))
+
+            class _Mesin74(object):
+                """Mesin palsu: tangkap pesan status saja."""
+
+                def __init__(self):
+                    self.pesan = []
+
+                    class _Ev(object):
+                        def is_set(self):
+                            return False
+                    self.stop_event = _Ev()
+
+                def _sleep(self, _s):
+                    pass
+
+                def _set_status(self, msg, _w=None):
+                    self.pesan.append(str(msg))
+
+                def gabung(self):
+                    return " | ".join(self.pesan)
+
+            set_urutan_caption(False)   # kartu = caption dulu
+            m74 = _Mesin74()
+            l74 = studio_langkah_baru("VIDEO_CAPTION", "u74")
+            l74["posisi"] = None
+            l74["isi"] = "Nama video + caption dasar"
+            studio_jalankan_langkah(m74, l74, 0, ["melati.mp4"],
+                                    "#dangdut", 1, "")
+            cek.append(("KLIP_ISI74_VIDEO_DULU",
+                        "melati - #dangdut" in m74.gabung()))
+            # ikut OCR: nama dibaca layar, tetap video di depan
+            asli_ocr74 = globals()["baca_nama_video_layar"]
+            globals()["baca_nama_video_layar"] = (
+                lambda mesin, l, kandidat=None: ("melati dari layar",
+                                                 "ok"))
+            try:
+                m75 = _Mesin74()
+                l75 = dict(l74, sumber_nama="Baca nama di layar (OCR)")
+                studio_jalankan_langkah(m75, l75, 0, ["salah.mp4"],
+                                        "#dangdut", 1, "")
+                cek.append(("KLIP_ISI74_OCR",
+                            "melati dari layar - #dangdut"
+                            in m75.gabung()))
+                # caption kosong -> cukup nama video saja
+                m76 = _Mesin74()
+                studio_jalankan_langkah(m76, dict(l75), 0,
+                                        ["salah.mp4"], "", 1, "")
+                cek.append(("KLIP_ISI74_TANPA_CAP",
+                            "melati dari layar" in m76.gabung()
+                            and " - #" not in m76.gabung()))
+            finally:
+                globals()["baca_nama_video_layar"] = asli_ocr74
+            # sanitasi muat JSON (studio_bersihkan): isi asing
+            # ditolak, isi baru v7.4 diterima
+            _l74a = studio_bersihkan([{"jenis": "VIDEO_CAPTION",
+                                       "uid": "u75",
+                                       "isi": "Nama video + caption"
+                                              " dasar"}])
+            _l74b = studio_bersihkan([{"jenis": "VIDEO_CAPTION",
+                                       "uid": "u76", "isi": "aneh"}])
+            cek.append(("KLIP_ISI74_SANITASI",
+                        bool(_l74a) and _l74a[0]["isi"]
+                        == "Nama video + caption dasar"
+                        and bool(_l74b) and _l74b[0]["isi"]
+                        == "Caption dasar + nama video"))
             for tag, ok in cek:
                 print(tag, bool(ok))
             print("KLIP_SEMUA_OK", all(ok for _t, ok in cek))

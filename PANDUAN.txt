@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v7.3 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v7.4 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -424,6 +424,35 @@ BARU DI V7.1 - SCROLLBAR JUGA DI BOX ALUR KERJA MAKRO:
   dulu punya bilah gulir tetap; yang dulu terlewat baru box
   Studio ini. Uji:
   python cut_uploader.py --selftest-vsbtb  (5 cek).
+
+BARU DI V7.4 - PILIHAN "NAMA VIDEO + CAPTION DASAR" DI LANGKAH
+VIDEO+CAPTION:
+  Dulu pilihan "YANG DIKETIK OTOMATIS" di properti langkah
+  + VIDEO+CAPTION (kedua tab) hanya punya cara lama
+  "Caption dasar + nama video" (#dangdut - melati).
+  Kini ada pilihan BARU persis di bawahnya:
+
+      Nama video + caption dasar
+
+  Hasilnya: judul video DI DEPAN, lalu SPASI - MINUS -
+  SPASI, lalu caption yang sudah kamu tentukan:
+
+      melati - #dangdut
+
+  Cara kerjanya:
+  - TETAP judul di depan walau kartu VIDEO & CAPTION
+    (URUTAN CAPTION) memakai "Caption - Video" - pilihan
+    per-langkah ini yang menang untuk langkah itu sendiri.
+  - Ikut mode BACA NAMA DI LAYAR (OCR): nama yang terbaca
+    ditaruh di depan, caption di belakang - jadi urutan
+    upload tetap tidak berpengaruh.
+  - Caption kosong? Cukup nama videonya saja (tanpa minus).
+  - Tanpa OCR: nama diambil dari urutan daftar video
+    seperti biasa (berganti otomatis tiap putaran ULANGI).
+  - Pilihan ikut tersimpan di profil CutMotions & makro
+    Studio (file lama aman).
+
+  Uji: python cut_uploader.py --selftest-klip  (34 cek).
 
 BARU DI V7.3 - URUTAN CAPTION + CTRL+C/V SEMUA TITIK + UNDO +
 SIMPAN/SIMPAN SEBAGAI:
@@ -1040,6 +1069,8 @@ BARU DI V5.2 - ISI TANGGAL-JAM & ISI VIDEO & CAPTION:
     * "Caption dasar + nama video" - mis. "#dangdut -
       melati"; kalau ada di dalam blok ULANGI, nama video
       berganti otomatis tiap putaran (melati, rikma, dst).
+    * "Nama video + caption dasar" (v7.4) - sebaliknya:
+      judul di depan, mis. "melati - #dangdut".
     * "Nama video saja" - mis. "melati".
     * "Teks sendiri + placeholder" - bebas pakai {caption}
       {video} {no} {jumlah}.
