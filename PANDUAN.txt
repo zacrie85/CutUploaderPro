@@ -1,5 +1,5 @@
 ============================================================
-  CUTUPLOADER PRO v7.4 - MACRO STUDIO EDITION - PANDUAN
+  CUTUPLOADER PRO v7.5 - MACRO STUDIO EDITION - PANDUAN
   Otomasi klik bebas (ala Jitbit) + Uploader batch CutMotions
 ============================================================
 
@@ -424,6 +424,37 @@ BARU DI V7.1 - SCROLLBAR JUGA DI BOX ALUR KERJA MAKRO:
   dulu punya bilah gulir tetap; yang dulu terlewat baru box
   Studio ini. Uji:
   python cut_uploader.py --selftest-vsbtb  (5 cek).
+
+BARU DI V7.5 - EKSTENSI .MP4 PASTI TIDAK IKUT DI CAPTION HASIL
+OCR (PERBAIKAN BUG):
+  Keluhan: hasil BACA NAMA DI LAYAR (OCR) ikut menuliskan
+  ekstensi file (.mp4) ke caption - biasanya hanya nama
+  videonya saja.
+
+  Penyebab: OCR sering MENEMPELKAN karakter tepat setelah
+  ekstensi (mis. 'melati.mp4.' dengan titik di akhir,
+  'melati.mp4!', 'melati .mp4') - pembersih lama tidak
+  mengenalinya, jadi ekstensi lolos dan ikut ke caption.
+
+  Perbaikan v7.5 (berlaku otomatis di SEMUA jalur OCR:
+  langkah ISI VIDEO & CAPTION kedua tab, kartu BACA NAMA
+  VIDEO DI LAYAR fase caption, tombol TES BACA NAMA):
+  - Pembersihan kini TOLERAN: spasi/titik/tanda baca di
+    sekitar ekstensi otomatis dibuang:
+        melati.mp4.   -> melati
+        melati.mp4.!  -> melati
+        melati .mp4   -> melati
+        melati. mp4   -> melati
+        melati.MP4 :  -> melati
+  - Lapisan pemeriksa kedua di mesin & penyusun caption:
+    walau ada yang lolos, ekstensi PASTI hilang di titik
+    penulisan.
+  - Pesan TES BACA NAMA & status kini menampilkan nama
+    video TANPA .mp4.
+  - Nama asli tetap utuh: 'file.mp4x', 'file.mp42026',
+    'file.backup' tidak tersentuh.
+
+  Uji: python cut_uploader.py --selftest-ocr  (18 cek).
 
 BARU DI V7.4 - PILIHAN "NAMA VIDEO + CAPTION DASAR" DI LANGKAH
 VIDEO+CAPTION:

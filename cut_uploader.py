@@ -275,6 +275,22 @@
            CAPTION memakai urutan 'Caption - Video', ikut
            mode OCR baca nama di layar, dan tersimpan
            di profil/makro.
+     - v7.5: PERBAIKAN BUG OCR - ekstensi file (.mp4)
+           kini PASTI tidak ikut dituliskan. Dulu: bila
+           OCR menempelkan karakter tepat setelah
+           ekstensi (mis. 'melati.mp4.' dengan titik
+           di akhir, 'melati.mp4!', 'melati .mp4'),
+           pembersih lama tidak mengenalinya dan
+           ekstensi ikut ke caption. Kini pembersihan
+           pakai pola toleran (spasi/titik/tanda baca
+           di sekitar ekstensi otomatis dibuang) +
+           lapisan pemeriksa kedua di mesin & caption,
+           berlaku di SEMUA jalur OCR (langkah VIDEO+
+           CAPTION kedua tab, kartu BACA NAMA VIDEO DI
+           LAYAR fase caption, tombol TES BACA NAMA).
+           Pesan TES/status kini juga menampilkan nama
+           video TANPA .mp4. Nama asli seperti
+           'file.mp4x' / 'file.backup' tetap utuh.
 
   Batas situs: maksimal 20 video / sekali jalan,
   judul video maksimal 250 karakter.
@@ -304,6 +320,7 @@ import json
 import datetime
 import os
 import sys
+import re
 import shutil
 import tempfile
 
@@ -391,7 +408,7 @@ except Exception:
     PIL_OK = False
 
 APP_NAME = "CutUploader Pro"
-APP_VERSION = "7.4"
+APP_VERSION = "7.5"
 
 VIDEO_EXTS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v",
               ".3gp", ".flv", ".wmv", ".ts")
@@ -2380,6 +2397,9 @@ def compose_caption(caption, filename, video_dulu=None):
     if video_dulu is None:
         video_dulu = _URUTAN_CAPTION["video_dulu"]
     name = os.path.splitext(os.path.basename(filename))[0]
+    # v7.5: lapisan kedua - buang ekstensi yang lolos bila nama
+    # bawaan OCR masih bersampah ('melati.mp4.' -> 'melati')
+    name = buang_ekstensi_akhir(name) or name
     caption = (caption or "").strip()
     if caption:
         if video_dulu:
@@ -2527,6 +2547,45 @@ def potong_sampai_ekstensi(teks):
     return t[:kandidat[1]].rstrip()
 
 
+# v7.5: ekstensi media utk pembersihan nama (video + gambar) -
+# diurut dari yang terpanjang supaya varian panjang dicek dulu
+_EKST_MEDIA = sorted(
+    {e.lstrip(".").lower() for e in VIDEO_EXTS} | {"jpg", "jpeg", "png"},
+    key=len, reverse=True)
+# v7.5: pola ekstensi file di AKHIR teks, TOLERAN SAMPAH OCR -
+# OCR kerap menempelkan spasi/titik/tanda baca pada ekstensi
+# (.mp4.  .mp4.!  .mp4 :  . mp4  .MP4) sehingga cek batas kata
+# v6.4 yang ketat MELEWATKANNYA dan ekstensi ikut DITULISKAN.
+_POLA_EKST_AKHIR = re.compile(
+    r"[\s.]*\.\s*(?:" + "|".join(
+        re.escape(e) for e in _EKST_MEDIA) +
+    r")[\s.]*['\".,;:!?)\]}]*\s*$",
+    re.IGNORECASE)
+
+
+def buang_ekstensi_akhir(teks):
+    """v7.5: buang ekstensi file di AKHIR teks, toleran sampah OCR.
+
+    Lapisan terakhir pembersihan nama video (menutup celah v6.4):
+    bila OCR menambah karakter tepat SETELAH ekstensi, ekstensi
+    tidak dikenal dan ikut dituliskan ke caption. Contoh:
+      'melati.mp4.'    -> 'melati'
+      'melati.mp4.!'   -> 'melati'
+      'melati .mp4'    -> 'melati'
+      'melati. mp4'    -> 'melati'
+      'melati.MP4 :'   -> 'melati'
+      'melati (2).mp4' -> 'melati (2)'
+      'file.mp4x'      -> 'file.mp4x'   (menempel huruf - utuh)
+      'file.mp42026'   -> 'file.mp42026' (utuh)
+      'file.backup'    -> 'file.backup' (bukan ekstensi dikenal)
+    """
+    t = str(teks or "").strip()
+    if not t or "." not in t:
+        return t
+    baru = _POLA_EKST_AKHIR.sub("", t).strip(" .-;,")
+    return baru
+
+
 def rapikan_nama_terbaca(teks):
     """Bersihkan hasil OCR jadi nama video yang layak.
 
@@ -2534,14 +2593,14 @@ def rapikan_nama_terbaca(teks):
     - v6.4: bila teksnya kebanyakan (ada tulisan lain di sekitar
       nama), potong SAMPAI EKSTENSI FILE saja (.mp4/.mkv/.ts/...)
       - lihat potong_sampai_ekstensi()
-    - buang ekstensi file bila OCR sempat membacanya (.mp4 dll)
+    - buang ekstensi file bila OCR sempat membacanya (.mp4 dll);
+      v7.5: lewat buang_ekstensi_akhir() yang TOLERAN sampah OCR
+      ('.mp4.', '.mp4 !', '. mp4' - dulu lolos & ikut dituliskan)
     """
     t = potong_sampai_ekstensi(teks)
-    if "." in t:
-        kaki = t.rsplit(".", 1)[1].strip().lower()
-        if ("." + kaki) in VIDEO_EXTS or kaki in ("jpg", "png", "jpeg"):
-            t = t.rsplit(".", 1)[0].rstrip(" .-,;")
-    return t.strip()
+    # v7.5: pembersih akhir regex toleran menggantikan cek kaki
+    # lama yang ketat (gagal saat ada karakter setelah ekstensi)
+    return buang_ekstensi_akhir(t)
 
 
 def cocokkan_nama_terdekat(teks, kandidat, ambang=0.60):
@@ -2670,6 +2729,9 @@ def baca_nama_video_layar(mesin, l, kandidat=None):
             "video.".format(sumber, pesan), C_ORANGE)
         return None, pesan
     nama = rapikan_nama_terbaca(teks)
+    # v7.5: lapisan kedua - jamin nama TANPA ekstensi walau
+    # hasil potongan masih bersampah ('melati.mp4.' -> 'melati')
+    nama = buang_ekstensi_akhir(nama)
     if not nama:
         mesin._set_status(
             "OCR terbaca kosong - memakai urutan daftar video.",
@@ -2679,7 +2741,8 @@ def baca_nama_video_layar(mesin, l, kandidat=None):
     if asli:
         mesin._set_status(
             "Nama di layar terbaca '{}' -> video '{}' (padanan "
-            "{:.0%}).".format(nama, os.path.basename(asli), skor),
+            "{:.0%}).".format(nama, os.path.splitext(
+                os.path.basename(asli))[0], skor),
             C_GREEN)
         return os.path.splitext(os.path.basename(asli))[0], ""
     mesin._set_status(
@@ -5979,16 +6042,18 @@ class CutMotionsTab(PerekamAksiMixin):
                 nama = rapikan_nama_terbaca(teks)
                 asli, skor = cocokkan_nama_terdekat(nama, kandidat)
                 if asli:
+                    pendek = os.path.splitext(os.path.basename(
+                        asli))[0]   # v7.5: tampil TANPA .mp4
                     self._set_status(
                         "TES OK: terbaca '{}' -> video '{}' ({:.0%})."
-                        .format(nama, os.path.basename(asli), skor),
+                        .format(nama, pendek, skor),
                         C_GREEN)
                     messagebox.showinfo(
                         APP_NAME,
                         "TES OK!\n\nTulisan terbaca : {}\nVideo padanan  : "
                         "{}\nKemiripan        : {:.0%}\n\nCaption nanti "
                         "akan memakai nama video ini.".format(
-                            nama, os.path.basename(asli), skor))
+                            nama, pendek, skor))
                 else:
                     self._set_status(
                         "TES: terbaca '{}' (tanpa padanan di daftar "
@@ -6125,16 +6190,18 @@ class CutMotionsTab(PerekamAksiMixin):
                 nama = rapikan_nama_terbaca(teks)
                 asli, skor = cocokkan_nama_terdekat(nama, kandidat)
                 if asli:
+                    pendek = os.path.splitext(os.path.basename(
+                        asli))[0]   # v7.5: tampil TANPA .mp4
                     self._set_status(
                         "TES OK: terbaca '{}' -> video '{}' ({:.0%})."
-                        .format(nama, os.path.basename(asli), skor),
+                        .format(nama, pendek, skor),
                         C_GREEN)
                     messagebox.showinfo(
                         APP_NAME,
                         "TES OK!\n\nTulisan terbaca : {}\nVideo padanan  : "
                         "{}\nKemiripan        : {:.0%}\n\nCaption nanti "
                         "akan memakai nama video ini.".format(
-                            nama, os.path.basename(asli), skor))
+                            nama, pendek, skor))
                 else:
                     self._set_status(
                         "TES: terbaca '{}' (tanpa padanan di daftar "
@@ -7654,6 +7721,9 @@ class CutMotionsTab(PerekamAksiMixin):
                     teks_layar, pes_ocr = baca_teks_area(*area_i)
                     if teks_layar:
                         nama_baca = rapikan_nama_terbaca(teks_layar)
+                        # v7.5: lapisan kedua - jamin TANPA ekstensi
+                        # walau OCR menempel sampah ('melati.mp4.')
+                        nama_baca = buang_ekstensi_akhir(nama_baca)
                         if nama_baca:
                             asli, skor = cocokkan_nama_terdekat(
                                 nama_baca, daftar_caption)
@@ -7662,7 +7732,8 @@ class CutMotionsTab(PerekamAksiMixin):
                                 self._set_status(
                                     "Baris {}: layar terbaca '{}' -> "
                                     "video '{}' ({:.0%}).".format(
-                                        i + 1, nama_baca, nama_baris,
+                                        i + 1, nama_baca, os.path.splitext(
+                                            nama_baris)[0],
                                         skor), C_GREEN)
                             else:
                                 nama_baris = nama_baca
@@ -10271,16 +10342,18 @@ class StudioMakroTab(PerekamAksiMixin):
                 nama = rapikan_nama_terbaca(teks)
                 asli, skor = cocokkan_nama_terdekat(nama, kandidat)
                 if asli:
+                    pendek = os.path.splitext(os.path.basename(
+                        asli))[0]   # v7.5: tampil TANPA .mp4
                     self._set_status(
                         "TES OK: terbaca '{}' -> video '{}' ({:.0%})."
-                        .format(nama, os.path.basename(asli), skor),
+                        .format(nama, pendek, skor),
                         C_GREEN)
                     messagebox.showinfo(
                         APP_NAME,
                         "TES OK!\n\nTulisan terbaca : {}\nVideo padanan  : "
                         "{}\nKemiripan        : {:.0%}\n\nCaption nanti "
                         "akan memakai nama video ini.".format(
-                            nama, os.path.basename(asli), skor))
+                            nama, pendek, skor))
                 else:
                     self._set_status(
                         "TES: terbaca '{}' (tanpa padanan di daftar "
@@ -12223,6 +12296,33 @@ def main():
                   and rapikan_nama_terbaca("nontondisnack (22).TS "
                                            "sisa teks")
                   == "nontondisnack (22)")
+            # v7.5: ekstensi tetap terbuang walau OCR menempel
+            # sampah (.mp4. .mp4.! . mp4) - dulu ikut DITULISKAN
+            print("OCR_EKST75_OK",
+                  rapikan_nama_terbaca("melati.mp4.") == "melati"
+                  and rapikan_nama_terbaca("melati.mp4.!") == "melati"
+                  and rapikan_nama_terbaca("melati .mp4") == "melati"
+                  and rapikan_nama_terbaca("melati. mp4") == "melati"
+                  and rapikan_nama_terbaca("melati.MP4 :") == "melati"
+                  and rapikan_nama_terbaca("bunga.mp4, 12:30")
+                  == "bunga"
+                  and buang_ekstensi_akhir("melati (2).mp4")
+                  == "melati (2)"
+                  and buang_ekstensi_akhir("file.mp4x") == "file.mp4x"
+                  and buang_ekstensi_akhir("file.mp42026")
+                  == "file.mp42026"
+                  and buang_ekstensi_akhir("file.backup")
+                  == "file.backup"
+                  and buang_ekstensi_akhir("melati") == "melati"
+                  and buang_ekstensi_akhir("") == "")
+            # v7.5: caption tidak lagi memuat ekstensi dari nama
+            # OCR bersampah ('melati.mp4.' -> '#dangdut - melati')
+            print("OCR_CAP75_OK",
+                  compose_caption("#dangdut", "melati.mp4.")
+                  == "#dangdut - melati"
+                  and compose_caption("#dangdut", "melati.mp4",
+                                      video_dulu=True)
+                  == "melati - #dangdut")
             print("OCR_MIRIP_OK",
                   kemiripan_teks("abc", "abc") == 1.0
                   and kemiripan_teks("abc", "abd") > 0.6
